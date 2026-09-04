@@ -1,0 +1,1242 @@
+{
+  "project": "FABntasy",
+  "description": "PWA de fantasy de baloncesto federado andaluz, con foco inicial en la 1ª Provincial Senior de Sevilla y datos obtenidos automáticamente desde el ecosistema público de Afición FAB.",
+  "vision": "FABntasy convierte las competiciones federadas de la Federación Andaluza de Baloncesto en una experiencia fantasy accesible desde cualquier navegador. La versión 1.0 prioriza una única competición activa, ingesta automática y desacoplada de datos FAB, puntuación reproducible por jornada, plantillas, mercado, ligas privadas y ranking, todo desde una PWA instalable sin depender de marketplaces de aplicaciones. La arquitectura debe permitir ampliar posteriormente a otras provinciales y a Liga Nacional N1 sin rehacer el modelo deportivo ni el motor fantasy.",
+  "release_target": "1.0.0",
+  "architecture": {
+    "web": "Next.js + React + TypeScript + Tailwind CSS, desplegado como PWA instalable",
+    "application_backend": "Next.js server actions / route handlers para la API de producto y lógica de negocio del MVP",
+    "database": "PostgreSQL",
+    "orm": "Prisma",
+    "ingestion": "Python 3.12 + httpx/requests + scheduler/cron",
+    "authentication": "Auth.js o proveedor equivalente, con sesiones server-side",
+    "cache": "Sin Redis en el MVP; añadir solo si las métricas lo justifican",
+    "deployment": "Frontend/API en plataforma compatible con Next.js; PostgreSQL gestionado; ingestor Python como proceso o job independiente",
+    "data_flow": "Afición FAB -> Python ingestor -> PostgreSQL -> API propia -> PWA",
+    "initial_competition": "1ª Provincial Senior Masculina de Sevilla, temporada activa 2026/2027",
+    "expansion_model": "Todas las entidades deportivas dependen de federation/competition/season/group para permitir nuevas competiciones sin duplicar lógica"
+  },
+  "rules": {
+    "one_feature_at_a_time": true,
+    "require_tests_to_close": true,
+    "require_previous_dependencies_done": true,
+    "require_approved_spec_to_implement": true,
+    "preserve_previous_acceptance_contracts": true,
+    "valid_status": [
+      "pending",
+      "spec_ready",
+      "in_progress",
+      "review_pending",
+      "done",
+      "blocked"
+    ],
+    "sdd_required_when": "feature tiene \"sdd\": true",
+    "max_attempts": 3,
+    "default_quality_gates": [
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm test",
+      "python -m pytest",
+      "prisma validate"
+    ],
+    "data_invariants": [
+      "La PWA nunca llama directamente a Afición FAB; todo dato externo llega desde nuestra base de datos y API.",
+      "id_dispositivo, key y cualquier credencial FAB viven solo en el ingestor/backend y nunca se envían al navegador.",
+      "Cada entidad externa conserva su identificador FAB original además de un id interno estable.",
+      "La ingesta es idempotente: repetir una sincronización no duplica competiciones, equipos, partidos, jugadores ni estadísticas.",
+      "Los payloads RAW relevantes se conservan para depuración, auditoría y re-normalización.",
+      "Un partido solo genera puntuación fantasy definitiva a partir de estadísticas persistidas y versionadas.",
+      "Cambiar la fórmula fantasy no reescribe silenciosamente puntuaciones históricas; cada score queda ligado a una versión de reglas.",
+      "Las operaciones de mercado y alineación que afecten a una jornada deben respetar un cutoff server-side.",
+      "La lógica de clasificación nunca confía en valores calculados por el cliente."
+    ],
+    "external_api_policy": [
+      "La API de Afición FAB encontrada no se considera una API pública documentada para terceros.",
+      "El ingestor debe aplicar rate limiting, backoff y caché para minimizar tráfico.",
+      "Los fallos de FAB no deben tumbar la PWA ni impedir consultar datos ya sincronizados.",
+      "Toda integración FAB debe quedar encapsulada detrás de FabClient para poder sustituir la fuente de datos.",
+      "Antes de un lanzamiento comercial o a gran escala se revisarán términos de uso y, si procede, se solicitará acceso o autorización oficial."
+    ]
+  },
+  "known_fab_contracts": {
+    "confirmed_by_live_calls": [
+      "POST /dispositivo.ashx con accion=registrar devuelve resultado, id_dispositivo, key y ruta.",
+      "POST /v2/busqueda.ashx soporta buscarPartido.",
+      "POST /v2/busqueda.ashx soporta buscarCategoria.",
+      "POST /v2/busqueda.ashx soporta buscarEquipo.",
+      "buscarPartido pagina mediante skip y expone numeroMaximoResultados=20.",
+      "Los partidos exponen IdPartido, IdPartidoNotificacion, equipos, fecha, competición, categoría, delegación, estado, resultados y TipoActa.",
+      "Existen partidos de la temporada activa con TipoActa=ESTADÍSTICAS.",
+      "buscarEquipo devuelve Temporada, IdCategoriaCompeticion, IdCompeticion, IdCategoria, IdEquipoNotificacion e Id."
+    ],
+    "confirmed_from_apk_5_0_27": [
+      "POST /v2/envivo/estadisticas.ashx con id_dispositivo, key e id_partido.",
+      "GET /descargar.ashx con tipo=estadisticaPartido para descarga de PDF de estadísticas.",
+      "Modelos de jugador con puntos, tiros, rebotes, asistencias, recuperaciones, pérdidas, tapones, faltas, tiempo jugado, valoración y +/-.",
+      "Acciones/endpoints relacionados con fasesGrupos, Jornadas, horariosFecha, horariosJornadas, estadísticas de equipos/jugadores, mejores jugadores, comparativa y mapa de tiro."
+    ],
+    "pending_validation": [
+      "Respuesta real de /v2/envivo/estadisticas.ashx sobre un partido terminado de la temporada activa.",
+      "Firma exacta y respuesta de fasesGrupos.",
+      "Firma exacta y respuesta de Jornadas.",
+      "Firma exacta y respuesta de horariosJornadas.",
+      "Consistencia de boxscore en todos los partidos de la competición provincial objetivo."
+    ]
+  },
+  "scope_1_0": {
+    "included": [
+      "PWA responsive e instalable desde navegador.",
+      "Una competición activa como foco inicial.",
+      "Ingesta automática de categorías, equipos, partidos y estadísticas FAB.",
+      "Base deportiva normalizada en PostgreSQL.",
+      "Usuarios y sesiones.",
+      "Explorador de competición, equipos, jugadores, calendario y estadísticas.",
+      "Sistema de puntuación fantasy versionado.",
+      "Plantilla fantasy con presupuesto y alineación por jornada.",
+      "Mercado de fichajes y evolución de precios.",
+      "Ligas privadas con invitación por enlace/código.",
+      "Ranking global y ranking por liga privada.",
+      "Cálculo automático de jornada a partir de boxscores FAB.",
+      "PWA install prompt, manifest, iconos, service worker y caché del shell.",
+      "Notificaciones web opcionales para cierre de jornada y jornada calculada.",
+      "Panel administrativo mínimo para salud de ingesta y correcciones controladas.",
+      "Auditoría de cambios de datos deportivos y puntuaciones fantasy."
+    ],
+    "excluded": [
+      "Aplicaciones nativas Android o iOS.",
+      "Publicación en Google Play o App Store.",
+      "Cobertura obligatoria de todas las competiciones FAB en 1.0.",
+      "Scraping visual u OCR como fuente primaria.",
+      "Player claim o perfiles verificados de jugadores reales.",
+      "Chat, foro o red social.",
+      "Pagos, apuestas o premios monetarios.",
+      "Mercado entre usuarios con dinero real.",
+      "Fantasy en directo posesión a posesión.",
+      "Mapas de tiro avanzados como feature central.",
+      "Aplicación para árbitros, clubes o anotadores.",
+      "Dependencia directa del navegador con credenciales o endpoints FAB."
+    ]
+  },
+  "features": [
+    {
+      "id": "sprint-0-project-foundation",
+      "name": "Sprint 0 - Project Foundation",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.0.1",
+      "dependencies": [],
+      "objective": "Crear la base reproducible del proyecto y separar desde el primer commit producto, ingesta y contratos.",
+      "user_stories": [
+        {
+          "id": "HU0.1",
+          "story": "Como desarrollador quiero un repositorio único y reproducible para evolucionar la PWA y el ingestor sin duplicar configuración."
+        },
+        {
+          "id": "HU0.2",
+          "story": "Como mantenedor quiero que ninguna credencial FAB pueda acabar accidentalmente en el navegador o en el repositorio."
+        }
+      ],
+      "tasks": [
+        "Crear monorepo con apps/web, services/fab_ingestor, packages/config, packages/domain y prisma.",
+        "Configurar Next.js, TypeScript estricto, Tailwind, ESLint, Vitest y Playwright base.",
+        "Configurar Python 3.12, pytest, ruff y tipado del ingestor.",
+        "Añadir PostgreSQL y Prisma con migración inicial vacía.",
+        "Crear .env.example y validación de variables privadas/públicas.",
+        "Configurar CI con gates de TypeScript, Python y Prisma."
+      ],
+      "deliverable": "El repositorio instala, compila, prueba y arranca shells mínimos de PWA e ingestor.",
+      "acceptance": [
+        "AC1: apps/web y services/fab_ingestor son los únicos entrypoints ejecutables del producto inicial.",
+        "AC2: pnpm typecheck, pnpm lint, pnpm test, python -m pytest y prisma validate terminan con código 0 en CI.",
+        "AC3: Ninguna variable que contenga FAB_DEVICE, FAB_KEY, SECRET, PASSWORD o TOKEN puede usar prefijo NEXT_PUBLIC_.",
+        "AC4: El ingestor importa su configuración exclusivamente desde variables server-side y puede arrancar en modo mock sin red.",
+        "AC5: Existe docs/ARCHITECTURE.md con el flujo FAB -> ingestor -> PostgreSQL -> API propia -> PWA.",
+        "AC6: Sprint 0 no implementa autenticación, fantasy, mercado ni llamadas reales a FAB."
+      ],
+      "scope": [
+        "apps/web/**",
+        "services/fab_ingestor/**",
+        "packages/**",
+        "prisma/**",
+        "tests/**",
+        ".github/workflows/**",
+        ".env.example",
+        "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-1-fab-client",
+      "name": "Sprint 1 - FAB Client",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.0.2",
+      "dependencies": [
+        "sprint-0-project-foundation"
+      ],
+      "objective": "Encapsular el contrato conocido de Afición FAB en un cliente Python probado y reemplazable.",
+      "user_stories": [
+        {
+          "id": "HU1.1",
+          "story": "Como sistema quiero consultar Afición FAB desde un único cliente para que un cambio externo no se propague al resto del proyecto."
+        }
+      ],
+      "tasks": [
+        "Implementar FabClient con registro de dispositivo.",
+        "Persistir y rotar id_dispositivo/key fuera del código.",
+        "Implementar search_match, search_category y search_team con paginación.",
+        "Añadir timeouts, backoff, rate limit y user-agent identificable.",
+        "Crear fixtures anonimizadas a partir de respuestas conocidas.",
+        "Guardar opcionalmente respuestas RAW para debugging."
+      ],
+      "deliverable": "Un FabClient Python obtiene y valida las respuestas ya confirmadas de Afición FAB.",
+      "acceptance": [
+        "AC1: register_device reproduce el POST a /dispositivo.ashx y valida resultado=correcto, id_dispositivo y key.",
+        "AC2: search_match, search_category y search_team usan exclusivamente /v2/busqueda.ashx con parámetros form-urlencoded.",
+        "AC3: La paginación usa skip y nunca solicita páginas concurrentes del mismo recurso.",
+        "AC4: Una key nueva devuelta por FAB sustituye de forma atómica a la anterior.",
+        "AC5: Logs y excepciones no contienen id_dispositivo, key ni bodies completos con credenciales.",
+        "AC6: 429 y 5xx aplican backoff acotado; 4xx no se reintentan en bucle.",
+        "AC7: Tests unitarios no requieren acceso real a FAB y cubren registro, rotación de key, paginación, timeout y error."
+      ],
+      "scope": [
+        "services/fab_ingestor/**",
+        "tests/**",
+        "docs/**",
+        ".env.example",
+        "spec.json"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-2-sports-data-model",
+      "name": "Sprint 2 - Sports Data Model",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.0.3",
+      "dependencies": [
+        "sprint-1-fab-client"
+      ],
+      "objective": "Crear un modelo deportivo normalizado e independiente de los nombres concretos de la competición inicial.",
+      "user_stories": [
+        {
+          "id": "HU2.1",
+          "story": "Como mantenedor quiero añadir nuevas competiciones en el futuro sin duplicar tablas ni lógica fantasy."
+        }
+      ],
+      "tasks": [
+        "Crear tablas federations, competitions, seasons, competition_seasons, groups y rounds.",
+        "Crear teams, team_registrations, players y player_registrations.",
+        "Crear games y player_game_stats.",
+        "Crear raw_fab_payloads y external_ids.",
+        "Definir claves únicas e índices por identificador FAB.",
+        "Crear repositorios de upsert idempotente."
+      ],
+      "deliverable": "PostgreSQL puede representar una competición completa, sus participantes, partidos y boxscores sin datos fantasy.",
+      "acceptance": [
+        "AC1: Cada entidad sincronizable conserva un id interno y al menos un external_id FAB cuando exista.",
+        "AC2: Repetir el mismo upsert no crea filas duplicadas.",
+        "AC3: Un jugador puede tener registros distintos por temporada/equipo sin duplicar su identidad cuando exista un identificador estable.",
+        "AC4: games soporta estado, fecha/hora, jornada, local, visitante, resultado y tipo de acta.",
+        "AC5: player_game_stats admite puntos, tiros, rebotes, asistencias, robos, pérdidas, tapones, faltas, minutos, valoración y plus_minus nullable.",
+        "AC6: raw_fab_payloads conserva endpoint, external_id, retrieved_at y payload JSON sin credenciales.",
+        "AC7: La migración es reversible en desarrollo y prisma validate pasa."
+      ],
+      "scope": [
+        "prisma/**",
+        "apps/web/src/server/**",
+        "services/fab_ingestor/**",
+        "tests/**",
+        "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-3-active-competition-discovery",
+      "name": "Sprint 3 - Active Competition Discovery",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.0.4",
+      "dependencies": [
+        "sprint-2-sports-data-model"
+      ],
+      "objective": "Descubrir y sincronizar la competición objetivo de la temporada activa mediante los IDs reales de FAB.",
+      "user_stories": [
+        {
+          "id": "HU3.1",
+          "story": "Como administrador quiero seleccionar una competición FAB activa y que el sistema recuerde su identidad externa."
+        }
+      ],
+      "tasks": [
+        "Implementar búsqueda administrativa de categorías activas.",
+        "Persistir Id, IdCompeticionCategoria, nombre, categoría y delegación.",
+        "Implementar o validar fasesGrupos.",
+        "Implementar o validar equipos de la categoría.",
+        "Permitir marcar una competition_season como fantasy_enabled.",
+        "Crear comando CLI de sync de competición."
+      ],
+      "deliverable": "La competición objetivo queda identificada y sincronizada sin depender de búsquedas de texto en cada ejecución.",
+      "acceptance": [
+        "AC1: La selección inicial usa buscarCategoria solo para discovery; las sincronizaciones posteriores usan IDs persistidos.",
+        "AC2: El sistema no asume que el nombre de la competición contenga la temporada.",
+        "AC3: Si fasesGrupos no puede validarse todavía, la feature queda bloqueada antes de inventar parámetros o usar scraping visual.",
+        "AC4: Los equipos sincronizados quedan ligados a competition_season y grupo cuando FAB lo exponga.",
+        "AC5: Solo una competición puede marcarse primary_fantasy_competition en el MVP.",
+        "AC6: Toda respuesta externa utilizada queda disponible en raw_fab_payloads."
+      ],
+      "scope": [
+        "services/fab_ingestor/**",
+        "prisma/**",
+        "apps/web/src/server/**",
+        "tests/**",
+        "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-4-schedule-and-games-ingestion",
+      "name": "Sprint 4 - Schedule and Games Ingestion",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.0.5",
+      "dependencies": [
+        "sprint-3-active-competition-discovery"
+      ],
+      "objective": "Recorrer grupos, jornadas y partidos de la competición activa sin depender del buscador global.",
+      "user_stories": [
+        {
+          "id": "HU4.1",
+          "story": "Como sistema quiero conocer automáticamente calendario, jornada, resultados y estado de todos los partidos."
+        }
+      ],
+      "tasks": [
+        "Validar e implementar Jornadas/horariosJornadas o la ruta equivalente de la app.",
+        "Normalizar local, visitante, fecha, hora, estado, resultado, jornada y TipoActa.",
+        "Crear upsert de games.",
+        "Detectar altas, reprogramaciones y cambios de resultado.",
+        "Marcar source_updated_at y last_seen_at."
+      ],
+      "deliverable": "La base refleja el calendario activo de la competición y puede actualizarlo de forma idempotente.",
+      "acceptance": [
+        "AC1: Una sincronización completa no depende de buscarPartido por nombre de equipo.",
+        "AC2: Cambios de horario actualizan el mismo game y no crean otro.",
+        "AC3: TipoActa se conserva exactamente como valor externo además de una bandera normalizada has_statistics.",
+        "AC4: Un partido terminado mantiene resultado y parciales cuando FAB los proporciona.",
+        "AC5: Un partido que deja de aparecer no se borra automáticamente; se marca como stale hasta confirmación.",
+        "AC6: Tests cubren altas, actualizaciones, reprogramaciones, duplicados y desaparición temporal."
+      ],
+      "scope": [
+        "services/fab_ingestor/**",
+        "prisma/**",
+        "tests/**",
+        "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-5-boxscore-ingestion",
+      "name": "Sprint 5 - Boxscore Ingestion",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.1.0",
+      "dependencies": [
+        "sprint-4-schedule-and-games-ingestion"
+      ],
+      "objective": "Validar el endpoint de estadísticas con un partido terminado y normalizar boxscores individuales.",
+      "user_stories": [
+        {
+          "id": "HU5.1",
+          "story": "Como sistema fantasy quiero disponer de estadísticas individuales fiables para calcular puntos automáticamente."
+        }
+      ],
+      "tasks": [
+        "Probar /v2/envivo/estadisticas.ashx con un partido terminado TipoActa=ESTADÍSTICAS.",
+        "Validar estructura de equipos y jugadores.",
+        "Mapear todos los campos disponibles a player_game_stats.",
+        "Resolver identidad de jugadores entre partidos.",
+        "Guardar payload RAW y checksum.",
+        "Probar descarga PDF como herramienta de auditoría opcional."
+      ],
+      "deliverable": "Un partido terminado puede transformarse desde FAB a un boxscore normalizado reproducible.",
+      "acceptance": [
+        "AC1: La implementación real no se considera cerrada hasta obtener al menos un boxscore válido de la temporada activa.",
+        "AC2: Cada fila player_game_stats referencia game, player y team.",
+        "AC3: Campos ausentes en FAB se almacenan como null y nunca se inventan como cero salvo contrato externo inequívoco.",
+        "AC4: El ingestor conserva puntos y, cuando existan, tiros, rebotes, asistencias, robos, pérdidas, tapones, faltas, minutos, valoración y +/-.",
+        "AC5: Reingerir el mismo boxscore actualiza la fila y conserva el payload anterior para auditoría.",
+        "AC6: Una respuesta incompleta o contradictoria no marca el partido como stats_final.",
+        "AC7: Tests verifican mapping, nullability, cambios posteriores y ausencia de duplicados."
+      ],
+      "scope": [
+        "services/fab_ingestor/**",
+        "prisma/**",
+        "tests/**",
+        "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-6-ingestion-orchestrator",
+      "name": "Sprint 6 - Ingestion Orchestrator",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.1.1",
+      "dependencies": [
+        "sprint-5-boxscore-ingestion"
+      ],
+      "objective": "Convertir los scripts de descubrimiento en una ingesta automática, observable e idempotente.",
+      "user_stories": [
+        {
+          "id": "HU6.1",
+          "story": "Como administrador quiero que los datos FAB se actualicen solos sin ejecutar comandos manualmente."
+        }
+      ],
+      "tasks": [
+        "Crear comandos sync:competition, sync:schedule, sync:stats y sync:all.",
+        "Añadir scheduler configurable.",
+        "Crear locks para evitar ejecuciones solapadas.",
+        "Añadir retries/backoff y circuit breaker simple.",
+        "Crear tabla ingestion_runs con métricas y errores redactados.",
+        "Añadir estrategia de frecuencia entre semana y durante jornada."
+      ],
+      "deliverable": "La temporada activa se mantiene sincronizada automáticamente mediante un único proceso Python.",
+      "acceptance": [
+        "AC1: Dos ejecuciones concurrentes del mismo job no procesan en paralelo la misma competición.",
+        "AC2: El scheduler puede ejecutarse cada 1-3 horas en reposo y cada 5-15 minutos en ventanas de jornada mediante configuración.",
+        "AC3: Un fallo de FAB no elimina datos ya persistidos.",
+        "AC4: ingestion_runs registra inicio, fin, estado, contadores y error_code sin credenciales ni payloads sensibles.",
+        "AC5: Solo se solicitan boxscores de partidos elegibles y los ya definitivos pueden saltarse salvo resync explícito.",
+        "AC6: El proceso termina de forma controlada ante SIGTERM y no deja locks permanentes."
+      ],
+      "scope": [
+        "services/fab_ingestor/**",
+        "prisma/**",
+        "infrastructure/**",
+        "tests/**",
+        "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-7-pwa-auth-shell",
+      "name": "Sprint 7 - PWA Auth and Shell",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.2.0",
+      "dependencies": [
+        "sprint-2-sports-data-model"
+      ],
+      "objective": "Crear la PWA instalable con autenticación, navegación y shell responsive.",
+      "user_stories": [
+        {
+          "id": "HU7.1",
+          "story": "Como usuario quiero registrarme, iniciar sesión y abrir FABntasy desde móvil u ordenador sin instalar una app nativa."
+        }
+      ],
+      "tasks": [
+        "Implementar registro, login, logout y recuperación básica de sesión.",
+        "Crear layout responsive mobile-first.",
+        "Crear navegación Inicio, Mi equipo, Mercado, Ligas, Jugadores y Perfil.",
+        "Añadir manifest, iconos, display standalone y service worker.",
+        "Crear estados loading, offline y error.",
+        "Añadir protección CSRF/sesión y rate limiting de auth."
+      ],
+      "deliverable": "Un usuario puede entrar en la PWA, autenticarse y navegar por un shell instalable.",
+      "acceptance": [
+        "AC1: La app funciona en navegador móvil y desktop con un único codebase.",
+        "AC2: Las rutas privadas no renderizan datos fantasy sin sesión válida.",
+        "AC3: Ningún secreto FAB aparece en HTML, JS, source maps ni respuestas al cliente.",
+        "AC4: El manifest permite instalación standalone en navegadores compatibles.",
+        "AC5: El service worker cachea solo el app shell y recursos seguros; mutaciones fantasy requieren red.",
+        "AC6: La shell sigue siendo utilizable si FAB está caída porque solo consume nuestra API."
+      ],
+      "scope": [
+        "apps/web/**",
+        "prisma/**",
+        "packages/**",
+        "tests/**",
+        "public/**",
+        "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-8-sports-explorer",
+      "name": "Sprint 8 - Sports Explorer",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.2.1",
+      "dependencies": [
+        "sprint-6-ingestion-orchestrator",
+        "sprint-7-pwa-auth-shell"
+      ],
+      "objective": "Exponer en la PWA los datos reales de competición antes de introducir mecánicas fantasy.",
+      "user_stories": [
+        {
+          "id": "HU8.1",
+          "story": "Como usuario quiero consultar equipos, calendario, resultados, jugadores y estadísticas de la liga real."
+        }
+      ],
+      "tasks": [
+        "Crear API propia de competición, equipos, partidos y jugadores.",
+        "Crear clasificación/calendario de competición.",
+        "Crear ficha de partido con boxscore cuando exista.",
+        "Crear ficha de jugador con agregados por temporada.",
+        "Añadir búsqueda/filtros básicos.",
+        "Añadir cache server-side de lecturas públicas."
+      ],
+      "deliverable": "FABntasy ya funciona como explorador estadístico de la competición real.",
+      "acceptance": [
+        "AC1: La PWA no hace requests al dominio de Afición FAB.",
+        "AC2: Un partido sin estadísticas muestra marcador/estado sin inventar boxscore.",
+        "AC3: Los agregados de jugador se recalculan desde player_game_stats.",
+        "AC4: Los datos externos muestran last_synced_at o estado equivalente cuando sea útil.",
+        "AC5: La API pagina listados grandes y no devuelve payloads RAW.",
+        "AC6: Tests E2E cubren calendario, partido con/sin estadísticas y ficha de jugador."
+      ],
+      "scope": [
+        "apps/web/**",
+        "packages/domain/**",
+        "prisma/**",
+        "tests/**",
+        "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-9-fantasy-scoring-engine",
+      "name": "Sprint 9 - Fantasy Scoring Engine",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.3.0",
+      "dependencies": [
+        "sprint-5-boxscore-ingestion",
+        "sprint-8-sports-explorer"
+      ],
+      "objective": "Definir y versionar la fórmula que transforma un boxscore FAB en puntos fantasy.",
+      "user_stories": [
+        {
+          "id": "HU9.1",
+          "story": "Como jugador quiero que cada actuación real produzca una puntuación fantasy clara y verificable."
+        }
+      ],
+      "tasks": [
+        "Definir FantasyScoringRuleSet versionado.",
+        "Crear configuración de pesos y bonus.",
+        "Implementar cálculo puro y determinista.",
+        "Persistir fantasy_player_game_scores.",
+        "Crear explicación por desglose de puntos.",
+        "Añadir recomputación controlada por versión."
+      ],
+      "deliverable": "Cada boxscore elegible produce una puntuación fantasy reproducible y explicable.",
+      "acceptance": [
+        "AC1: El mismo boxscore y ruleset producen siempre exactamente el mismo score.",
+        "AC2: Cada score persiste ruleset_version, source_stats_version y breakdown.",
+        "AC3: Un campo estadístico null no se trata como cero si el ruleset requiere distinguir dato desconocido.",
+        "AC4: Recalcular con una versión nueva no sobrescribe silenciosamente resultados históricos de una versión anterior.",
+        "AC5: La UI puede explicar cómo se obtuvo cada puntuación.",
+        "AC6: Tests cubren fixtures extremos, valores null, bonus, negativos y redondeo."
+      ],
+      "scope": [
+        "apps/web/src/server/**",
+        "packages/domain/**",
+        "prisma/**",
+        "tests/**",
+        "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-10-fantasy-team-roster",
+      "name": "Sprint 10 - Fantasy Team and Roster",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.3.1",
+      "dependencies": [
+        "sprint-9-fantasy-scoring-engine",
+        "sprint-7-pwa-auth-shell"
+      ],
+      "objective": "Permitir a cada usuario crear su equipo fantasy, gestionar presupuesto y definir alineación.",
+      "user_stories": [
+        {
+          "id": "HU10.1",
+          "story": "Como usuario quiero construir una plantilla respetando presupuesto y reglas de composición."
+        },
+        {
+          "id": "HU10.2",
+          "story": "Como usuario quiero elegir qué jugadores puntúan en la próxima jornada."
+        }
+      ],
+      "tasks": [
+        "Crear fantasy_teams, fantasy_rosters y fantasy_lineups.",
+        "Definir presupuesto inicial configurable.",
+        "Definir reglas de tamaño/posiciones de plantilla configurables.",
+        "Crear UI Mi equipo.",
+        "Crear validación server-side de alineación.",
+        "Implementar cutoff por jornada."
+      ],
+      "deliverable": "Un usuario puede crear una plantilla válida y guardar una alineación para la jornada.",
+      "acceptance": [
+        "AC1: El servidor rechaza plantillas que excedan presupuesto o reglas de composición.",
+        "AC2: Un usuario no puede tener dos veces el mismo jugador en una plantilla.",
+        "AC3: El cutoff usa hora server-side derivada de la jornada y no del reloj del cliente.",
+        "AC4: Tras el cutoff una alineación queda congelada para esa jornada.",
+        "AC5: La UI distingue titulares, banquillo, presupuesto usado y restante.",
+        "AC6: Tests cubren presupuesto exacto, exceso, duplicados, posiciones y carrera en cutoff."
+      ],
+      "scope": [
+        "apps/web/**",
+        "packages/domain/**",
+        "prisma/**",
+        "tests/**",
+        "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-11-player-pricing",
+      "name": "Sprint 11 - Player Pricing",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.4.0",
+      "dependencies": [
+        "sprint-9-fantasy-scoring-engine",
+        "sprint-10-fantasy-team-roster"
+      ],
+      "objective": "Crear precios iniciales y evolución controlada del valor de los jugadores.",
+      "user_stories": [
+        {
+          "id": "HU11.1",
+          "story": "Como usuario quiero que los jugadores tengan un valor de mercado que evolucione con su rendimiento y demanda."
+        }
+      ],
+      "tasks": [
+        "Crear player_prices y price_events.",
+        "Definir algoritmo inicial de valoración.",
+        "Incluir rendimiento reciente y demanda fantasy mediante parámetros configurables.",
+        "Definir límites diarios/semanales de variación.",
+        "Crear histórico y tendencia.",
+        "Crear job de actualización de precios."
+      ],
+      "deliverable": "Cada jugador elegible tiene un precio reproducible y un histórico de cambios.",
+      "acceptance": [
+        "AC1: Toda variación de precio registra precio anterior, nuevo, motivo y versión del algoritmo.",
+        "AC2: El precio nunca es negativo ni supera límites configurados.",
+        "AC3: Una ejecución repetida del mismo periodo no duplica price_events.",
+        "AC4: El algoritmo puede ejecutarse sin modificar puntuaciones fantasy.",
+        "AC5: La UI muestra precio actual y tendencia sin prometer valor monetario real.",
+        "AC6: Tests cubren jugador nuevo, alta/baja demanda, rendimiento extremo y límites."
+      ],
+      "scope": [
+        "apps/web/**",
+        "packages/domain/**",
+        "prisma/**",
+        "tests/**",
+        "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-12-market-transactions",
+      "name": "Sprint 12 - Market and Transactions",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.4.1",
+      "dependencies": [
+        "sprint-11-player-pricing"
+      ],
+      "objective": "Implementar compra y venta de jugadores con consistencia de presupuesto y plantilla.",
+      "user_stories": [
+        {
+          "id": "HU12.1",
+          "story": "Como usuario quiero fichar y vender jugadores desde un mercado simple."
+        }
+      ],
+      "tasks": [
+        "Crear market_transactions y ledger de presupuesto.",
+        "Implementar compra directa al precio vigente para el MVP.",
+        "Implementar venta según regla configurable.",
+        "Crear filtros de mercado por posición, precio, equipo y rendimiento.",
+        "Añadir confirmación de transacción.",
+        "Resolver concurrencia sobre saldo y roster."
+      ],
+      "deliverable": "Los usuarios pueden comprar y vender jugadores sin inconsistencias de saldo.",
+      "acceptance": [
+        "AC1: Compra, saldo y roster se actualizan en una única transacción DB.",
+        "AC2: Dos compras concurrentes que excedan presupuesto no pueden dejar saldo negativo.",
+        "AC3: Cada operación conserva el precio aplicado en ese instante.",
+        "AC4: Vender un jugador fuera de la plantilla falla sin modificar saldo.",
+        "AC5: Las operaciones tras cutoff respetan las reglas aprobadas de jornada.",
+        "AC6: La UI muestra confirmación y resultado definitivo del servidor."
+      ],
+      "scope": [
+        "apps/web/**",
+        "packages/domain/**",
+        "prisma/**",
+        "tests/**",
+        "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-13-private-leagues",
+      "name": "Sprint 13 - Private Leagues",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.5.0",
+      "dependencies": [
+        "sprint-10-fantasy-team-roster"
+      ],
+      "objective": "Permitir crear ligas privadas y unirse mediante enlace o código.",
+      "user_stories": [
+        {
+          "id": "HU13.1",
+          "story": "Como usuario quiero crear una liga para competir con mis amigos o compañeros de equipo."
+        },
+        {
+          "id": "HU13.2",
+          "story": "Como usuario quiero unirme desde un enlace compartido por WhatsApp."
+        }
+      ],
+      "tasks": [
+        "Crear fantasy_leagues y league_memberships.",
+        "Generar slug/código de invitación.",
+        "Crear landing de invitación.",
+        "Implementar owner/admin básico de liga.",
+        "Añadir abandonar liga y revocar invitación.",
+        "Definir límite inicial de miembros."
+      ],
+      "deliverable": "Una liga privada puede crearse, compartirse y poblarse desde el navegador.",
+      "acceptance": [
+        "AC1: Un código de invitación no expone ids internos secuenciales.",
+        "AC2: Un usuario no puede duplicar membership en la misma liga.",
+        "AC3: Una invitación revocada deja de aceptar nuevos miembros.",
+        "AC4: El enlace conserva intención tras login/registro y completa la unión al volver.",
+        "AC5: El propietario no puede eliminar accidentalmente una liga con miembros sin confirmación explícita.",
+        "AC6: Tests E2E cubren crear, compartir, registrarse, unirse y revocar."
+      ],
+      "scope": [
+        "apps/web/**",
+        "prisma/**",
+        "tests/**",
+        "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-14-round-scoring-rankings",
+      "name": "Sprint 14 - Round Scoring and Rankings",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.5.1",
+      "dependencies": [
+        "sprint-9-fantasy-scoring-engine",
+        "sprint-10-fantasy-team-roster",
+        "sprint-13-private-leagues"
+      ],
+      "objective": "Calcular automáticamente la puntuación de cada equipo fantasy por jornada y construir rankings.",
+      "user_stories": [
+        {
+          "id": "HU14.1",
+          "story": "Como usuario quiero saber cuántos puntos hice en la jornada y mi posición global y en mis ligas."
+        }
+      ],
+      "tasks": [
+        "Crear fantasy_round_scores y fantasy_team_totals.",
+        "Snapshot de alineación al cutoff.",
+        "Agregar scores de jugadores alineados.",
+        "Crear ranking global y por liga.",
+        "Definir desempates deterministas.",
+        "Crear historial por jornada."
+      ],
+      "deliverable": "Cada jornada cerrada produce puntuaciones y rankings consistentes.",
+      "acceptance": [
+        "AC1: El cálculo usa exclusivamente el snapshot de alineación congelado.",
+        "AC2: Reejecutar una jornada con los mismos inputs no duplica ni altera el resultado.",
+        "AC3: Una corrección de boxscore puede disparar recomputación versionada y auditable.",
+        "AC4: Los desempates siguen una regla publicada y determinista.",
+        "AC5: Ranking global y privado derivan de las mismas puntuaciones base.",
+        "AC6: La UI muestra puntos de jornada, acumulado y variación de puesto."
+      ],
+      "scope": [
+        "apps/web/**",
+        "packages/domain/**",
+        "prisma/**",
+        "tests/**",
+        "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-15-home-dashboard",
+      "name": "Sprint 15 - Home Dashboard",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.6.0",
+      "dependencies": [
+        "sprint-12-market-transactions",
+        "sprint-14-round-scoring-rankings"
+      ],
+      "objective": "Unificar próxima jornada, equipo, mercado, puntos y ligas en una portada útil.",
+      "user_stories": [
+        {
+          "id": "HU15.1",
+          "story": "Como usuario quiero abrir FABntasy y entender en segundos qué tengo que hacer y cómo voy."
+        }
+      ],
+      "tasks": [
+        "Crear resumen de próxima jornada y cutoff.",
+        "Mostrar puntos/posición de la última jornada.",
+        "Mostrar presupuesto y alertas de alineación.",
+        "Mostrar movimientos relevantes de precios.",
+        "Mostrar posiciones en ligas privadas.",
+        "Añadir enlaces de acción directa."
+      ],
+      "deliverable": "La PWA tiene una home funcional que concentra el loop principal del fantasy.",
+      "acceptance": [
+        "AC1: La home no hace más de una carga agregada principal por sesión/navegación salvo refresh explícito.",
+        "AC2: Un usuario sin equipo recibe onboarding en lugar de tarjetas vacías.",
+        "AC3: Un usuario con alineación inválida ve una advertencia accionable antes del cutoff.",
+        "AC4: Datos de ranking y presupuesto coinciden con las fuentes server-side.",
+        "AC5: La vista funciona correctamente en móvil estrecho y desktop.",
+        "AC6: No se muestran datos simulados cuando falta información real."
+      ],
+      "scope": [
+        "apps/web/**",
+        "tests/**",
+        "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-16-pwa-install-and-notifications",
+      "name": "Sprint 16 - PWA Install and Notifications",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.6.1",
+      "dependencies": [
+        "sprint-7-pwa-auth-shell",
+        "sprint-15-home-dashboard"
+      ],
+      "objective": "Hacer que FABntasy se comporte como una aplicación instalable y pueda avisar de eventos importantes.",
+      "user_stories": [
+        {
+          "id": "HU16.1",
+          "story": "Como usuario quiero añadir FABntasy a mi pantalla de inicio."
+        },
+        {
+          "id": "HU16.2",
+          "story": "Como usuario quiero recibir avisos útiles sin abrir constantemente la web."
+        }
+      ],
+      "tasks": [
+        "Completar installability y assets PWA.",
+        "Implementar Web Push opt-in.",
+        "Crear preferencias de notificación.",
+        "Notificar cutoff próximo y jornada calculada.",
+        "Añadir gestión de subscriptions y expiración.",
+        "Probar iOS, Android y desktop compatibles."
+      ],
+      "deliverable": "FABntasy puede instalarse como PWA y enviar notificaciones opt-in.",
+      "acceptance": [
+        "AC1: Nunca se solicita permiso de notificaciones al primer render sin gesto/contexto del usuario.",
+        "AC2: Desactivar una preferencia impide nuevas notificaciones de ese tipo.",
+        "AC3: Las subscriptions se asocian al usuario y pueden revocarse.",
+        "AC4: Una jornada recalculada no genera spam duplicado.",
+        "AC5: La app sigue funcionando completa cuando Push no está soportado.",
+        "AC6: El service worker no cachea respuestas privadas de mutación."
+      ],
+      "scope": [
+        "apps/web/**",
+        "public/**",
+        "prisma/**",
+        "tests/**",
+        "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-17-ingestion-admin",
+      "name": "Sprint 17 - Ingestion Admin",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.7.0",
+      "dependencies": [
+        "sprint-6-ingestion-orchestrator",
+        "sprint-8-sports-explorer"
+      ],
+      "objective": "Crear un panel administrativo mínimo para observar y operar la ingesta sin entrar al servidor.",
+      "user_stories": [
+        {
+          "id": "HU17.1",
+          "story": "Como administrador quiero saber si FABntasy está sincronizando bien y poder relanzar una ingesta concreta."
+        }
+      ],
+      "tasks": [
+        "Crear rol admin separado.",
+        "Mostrar últimos ingestion_runs.",
+        "Mostrar última sincronización por competición y partido.",
+        "Permitir resync de competición, jornada o partido.",
+        "Mostrar payload RAW solo mediante vista protegida y redactada.",
+        "Añadir health del ingestor."
+      ],
+      "deliverable": "Los fallos de datos pueden diagnosticarse y reintentarse desde una interfaz protegida.",
+      "acceptance": [
+        "AC1: Ninguna ruta admin es accesible por un usuario normal.",
+        "AC2: El panel nunca muestra id_dispositivo ni key.",
+        "AC3: Un resync crea un job identificable y no ejecuta dos veces concurrentemente el mismo recurso.",
+        "AC4: Los payloads RAW se presentan con campos sensibles redactados.",
+        "AC5: Un fallo de FAB se diferencia de un fallo de normalización o DB.",
+        "AC6: Las acciones administrativas quedan auditadas."
+      ],
+      "scope": [
+        "apps/web/**",
+        "services/fab_ingestor/**",
+        "prisma/**",
+        "tests/**",
+        "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-18-data-corrections-audit",
+      "name": "Sprint 18 - Data Corrections and Audit",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.7.1",
+      "dependencies": [
+        "sprint-14-round-scoring-rankings",
+        "sprint-17-ingestion-admin"
+      ],
+      "objective": "Soportar correcciones de FAB y ajustes administrativos sin perder trazabilidad.",
+      "user_stories": [
+        {
+          "id": "HU18.1",
+          "story": "Como administrador quiero corregir un problema puntual de datos sin editar la base a mano."
+        },
+        {
+          "id": "HU18.2",
+          "story": "Como usuario quiero que una corrección real recalcule mi jornada de forma transparente."
+        }
+      ],
+      "tasks": [
+        "Crear sports_data_revisions y audit_events.",
+        "Distinguir source correction de manual override.",
+        "Añadir recomputación de scores afectados.",
+        "Crear diff antes/después.",
+        "Añadir motivo obligatorio para override manual.",
+        "Mostrar aviso de jornada recalculada."
+      ],
+      "deliverable": "Toda corrección de datos o puntuación queda explicada, versionada y reproducible.",
+      "acceptance": [
+        "AC1: Ningún override manual destruye el valor original de FAB.",
+        "AC2: Cada revisión registra actor, motivo, timestamp y campos modificados.",
+        "AC3: La recomputación afecta solo a jornadas/usuarios dependientes de los datos corregidos.",
+        "AC4: Repetir una revisión ya aplicada es idempotente.",
+        "AC5: La UI puede indicar que una jornada fue recalculada.",
+        "AC6: Los usuarios no pueden crear ni modificar revisiones."
+      ],
+      "scope": [
+        "apps/web/**",
+        "services/fab_ingestor/**",
+        "packages/domain/**",
+        "prisma/**",
+        "tests/**",
+        "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-19-security-privacy-hardening",
+      "name": "Sprint 19 - Security and Privacy Hardening",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.8.0",
+      "dependencies": [
+        "sprint-18-data-corrections-audit",
+        "sprint-16-pwa-install-and-notifications"
+      ],
+      "objective": "Cerrar vectores de abuso, proteger datos de usuario y preparar el producto para beta pública.",
+      "user_stories": [
+        {
+          "id": "HU19.1",
+          "story": "Como usuario quiero que mi cuenta, ligas y actividad estén protegidas."
+        },
+        {
+          "id": "HU19.2",
+          "story": "Como operador quiero que un usuario malicioso no pueda abusar de la API ni del ingestor."
+        }
+      ],
+      "tasks": [
+        "Revisar autorización de todas las mutaciones.",
+        "Añadir rate limits por IP/usuario.",
+        "Aplicar CSP, cookies seguras, CSRF y headers.",
+        "Crear exportación y borrado de cuenta.",
+        "Minimizar PII y definir retención.",
+        "Ejecutar revisión de secretos y dependencias."
+      ],
+      "deliverable": "La beta dispone de controles de seguridad, privacidad y abuso coherentes.",
+      "acceptance": [
+        "AC1: Ningún endpoint de usuario acepta user_id arbitrario como sustituto de la identidad de sesión.",
+        "AC2: Mercado, ligas, lineup y admin tienen autorización server-side.",
+        "AC3: Rate limiting distingue autenticación de lecturas normales.",
+        "AC4: Exportar/borrar cuenta no elimina datos deportivos globales importados de FAB.",
+        "AC5: Logs no contienen cookies, tokens, key FAB ni payloads de contraseña.",
+        "AC6: Dependencias críticas conocidas con vulnerabilidad alta bloquean release hasta evaluación."
+      ],
+      "scope": [
+        "apps/web/**",
+        "services/fab_ingestor/**",
+        "packages/**",
+        "prisma/**",
+        "tests/**",
+        "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-20-performance-reliability",
+      "name": "Sprint 20 - Performance and Reliability",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.8.1",
+      "dependencies": [
+        "sprint-19-security-privacy-hardening"
+      ],
+      "objective": "Asegurar que la aplicación responde con fluidez durante jornadas y picos de usuarios.",
+      "user_stories": [
+        {
+          "id": "HU20.1",
+          "story": "Como usuario quiero abrir mercado, equipo y ranking rápidamente incluso después de terminar los partidos."
+        }
+      ],
+      "tasks": [
+        "Crear benchmarks de rankings, mercado y home.",
+        "Añadir índices PostgreSQL guiados por queries reales.",
+        "Optimizar agregados de jornada.",
+        "Añadir caché server-side donde sea medible.",
+        "Probar carga simultánea y recalculado.",
+        "Añadir métricas y alertas mínimas."
+      ],
+      "deliverable": "FABntasy cumple presupuestos de rendimiento definidos para la beta.",
+      "acceptance": [
+        "AC1: Home, mercado y ranking tienen presupuesto p95 documentado y testeable.",
+        "AC2: El cálculo de una jornada completa no bloquea requests interactivos.",
+        "AC3: Los rankings no se recalculan desde cero en cada request.",
+        "AC4: La caída temporal del ingestor no afecta lecturas de datos ya sincronizados.",
+        "AC5: Las queries lentas relevantes quedan identificadas y cubiertas por índices o justificación.",
+        "AC6: Los tests de carga no realizan llamadas al backend real de FAB."
+      ],
+      "scope": [
+        "apps/web/**",
+        "services/fab_ingestor/**",
+        "prisma/**",
+        "tests/**",
+        "scripts/**",
+        "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-21-accessibility-responsive-polish",
+      "name": "Sprint 21 - Accessibility and Responsive Polish",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.9.0",
+      "dependencies": [
+        "sprint-20-performance-reliability"
+      ],
+      "objective": "Cerrar la experiencia PWA en móvil, tablet y escritorio con accesibilidad consistente.",
+      "user_stories": [
+        {
+          "id": "HU21.1",
+          "story": "Como usuario quiero jugar cómodamente desde móvil o escritorio y con navegación accesible."
+        }
+      ],
+      "tasks": [
+        "Auditar teclado, foco, labels y regiones live.",
+        "Revisar contraste y escalado de texto.",
+        "Pulir breakpoints de Mi equipo, Mercado y Rankings.",
+        "Añadir skeletons/empty/error states coherentes.",
+        "Optimizar touch targets.",
+        "Añadir pruebas automáticas de accesibilidad."
+      ],
+      "deliverable": "La PWA es utilizable y coherente en los navegadores objetivo.",
+      "acceptance": [
+        "AC1: Las acciones críticas pueden completarse solo con teclado en desktop.",
+        "AC2: Los controles táctiles principales respetan tamaño mínimo accesible.",
+        "AC3: Estados loading, empty, offline y error son distinguibles por texto, no solo color.",
+        "AC4: El orden de foco de diálogos de compra, venta, invitación y lineup es determinista.",
+        "AC5: Las páginas principales superan la suite de accesibilidad automática aprobada.",
+        "AC6: No aparecen scrolls horizontales involuntarios en anchos móviles objetivo."
+      ],
+      "scope": [
+        "apps/web/**",
+        "tests/**",
+        "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-22-beta-observability",
+      "name": "Sprint 22 - Beta Observability",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.9.1",
+      "dependencies": [
+        "sprint-21-accessibility-responsive-polish",
+        "sprint-17-ingestion-admin"
+      ],
+      "objective": "Preparar una beta cerrada con métricas operativas y feedback sin instrumentación invasiva.",
+      "user_stories": [
+        {
+          "id": "HU22.1",
+          "story": "Como operador quiero detectar errores de ingesta y producto durante la beta antes de que los usuarios tengan que avisarme."
+        }
+      ],
+      "tasks": [
+        "Añadir error tracking server/client con redacción.",
+        "Medir latencia, errores y salud de jobs.",
+        "Añadir métricas agregadas de uso del producto sin perfilar contenido sensible.",
+        "Crear página de status interna.",
+        "Crear canal de feedback.",
+        "Definir runbook de incidentes."
+      ],
+      "deliverable": "La beta puede operarse y diagnosticarse sin inspección manual constante.",
+      "acceptance": [
+        "AC1: Un error de ingesta fallida genera una señal operativa sin incluir credenciales FAB.",
+        "AC2: Los errores client-side se agrupan sin registrar tokens ni datos privados de ligas.",
+        "AC3: Existe dashboard interno de jobs fallidos y backlog pendiente.",
+        "AC4: Las métricas distinguen fallo de FAB, DB y aplicación.",
+        "AC5: Se documenta cómo desactivar temporalmente scoring/mercado sin perder datos.",
+        "AC6: El feedback de usuario no se mezcla con logs técnicos."
+      ],
+      "scope": [
+        "apps/web/**",
+        "services/fab_ingestor/**",
+        "infrastructure/**",
+        "tests/**",
+        "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-23-release-candidate",
+      "name": "Sprint 23 - Release Candidate",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.9.9",
+      "dependencies": [
+        "sprint-22-beta-observability"
+      ],
+      "objective": "Cerrar todos los flujos críticos con datos reales de la competición objetivo antes de 1.0.",
+      "user_stories": [
+        {
+          "id": "HU23.1",
+          "story": "Como operador quiero validar una jornada completa de principio a fin antes de abrir el producto."
+        }
+      ],
+      "tasks": [
+        "Ejecutar smoke real con competición activa.",
+        "Validar ingesta de calendario y boxscores.",
+        "Validar cutoff, lineup, scoring, mercado y rankings.",
+        "Validar ligas privadas e invitaciones.",
+        "Revisar notificaciones y PWA instalada.",
+        "Cerrar bugs bloqueantes y documentación."
+      ],
+      "deliverable": "Una release candidate completa una jornada real sin intervención manual salvo incidencias excepcionales.",
+      "acceptance": [
+        "AC1: Al menos una jornada real recorre ingesta -> stats -> fantasy score -> team score -> ranking.",
+        "AC2: Un resync del mismo partido no duplica puntuaciones ni transacciones.",
+        "AC3: Una corrección posterior de FAB puede recalcular de forma auditable.",
+        "AC4: El fantasy sigue legible si un partido carece de estadísticas completas.",
+        "AC5: Todos los flujos críticos tienen E2E en navegadores objetivo.",
+        "AC6: No quedan errores conocidos de severidad bloqueante o alta sin aceptación explícita."
+      ],
+      "scope": [
+        "apps/web/**",
+        "services/fab_ingestor/**",
+        "packages/**",
+        "prisma/**",
+        "tests/**",
+        "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-24-production-1-0",
+      "name": "Sprint 24 - Production 1.0",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "1.0.0",
+      "dependencies": [
+        "sprint-23-release-candidate"
+      ],
+      "objective": "Publicar FABntasy 1.0 con operación, backups y recuperación documentados.",
+      "user_stories": [
+        {
+          "id": "HU24.1",
+          "story": "Como usuario quiero jugar una temporada activa de forma estable desde cualquier navegador compatible."
+        },
+        {
+          "id": "HU24.2",
+          "story": "Como operador quiero desplegar y recuperar FABntasy sin perder datos fantasy ni deportivos."
+        }
+      ],
+      "tasks": [
+        "Configurar producción y dominios.",
+        "Configurar backups automáticos de PostgreSQL.",
+        "Configurar secretos server-side.",
+        "Documentar restore y disaster recovery.",
+        "Fijar política de versiones del ruleset y algoritmo de precios.",
+        "Crear checklist de lanzamiento.",
+        "Publicar changelog 1.0.0."
+      ],
+      "deliverable": "FABntasy 1.0 está desplegado como PWA y listo para una competición activa real.",
+      "acceptance": [
+        "AC1: Producción usa HTTPS y cookies seguras.",
+        "AC2: Existe backup automático y se ha probado al menos una restauración completa.",
+        "AC3: Las credenciales FAB y de base de datos no existen en bundles cliente ni repositorio.",
+        "AC4: El ingestor puede reiniciarse sin duplicar datos ni perder el estado de la competición.",
+        "AC5: La versión de scoring activa y precios queda congelada/documentada para el inicio de la competición salvo migración explícita.",
+        "AC6: Existe runbook para caída de FAB, DB, ingestor y frontend.",
+        "AC7: La release 1.0 no depende de Google Play ni App Store.",
+        "AC8: La arquitectura permite habilitar una segunda competition_season sin migración destructiva del modelo central."
+      ],
+      "scope": [
+        "apps/web/**",
+        "services/fab_ingestor/**",
+        "packages/**",
+        "prisma/**",
+        "infrastructure/**",
+        "tests/**",
+        "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": false
+    }
+  ]
+}

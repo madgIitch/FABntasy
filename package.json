@@ -1,0 +1,15 @@
+{
+  "name": "fabntasy",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev": "pnpm --filter @fabntasy/web dev",
+    "typecheck": "pnpm --filter @fabntasy/web typecheck",
+    "lint": "pnpm --filter @fabntasy/web lint",
+    "test": "pnpm --filter @fabntasy/web test",
+    "prisma": "prisma"
+  },
+  "devDependencies": {
+    "prisma": "^6.0.0"
+  }
+}

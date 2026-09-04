@@ -1,0 +1,8 @@
+[project]
+name = "fabntasy-fab-ingestor"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.8"]

@@ -1,6 +1,11 @@
 {
   "gates": [
-    { "name": "test", "cmd": "echo 'TODO: define un comando de tests' && false", "blocking": true },
+    { "name": "typecheck", "cmd": "pnpm typecheck", "blocking": true },
+    { "name": "lint", "cmd": "pnpm lint", "blocking": true },
+    { "name": "test", "cmd": "pnpm test", "blocking": true },
+    { "name": "python-test", "cmd": "python -m pytest services/fab_ingestor", "blocking": true },
+    { "name": "ruff", "cmd": "ruff check services/fab_ingestor", "blocking": true },
+    { "name": "prisma-validate", "cmd": "pnpm exec prisma validate", "blocking": true },
     { "name": "diff-scope", "blocking": true }
   ]
 }

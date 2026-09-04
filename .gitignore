@@ -1,2 +1,7 @@
+.env
+.env.*
+!.env.example
+node_modules/
+.venv/
 .harness/harness-state.json
 .harness/interviews/

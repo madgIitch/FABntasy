@@ -9,3 +9,16 @@ una decisión de arquitectura relevante durante implementación.
 - (rellenar) Decisiones que aún no deben asumirse automáticamente.
 
 <!-- Nuevas entradas debajo -->
+
+<!-- harness:sprint-0-project-foundation -->
+## 2026-09-04 · sprint-0-project-foundation aprobado
+
+Contexto: se aprobó el spec `sprint-0-project-foundation` (Sprint 0 - Project Foundation).
+
+Decisiones registradas:
+
+- **auth_secrets:** FAB_DEVICE, FAB_KEY, SECRET, PASSWORD y TOKEN son siempre server-side; ninguna variable sensible usa NEXT_PUBLIC_.
+- **rollback_compat:** La migración inicial es vacía y la estructura permite continuar sin autenticación, fantasy ni mercado.
+- **tests:** Se cubren los comandos de TypeScript, lint, tests, pytest y validación Prisma definidos por el spec.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

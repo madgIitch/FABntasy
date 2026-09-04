@@ -221,7 +221,7 @@
     {
       "id": "sprint-2-sports-data-model",
       "name": "Sprint 2 - Sports Data Model",
-      "status": "spec_ready",
+      "status": "done",
       "sdd": true,
       "milestone": "0.0.3",
       "dependencies": [
@@ -263,10 +263,13 @@
         ".env.example",
         "spec.json"
       ],
-      "spec_approved": false,
+      "spec_approved": true,
       "manual_spec_ready": true,
       "manual_spec_ready_at": "2026-09-04T22:10:17.062Z",
-      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes."
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:0675f0e65271dda10c384e55bf75d88a28c1c1e4ab7dcd2c6c97915b53fa9b6d",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-04T22:11:44.043Z"
     },
     {
       "id": "sprint-3-active-competition-discovery",

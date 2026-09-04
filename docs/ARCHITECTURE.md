@@ -82,3 +82,25 @@ Objetivo no negociable:
 - **edge_cases:** La paginación avanza secuencialmente mediante skip, termina ante página vacía o incompleta y evita concurrencia sobre el mismo recurso.
 - **ui_states:** La feature no incorpora interfaz de usuario; expone un cliente Python reemplazable para el ingestor.
 
+<!-- harness:sprint-2-sports-data-model -->
+## sprint-2-sports-data-model · Sprint 2 - Sports Data Model
+
+
+
+### Scope aprobado
+
+  - `prisma/**`
+  - `apps/web/src/server/**`
+  - `services/fab_ingestor/**`
+  - `tests/**`
+  - `docs/**`
+  - `.env.example`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** Prisma define UUID internos y relaciones normalizadas para federación, competición, temporada, edición, grupo, jornada, equipo, inscripción, jugador, inscripción, partido, estadísticas, identificadores externos y payloads RAW. Los repositorios Python realizan UPSERT sobre claves naturales documentadas.
+- **external_contracts:** `external_ids` usa `source`, `entity_type`, `external_id` y `entity_id`; conserva IDs opacos como texto y establece unicidad por fuente, tipo e ID externo. Prisma gobierna migraciones y Python escribe directamente en PostgreSQL.
+- **edge_cases:** Los campos aún no publicados por FAB son nullable; un jugador sin identificador estable puede conservar identidad provisional por fuente y contexto, sin fusionarse por nombre; partidos reprogramados actualizan el mismo registro.
+- **ui_states:** No hay UI en este sprint; las consultas de servidor solo exponen datos deportivos normalizados y nunca payloads RAW por defecto.
+

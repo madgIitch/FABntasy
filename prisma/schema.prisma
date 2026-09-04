@@ -3,7 +3,256 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
+}
+
+model Federation {
+  id           String        @id @default(uuid()) @db.Uuid
+  name         String
+  countryCode  String        @default("ES") @map("country_code")
+  competitions Competition[]
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  @@unique([name, countryCode])
+  @@map("federations")
+}
+
+model Competition {
+  id                 String              @id @default(uuid()) @db.Uuid
+  federationId       String              @map("federation_id") @db.Uuid
+  name               String
+  federation         Federation          @relation(fields: [federationId], references: [id], onDelete: Restrict)
+  competitionSeasons CompetitionSeason[]
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+
+  @@unique([federationId, name])
+  @@map("competitions")
+}
+
+model Season {
+  id                 String              @id @default(uuid()) @db.Uuid
+  name               String              @unique
+  startsOn           DateTime?           @map("starts_on") @db.Date
+  endsOn             DateTime?           @map("ends_on") @db.Date
+  competitionSeasons CompetitionSeason[]
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+
+  @@map("seasons")
+}
+
+model CompetitionSeason {
+  id                  String               @id @default(uuid()) @db.Uuid
+  competitionId       String               @map("competition_id") @db.Uuid
+  seasonId            String               @map("season_id") @db.Uuid
+  name                String?
+  fantasyEnabled      Boolean              @default(false) @map("fantasy_enabled")
+  competition         Competition          @relation(fields: [competitionId], references: [id], onDelete: Restrict)
+  season              Season               @relation(fields: [seasonId], references: [id], onDelete: Restrict)
+  groups              Group[]
+  teamRegistrations   TeamRegistration[]
+  playerRegistrations PlayerRegistration[]
+  games               Game[]
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
+
+  @@unique([competitionId, seasonId])
+  @@map("competition_seasons")
+}
+
+model Group {
+  id                  String             @id @default(uuid()) @db.Uuid
+  competitionSeasonId String             @map("competition_season_id") @db.Uuid
+  name                String
+  competitionSeason   CompetitionSeason  @relation(fields: [competitionSeasonId], references: [id], onDelete: Cascade)
+  rounds              Round[]
+  teamRegistrations   TeamRegistration[]
+  games               Game[]
+  createdAt           DateTime           @default(now()) @map("created_at")
+  updatedAt           DateTime           @updatedAt @map("updated_at")
+
+  @@unique([competitionSeasonId, name])
+  @@map("groups")
+}
+
+model Round {
+  id        String    @id @default(uuid()) @db.Uuid
+  groupId   String    @map("group_id") @db.Uuid
+  number    Int
+  name      String?
+  startsOn  DateTime? @map("starts_on") @db.Date
+  endsOn    DateTime? @map("ends_on") @db.Date
+  group     Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  games     Game[]
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@unique([groupId, number])
+  @@map("rounds")
+}
+
+model Team {
+  id            String             @id @default(uuid()) @db.Uuid
+  name          String
+  clubName      String?            @map("club_name")
+  registrations TeamRegistration[]
+  homeGames     Game[]             @relation("HomeTeam")
+  awayGames     Game[]             @relation("AwayTeam")
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  @@index([name])
+  @@map("teams")
+}
+
+model TeamRegistration {
+  id                  String               @id @default(uuid()) @db.Uuid
+  teamId              String               @map("team_id") @db.Uuid
+  competitionSeasonId String               @map("competition_season_id") @db.Uuid
+  groupId             String?              @map("group_id") @db.Uuid
+  displayName         String?              @map("display_name")
+  team                Team                 @relation(fields: [teamId], references: [id], onDelete: Restrict)
+  competitionSeason   CompetitionSeason    @relation(fields: [competitionSeasonId], references: [id], onDelete: Cascade)
+  group               Group?               @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  playerRegistrations PlayerRegistration[]
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
+
+  @@unique([teamId, competitionSeasonId])
+  @@index([competitionSeasonId, groupId])
+  @@map("team_registrations")
+}
+
+model Player {
+  id            String               @id @default(uuid()) @db.Uuid
+  displayName   String               @map("display_name")
+  provisional   Boolean              @default(false)
+  registrations PlayerRegistration[]
+  createdAt     DateTime             @default(now()) @map("created_at")
+  updatedAt     DateTime             @updatedAt @map("updated_at")
+
+  @@index([displayName])
+  @@map("players")
+}
+
+model PlayerRegistration {
+  id                  String            @id @default(uuid()) @db.Uuid
+  playerId            String            @map("player_id") @db.Uuid
+  teamRegistrationId  String            @map("team_registration_id") @db.Uuid
+  competitionSeasonId String            @map("competition_season_id") @db.Uuid
+  shirtNumber         String?           @map("shirt_number")
+  player              Player            @relation(fields: [playerId], references: [id], onDelete: Restrict)
+  teamRegistration    TeamRegistration  @relation(fields: [teamRegistrationId], references: [id], onDelete: Cascade)
+  competitionSeason   CompetitionSeason @relation(fields: [competitionSeasonId], references: [id], onDelete: Cascade)
+  stats               PlayerGameStat[]
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+
+  @@unique([playerId, teamRegistrationId])
+  @@index([competitionSeasonId])
+  @@map("player_registrations")
+}
+
+model Game {
+  id                  String            @id @default(uuid()) @db.Uuid
+  competitionSeasonId String            @map("competition_season_id") @db.Uuid
+  groupId             String?           @map("group_id") @db.Uuid
+  roundId             String?           @map("round_id") @db.Uuid
+  homeTeamId          String            @map("home_team_id") @db.Uuid
+  awayTeamId          String            @map("away_team_id") @db.Uuid
+  scheduledAt         DateTime?         @map("scheduled_at") @db.Timestamptz(3)
+  sourceTimezone      String?           @map("source_timezone")
+  roundNumber         Int?              @map("round_number")
+  status              String
+  sourceStatus        String?           @map("source_status")
+  homeScore           Int?              @map("home_score")
+  awayScore           Int?              @map("away_score")
+  scoreByPeriod       Json?             @map("score_by_period")
+  sourceScore         Json?             @map("source_score")
+  recordType          String?           @map("record_type")
+  hasStatistics       Boolean           @default(false) @map("has_statistics")
+  sourceUpdatedAt     DateTime?         @map("source_updated_at") @db.Timestamptz(3)
+  lastSeenAt          DateTime          @default(now()) @map("last_seen_at") @db.Timestamptz(3)
+  competitionSeason   CompetitionSeason @relation(fields: [competitionSeasonId], references: [id], onDelete: Cascade)
+  group               Group?            @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  round               Round?            @relation(fields: [roundId], references: [id], onDelete: SetNull)
+  homeTeam            Team              @relation("HomeTeam", fields: [homeTeamId], references: [id], onDelete: Restrict)
+  awayTeam            Team              @relation("AwayTeam", fields: [awayTeamId], references: [id], onDelete: Restrict)
+  playerStats         PlayerGameStat[]
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+
+  @@index([competitionSeasonId, roundNumber])
+  @@index([scheduledAt])
+  @@map("games")
+}
+
+model PlayerGameStat {
+  id                     String             @id @default(uuid()) @db.Uuid
+  gameId                 String             @map("game_id") @db.Uuid
+  playerRegistrationId   String             @map("player_registration_id") @db.Uuid
+  starter                Boolean?
+  minutesPlayed          Decimal?           @map("minutes_played") @db.Decimal(8, 3)
+  millisecondsPlayed     Int?               @map("milliseconds_played")
+  points                 Int?
+  freeThrowsMade         Int?               @map("free_throws_made")
+  freeThrowsAttempted    Int?               @map("free_throws_attempted")
+  twoPointersMade        Int?               @map("two_pointers_made")
+  twoPointersAttempted   Int?               @map("two_pointers_attempted")
+  threePointersMade      Int?               @map("three_pointers_made")
+  threePointersAttempted Int?               @map("three_pointers_attempted")
+  offensiveRebounds      Int?               @map("offensive_rebounds")
+  defensiveRebounds      Int?               @map("defensive_rebounds")
+  rebounds               Int?
+  assists                Int?
+  steals                 Int?
+  turnovers              Int?
+  blocks                 Int?
+  blocksReceived         Int?               @map("blocks_received")
+  foulsCommitted         Int?               @map("fouls_committed")
+  foulsReceived          Int?               @map("fouls_received")
+  technicalFouls         Int?               @map("technical_fouls")
+  valuation              Int?
+  plusMinus              Int?               @map("plus_minus")
+  game                   Game               @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  playerRegistration     PlayerRegistration @relation(fields: [playerRegistrationId], references: [id], onDelete: Cascade)
+  createdAt              DateTime           @default(now()) @map("created_at")
+  updatedAt              DateTime           @updatedAt @map("updated_at")
+
+  @@unique([gameId, playerRegistrationId])
+  @@map("player_game_stats")
+}
+
+model ExternalId {
+  id         String   @id @default(uuid()) @db.Uuid
+  source     String
+  entityType String   @map("entity_type")
+  externalId String   @map("external_id")
+  entityId   String   @map("entity_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@unique([source, entityType, externalId])
+  @@index([source, entityType, entityId])
+  @@map("external_ids")
+}
+
+model RawFabPayload {
+  id          String   @id @default(uuid()) @db.Uuid
+  endpoint    String
+  entityType  String   @map("entity_type")
+  externalId  String?  @map("external_id")
+  retrievedAt DateTime @default(now()) @map("retrieved_at") @db.Timestamptz(3)
+  httpStatus  Int      @map("http_status")
+  checksum    String
+  payload     Json
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([endpoint, checksum])
+  @@index([entityType, externalId, retrievedAt])
+  @@map("raw_fab_payloads")
 }

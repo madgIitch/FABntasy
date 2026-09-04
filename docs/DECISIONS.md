@@ -35,3 +35,16 @@ Decisiones registradas:
 - **tests:** Fixtures anonimizadas y transporte simulado cubren registro, rotación, paginación, timeout, reintentos y errores sin red real.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-2-sports-data-model -->
+## 2026-09-04 · sprint-2-sports-data-model aprobado
+
+Contexto: se aprobó el spec `sprint-2-sports-data-model` (Sprint 2 - Sports Data Model).
+
+Decisiones registradas:
+
+- **auth_secrets:** `raw_fab_payloads.payload` se sanea antes de persistir y rechaza claves sensibles (`key`, `id_dispositivo`, token, password, secret); la base no almacena credenciales FAB en tablas deportivas.
+- **rollback_compat:** La migración solo añade tablas deportivas, es reversible en desarrollo y no modifica el contrato del `FabClient` ni introduce tablas fantasy.
+- **tests:** Se prueban esquema, constraints y UPSERT con PostgreSQL real de test; además hay tests unitarios de saneado y mapeo. `prisma validate`, Python y gates existentes deben pasar.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

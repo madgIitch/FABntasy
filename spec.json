@@ -175,7 +175,7 @@
     {
       "id": "sprint-1-fab-client",
       "name": "Sprint 1 - FAB Client",
-      "status": "spec_ready",
+      "status": "pending",
       "sdd": true,
       "milestone": "0.0.2",
       "dependencies": [
@@ -213,13 +213,7 @@
         ".env.example",
         "spec.json"
       ],
-      "spec_approved": true,
-      "manual_spec_ready": true,
-      "manual_spec_ready_at": "2026-09-04T21:55:37.588Z",
-      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
-      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-      "approved_by": "peorr",
-      "approved_at": "2026-09-04T21:55:37.672Z"
+      "spec_approved": false
     },
     {
       "id": "sprint-2-sports-data-model",

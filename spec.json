@@ -121,7 +121,7 @@
     {
       "id": "sprint-0-project-foundation",
       "name": "Sprint 0 - Project Foundation",
-      "status": "spec_ready",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.0.1",
       "dependencies": [],

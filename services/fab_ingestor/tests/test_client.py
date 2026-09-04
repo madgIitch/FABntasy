@@ -136,6 +136,68 @@ def test_timeout_is_retried_then_reported_without_details():
     assert attempts == 2
 
 
+def test_team_phases_uses_confirmed_endpoint_and_fields():
+    calls = []
+
+    def transport(url, fields, timeout):
+        calls.append((url, dict(fields)))
+        return response({"resultado": "correcto", "listaFasesGrupo": [], "key": "rotated"})
+
+    client = FabClient(
+        MemoryCredentialStore(Credentials("device", "secret")),
+        transport=transport,
+        min_interval=0,
+    )
+    assert client.get_team_phases("opaque-team")["listaFasesGrupo"] == []
+    assert calls[0][0].endswith("/v2/equipo.ashx")
+    assert calls[0][1]["accion"] == "fasesGrupos"
+    assert calls[0][1]["id_equipo"] == "opaque-team"
+
+
+def test_category_phases_uses_apk_confirmed_endpoint_and_fields():
+    calls = []
+
+    def transport(url, fields, timeout):
+        calls.append((url, dict(fields)))
+        return response({"resultado": "correcto", "listaFasesGrupo": []})
+
+    client = FabClient(
+        MemoryCredentialStore(Credentials("device", "secret")),
+        transport=transport,
+        min_interval=0,
+    )
+    assert client.get_category_phases("opaque-category")["listaFasesGrupo"] == []
+    assert calls[0][0].endswith("/v2/categoria.ashx")
+    assert calls[0][1]["accion"] == "fasesGrupos"
+    assert calls[0][1]["id_categoria_competicion"] == "opaque-category"
+
+
+def test_category_teams_uses_apk_confirmed_form_contract():
+    calls = []
+
+    def transport(url, fields, timeout):
+        calls.append((url, dict(fields)))
+        return response({"resultado": "correcto", "equipos": [{"Id": "team-1"}]})
+
+    client = FabClient(
+        MemoryCredentialStore(Credentials("device", "secret")),
+        transport=transport,
+        min_interval=0,
+    )
+    assert client.get_category_teams("phase", "group", "LIGA") == [{"Id": "team-1"}]
+    assert calls[0][0].endswith("/v2/categoria.ashx")
+    assert calls[0][1] == {
+        "accion": "equipos",
+        "id_fase": "phase",
+        "id_grupo": "group",
+        "jornada": "",
+        "tipo_fase": "LIGA",
+        "ventana": "",
+        "id_dispositivo": "device",
+        "key": "secret",
+    }
+
+
 def test_file_store_replaces_credentials_atomically(tmp_path):
     path = tmp_path / "private" / "credentials.json"
     store = FileCredentialStore(path)

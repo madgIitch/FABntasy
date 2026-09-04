@@ -1,0 +1,19 @@
+{
+  "resultado": "correcto",
+  "listaFasesGrupo": [
+    {
+      "IdFase": "opaque-phase-1",
+      "NombreFase": "FASE DE GRUPOS",
+      "TipoFase": "LIGA",
+      "Grupos": [
+        {
+          "IdGrupo": "opaque-group-a",
+          "NombreGrupo": "GRUPO A",
+          "IdTipoClasificacion": 1,
+          "NombreTipoClasificacion": "FIBA"
+        }
+      ],
+      "Rondas": []
+    }
+  ]
+}

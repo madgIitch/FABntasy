@@ -124,13 +124,92 @@ class FabClient:
     def search_match(self, text: str, *, page_size: int = 20) -> list[dict]:
         return self._search("match", text, page_size)
 
-    def search_category(self, text: str, *, page_size: int = 20) -> list[dict]:
-        return self._search("category", text, page_size)
+    def search_category(
+        self,
+        text: str,
+        *,
+        page_size: int = 20,
+        payload_sink: Callable[[dict], None] | None = None,
+    ) -> list[dict]:
+        return self._search("category", text, page_size, payload_sink=payload_sink)
 
     def search_team(self, text: str, *, page_size: int = 20) -> list[dict]:
         return self._search("team", text, page_size)
 
-    def _search(self, resource: str, text: str, page_size: int) -> list[dict]:
+    def get_team_phases(self, team_id: str) -> dict:
+        if not team_id:
+            raise ValueError("team_id cannot be empty")
+        payload = self._post(
+            "/v2/equipo.ashx",
+            {"accion": "fasesGrupos", "id_equipo": team_id},
+        )
+        phases = payload.get("listaFasesGrupo")
+        if str(payload.get("resultado", "")).lower() != "correcto" or not isinstance(phases, list):
+            raise FabResponseError("FAB team phases returned an invalid response")
+        return payload
+
+    def get_category_phases(
+        self,
+        category_competition_id: str,
+        *,
+        payload_sink: Callable[[dict], None] | None = None,
+    ) -> dict:
+        if not category_competition_id:
+            raise ValueError("category_competition_id cannot be empty")
+        payload = self._post(
+            "/v2/categoria.ashx",
+            {
+                "accion": "fasesGrupos",
+                "id_categoria_competicion": category_competition_id,
+            },
+        )
+        if payload_sink is not None:
+            payload_sink(payload)
+        phases = payload.get("listaFasesGrupo")
+        if str(payload.get("resultado", "")).lower() != "correcto" or not isinstance(phases, list):
+            raise FabResponseError("FAB category phases returned an invalid response")
+        return payload
+
+    def get_category_teams(
+        self,
+        phase_id: str,
+        group_id: str,
+        phase_type: str,
+        *,
+        matchday: str = "",
+        window: str = "",
+        payload_sink: Callable[[dict], None] | None = None,
+    ) -> list[dict]:
+        if not phase_id or not group_id or not phase_type:
+            raise ValueError("phase_id, group_id and phase_type cannot be empty")
+        payload = self._post(
+            "/v2/categoria.ashx",
+            {
+                "accion": "equipos",
+                "id_fase": phase_id,
+                "id_grupo": group_id,
+                "jornada": matchday,
+                "tipo_fase": phase_type,
+                "ventana": window,
+            },
+        )
+        if payload_sink is not None:
+            payload_sink(payload)
+        teams = payload.get("equipos")
+        if str(payload.get("resultado", "")).lower() != "correcto" or not isinstance(teams, list):
+            raise FabResponseError("FAB category teams returned an invalid response")
+        if not all(isinstance(team, dict) for team in teams):
+            raise FabResponseError("FAB category teams returned invalid items")
+        return teams
+
+    def _search(
+        self,
+        resource: str,
+        text: str,
+        page_size: int,
+        *,
+        payload_sink: Callable[[dict], None] | None = None,
+    ) -> list[dict]:
         if page_size <= 0:
             raise ValueError("page_size must be positive")
         action = self.SEARCH_ACTIONS[resource]
@@ -141,6 +220,8 @@ class FabClient:
                 "/v2/busqueda.ashx",
                 {"accion": action, "texto": text, "skip": str(skip)},
             )
+            if payload_sink is not None:
+                payload_sink(payload)
             page = self._extract_page(payload, resource)
             items.extend(page)
             server_page_size = payload.get("numeroMaximoResultados", page_size)

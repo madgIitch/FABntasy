@@ -104,3 +104,24 @@ Objetivo no negociable:
 - **edge_cases:** Los campos aún no publicados por FAB son nullable; un jugador sin identificador estable puede conservar identidad provisional por fuente y contexto, sin fusionarse por nombre; partidos reprogramados actualizan el mismo registro.
 - **ui_states:** No hay UI en este sprint; las consultas de servidor solo exponen datos deportivos normalizados y nunca payloads RAW por defecto.
 
+<!-- harness:sprint-3-active-competition-discovery -->
+## sprint-3-active-competition-discovery · Sprint 3 - Active Competition Discovery
+
+
+
+### Scope aprobado
+
+  - `services/fab_ingestor/**`
+  - `prisma/**`
+  - `apps/web/src/server/**`
+  - `tests/**`
+  - `docs/**`
+  - `.env.example`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** La categoría FAB seleccionada se representa como Competition + CompetitionSeason y conserva `Id`, `IdCompeticionCategoria`, categoría, competición y delegación mediante external IDs y metadatos normalizados. Se añade una marca primaria protegida por índice único parcial.
+- **external_contracts:** Discovery usa exclusivamente `buscarCategoria`. La APK confirma que la enumeración exhaustiva parte de `/v2/categoria.ashx`: `accion=fasesGrupos` usa `id_categoria_competicion`, y `accion=equipos` usa `id_fase`, `id_grupo`, `jornada`, `tipo_fase` y `ventana`. Ambos contratos se validaron también contra Copa Delegación real.
+- **edge_cases:** El nombre no determina temporada ni identidad; los IDs opacos permanecen texto; repetir selección/sync es idempotente; `DESCANSA` se descarta como marcador de calendario; si un equipo aparece en más de un grupo/fase, su TeamRegistration no recibe un grupo ambiguo.
+- **ui_states:** La administración inicial es CLI: listado de candidatos, selección explícita por `IdCompeticionCategoria` y resumen de sync; no se implementa UI web en este sprint.

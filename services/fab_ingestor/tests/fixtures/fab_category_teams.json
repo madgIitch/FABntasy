@@ -1,0 +1,13 @@
+{
+  "resultado": "correcto",
+  "equipos": [
+    {
+      "Id": "opaque-team-1",
+      "Nombre": "EQUIPO ANONIMIZADO"
+    },
+    {
+      "Id": "opaque-placeholder",
+      "Nombre": "DESCANSA"
+    }
+  ]
+}

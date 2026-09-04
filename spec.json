@@ -274,7 +274,7 @@
     {
       "id": "sprint-3-active-competition-discovery",
       "name": "Sprint 3 - Active Competition Discovery",
-      "status": "pending",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.0.4",
       "dependencies": [
@@ -297,12 +297,15 @@
       ],
       "deliverable": "La competición objetivo queda identificada y sincronizada sin depender de búsquedas de texto en cada ejecución.",
       "acceptance": [
-        "AC1: La selección inicial usa buscarCategoria solo para discovery; las sincronizaciones posteriores usan IDs persistidos.",
-        "AC2: El sistema no asume que el nombre de la competición contenga la temporada.",
-        "AC3: Si fasesGrupos no puede validarse todavía, la feature queda bloqueada antes de inventar parámetros o usar scraping visual.",
-        "AC4: Los equipos sincronizados quedan ligados a competition_season y grupo cuando FAB lo exponga.",
-        "AC5: Solo una competición puede marcarse primary_fantasy_competition en el MVP.",
-        "AC6: Toda respuesta externa utilizada queda disponible en raw_fab_payloads."
+        "AC1: `discover-categories --query <texto>` llama únicamente a `buscarCategoria`, pagina secuencialmente y muestra candidatos con `Id`, `IdCompeticionCategoria`, `NombreCategoria`, `NombreCompeticion` y `NombreDelegacion`, sin credenciales ni payload completo.",
+        "AC2: `select-competition --category-id <IdCompeticionCategoria> --role <validation|primary>` exige coincidencia única obtenida de FAB, persiste todos sus IDs/nombres/delegación y crea o actualiza idempotentemente CompetitionSeason sin inferir la temporada desde `NombreCompeticion`; la Copa Delegación 2026 masculina de Sevilla (`IdCompeticionCategoria=10468`) se configura inicialmente con rol `validation`.",
+        "AC3: Tras la selección, toda sincronización usa los IDs persistidos; el texto de discovery no se guarda como dependencia operativa ni se reutiliza para identificar la competición.",
+        "AC4: Solo una CompetitionSeason puede tener `primary_fantasy_competition=true`; una competición `validation` puede alimentar pruebas reales del backend sin convertirse en la competición primaria, y cualquier cambio de rol es transaccional.",
+        "AC5: `FabClient.get_category_phases(id_categoria_competicion)` usa POST form-urlencoded `/v2/categoria.ashx` con `accion=fasesGrupos`, credenciales e ID opaco de categoría; su respuesta real se valida y anonimiza en fixture antes de mapear grupos.",
+        "AC6: `FabClient.get_category_teams(...)` usa el contrato confirmado de la APK y FAB real: `/v2/categoria.ashx`, `accion=equipos`, `id_fase`, `id_grupo`, `jornada`, `tipo_fase` y `ventana`; una respuesta incompatible conserva RAW saneado y bloquea la sincronización.",
+        "AC7: Equipos validados se persisten idempotentemente con sus external IDs y TeamRegistration ligada a CompetitionSeason; Group solo se asigna cuando FAB lo expone inequívocamente, sin deducirlo por nombre.",
+        "AC8: Toda respuesta FAB usada por discovery o sync queda en RawFabPayload con checksum y sin `key`, `id_dispositivo`, token, password ni secret.",
+        "AC9: Tests sin red cubren discovery, selección, respuestas vacías/ambiguas, reintento idempotente, bloqueo de contratos desconocidos y ausencia de secretos; integración contra PostgreSQL verifica unicidad primaria y rollback."
       ],
       "scope": [
         "services/fab_ingestor/**",
@@ -310,9 +313,16 @@
         "apps/web/src/server/**",
         "tests/**",
         "docs/**",
+        ".env.example",
         "spec.json"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-09-04T22:28:14.986Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:48a66afefeff56cda129523f276e1cf478bf7b8658025b0b5c6507e6ea1d521c",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-04T22:31:36.985Z"
     },
     {
       "id": "sprint-4-schedule-and-games-ingestion",

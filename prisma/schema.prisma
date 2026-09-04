@@ -51,6 +51,9 @@ model CompetitionSeason {
   seasonId            String               @map("season_id") @db.Uuid
   name                String?
   fantasyEnabled      Boolean              @default(false) @map("fantasy_enabled")
+  fantasyRole         String               @default("disabled") @map("fantasy_role")
+  categoryName        String?              @map("category_name")
+  delegationName      String?              @map("delegation_name")
   competition         Competition          @relation(fields: [competitionId], references: [id], onDelete: Restrict)
   season              Season               @relation(fields: [seasonId], references: [id], onDelete: Restrict)
   groups              Group[]

@@ -148,6 +148,28 @@ class SportsRepository:
         ).fetchone()
         return None if row is None else row[0]
 
+    def resolve_competition_selection(self, category_competition_id: str) -> tuple[UUID, str]:
+        row = self.connection.execute(
+            """
+            SELECT cs.id, opaque.external_id
+            FROM competition_seasons cs
+            JOIN external_ids category
+              ON category.entity_id = cs.id
+             AND category.source = 'FAB_CATEGORY_COMPETITION'
+             AND category.entity_type = 'competition_season'
+            JOIN external_ids opaque
+              ON opaque.entity_id = cs.id
+             AND opaque.source = 'FAB'
+             AND opaque.entity_type = 'competition_season'
+            WHERE category.external_id = %s
+              AND cs.fantasy_role IN ('validation', 'primary')
+            """,
+            (category_competition_id,),
+        ).fetchone()
+        if row is None:
+            raise ValueError("category is not a selected FAB competition")
+        return row[0], row[1]
+
     def save_raw_payload(
         self,
         *,

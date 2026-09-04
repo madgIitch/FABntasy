@@ -48,3 +48,16 @@ Decisiones registradas:
 - **tests:** Se prueban esquema, constraints y UPSERT con PostgreSQL real de test; además hay tests unitarios de saneado y mapeo. `prisma validate`, Python y gates existentes deben pasar.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-3-active-competition-discovery -->
+## 2026-09-04 · sprint-3-active-competition-discovery aprobado
+
+Contexto: se aprobó el spec `sprint-3-active-competition-discovery` (Sprint 3 - Active Competition Discovery).
+
+Decisiones registradas:
+
+- **auth_secrets:** Todas las llamadas pasan por FabClient y FileCredentialStore; CLI y logs muestran solo IDs deportivos y nombres, nunca credenciales; RAW se sanea con el contrato del Sprint 2.
+- **rollback_compat:** Cambiar la competición primaria requiere transacción; un fallo conserva la anterior. La migración solo añade metadatos/constraint de selección y puede revertirse en desarrollo.
+- **tests:** Fixtures anonimizadas cubren discovery, selección, cero resultados, ambigüedad, repetición, RAW y bloqueo contractual; integración PostgreSQL verifica unicidad primaria y rollback.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

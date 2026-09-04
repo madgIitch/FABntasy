@@ -1,0 +1,7 @@
+{
+  "name": "fabntasy",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {"typecheck":"tsc --noEmit","lint":"eslint .","test":"vitest run","dev":"pnpm --dir apps/web dev"},
+  "devDependencies": {"@types/node":"^22.0.0","eslint":"^9.0.0","prisma":"6.19.0","typescript":"^5.0.0","vitest":"^2.0.0"}
+}

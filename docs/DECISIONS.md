@@ -10,6 +10,14 @@ una decisión de arquitectura relevante durante implementación.
 
 <!-- Nuevas entradas debajo -->
 
+## 2026-09-04 · PostgreSQL gestionado en Supabase
+
+Contexto: el proyecto necesita PostgreSQL y Prisma sin asumir operación directa de la base de datos.
+
+Decisión: usar Supabase como proveedor de PostgreSQL gestionado. Prisma seguirá siendo la capa ORM y `DATABASE_URL` será server-side.
+
+Consecuencia: las migraciones seguirán versionadas en `prisma/`; los tests no dependerán de una instancia remota de Supabase.
+
 <!-- harness:sprint-0-project-foundation -->
 ## 2026-09-04 · sprint-0-project-foundation aprobado
 

@@ -1,2 +1,9 @@
-.harness/harness-state.json
-.harness/interviews/
+node_modules/
+.env
+.env.*
+!.env.example
+__pycache__/
+.pytest_cache/
+.venv/
+dist/
+.next/

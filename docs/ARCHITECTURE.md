@@ -23,6 +23,12 @@ Objetivo no negociable:
 
 ## Integraciones externas
 
+- Supabase:
+  - Responsabilidad: PostgreSQL gestionado para datos deportivos, fantasy y auditoría.
+  - Contrato: `DATABASE_URL` server-side; Prisma accede a la base de datos.
+  - Credenciales/config: variables de entorno; nunca se exponen en el bundle del navegador.
+  - Entorno local/CI: Supabase remoto para entornos compartidos; tests deben poder ejecutarse sin red mediante mocks o base efímera.
+
 - (rellenar) Servicio/API:
   - Contrato:
   - Credenciales/config:
@@ -61,4 +67,3 @@ Objetivo no negociable:
 - **external_contracts:** Los entrypoints son apps/web y services/fab_ingestor; el ingestor mock no llama a FAB.
 - **edge_cases:** La configuración ausente, el modo mock y la ejecución desde CI quedan cubiertos por defaults seguros y tests.
 - **ui_states:** La PWA entrega únicamente un shell mínimo con estados de arranque y error básicos, sin funcionalidades de producto.
-

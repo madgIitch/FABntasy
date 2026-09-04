@@ -6,7 +6,7 @@
   "architecture": {
     "web": "Next.js + React + TypeScript + Tailwind CSS, desplegado como PWA instalable",
     "application_backend": "Next.js server actions / route handlers para la API de producto y lógica de negocio del MVP",
-    "database": "PostgreSQL",
+    "database": "PostgreSQL gestionado en Supabase",
     "orm": "Prisma",
     "ingestion": "Python 3.12 + httpx/requests + scheduler/cron",
     "authentication": "Auth.js o proveedor equivalente, con sesiones server-side",

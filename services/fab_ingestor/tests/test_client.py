@@ -29,7 +29,11 @@ def test_register_device_validates_and_persists_credentials():
     assert credentials == Credentials("123", "new-secret")
     assert store.load() == credentials
     assert calls[0][0].endswith("/dispositivo.ashx")
-    assert calls[0][1] == {"accion": "registrar"}
+    assert calls[0][1]["accion"] == "registrar"
+    assert calls[0][1]["plataforma"] == "ANDROID"
+    assert calls[0][1]["tipo_dispositivo"] == "PHONE"
+    assert calls[0][1]["version"] == "5.0.27"
+    assert len(calls[0][1]["uid"]) == 16
 
 
 def test_register_device_rejects_incomplete_response():

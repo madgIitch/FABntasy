@@ -1,12 +1,12 @@
-# sprint-1-fab-client · undefined — Tareas
+# sprint-1-fab-client · Sprint 1 - FAB Client — Tareas
 
-Checklist de implementación. El agente marca [x] al completar; los gates verifican.
+Checklist de implementación completada y verificada.
 
-- [ ] (T1) AC1: register_device reproduce el POST a /dispositivo.ashx y valida resultado=correcto, id_dispositivo y key.  ↔ R1
-- [ ] (T2) AC2: search_match, search_category y search_team usan exclusivamente /v2/busqueda.ashx con parámetros form-urlencoded.  ↔ R2
-- [ ] (T3) AC3: La paginación usa skip y nunca solicita páginas concurrentes del mismo recurso.  ↔ R3
-- [ ] (T4) AC4: Una key nueva devuelta por FAB sustituye de forma atómica a la anterior.  ↔ R4
-- [ ] (T5) AC5: Logs y excepciones no contienen id_dispositivo, key ni bodies completos con credenciales.  ↔ R5
-- [ ] (T6) AC6: 429 y 5xx aplican backoff acotado; 4xx no se reintentan en bucle.  ↔ R6
-- [ ] (T7) AC7: Tests unitarios no requieren acceso real a FAB y cubren registro, rotación de key, paginación, timeout y error.  ↔ R7
-- [ ] Tests que cubran los criterios de aceptación
+- [x] (T1) AC1: registro de dispositivo y validación de respuesta.
+- [x] (T2) AC2: búsquedas exclusivamente mediante `/v2/busqueda.ashx` y formularios URL-encoded.
+- [x] (T3) AC3: paginación secuencial mediante `skip`.
+- [x] (T4) AC4: sustitución atómica de una key rotada.
+- [x] (T5) AC5: logs y excepciones sin credenciales ni bodies sensibles.
+- [x] (T6) AC6: backoff acotado para 429/5xx; 4xx sin reintento en bucle.
+- [x] (T7) AC7: tests unitarios sin acceso real a FAB.
+- [x] Tests que cubren los criterios de aceptación.

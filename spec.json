@@ -175,7 +175,7 @@
     {
       "id": "sprint-1-fab-client",
       "name": "Sprint 1 - FAB Client",
-      "status": "pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.0.2",
       "dependencies": [
@@ -213,12 +213,15 @@
         ".env.example",
         "spec.json"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_reason": "Contrato existente suficientemente especificado.",
+      "approved_by": "peorr"
     },
     {
       "id": "sprint-2-sports-data-model",
       "name": "Sprint 2 - Sports Data Model",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.0.3",
       "dependencies": [
@@ -241,13 +244,15 @@
       ],
       "deliverable": "PostgreSQL puede representar una competición completa, sus participantes, partidos y boxscores sin datos fantasy.",
       "acceptance": [
-        "AC1: Cada entidad sincronizable conserva un id interno y al menos un external_id FAB cuando exista.",
-        "AC2: Repetir el mismo upsert no crea filas duplicadas.",
-        "AC3: Un jugador puede tener registros distintos por temporada/equipo sin duplicar su identidad cuando exista un identificador estable.",
-        "AC4: games soporta estado, fecha/hora, jornada, local, visitante, resultado y tipo de acta.",
-        "AC5: player_game_stats admite puntos, tiros, rebotes, asistencias, robos, pérdidas, tapones, faltas, minutos, valoración y plus_minus nullable.",
-        "AC6: raw_fab_payloads conserva endpoint, external_id, retrieved_at y payload JSON sin credenciales.",
-        "AC7: La migración es reversible en desarrollo y prisma validate pasa."
+        "AC1: Federation, Competition, Season, CompetitionSeason, Group, Round, Team, TeamRegistration, Player, PlayerRegistration, Game y PlayerGameStat usan IDs internos UUID y relaciones con integridad referencial; toda entidad sincronizable puede vincularse a uno o más `external_ids` FAB.",
+        "AC2: `external_ids` conserva el identificador externo como texto opaco y aplica unicidad `(source, entity_type, external_id)`; los repositorios rechazan que el mismo identificador externo apunte a dos entidades internas.",
+        "AC3: Repetir cualquier UPSERT con la misma clave natural mantiene el mismo ID interno y no incrementa el número de filas; cada lote se ejecuta en una transacción y revierte completamente ante error.",
+        "AC4: Un jugador con identificador FAB estable conserva una sola identidad y puede tener varias PlayerRegistration por temporada/equipo; sin identificador estable no se fusionan jugadores únicamente por nombre.",
+        "AC5: Game conserva estado, `scheduled_at` UTC, zona horaria original cuando exista, jornada, local, visitante, marcadores nullable, estado externo, `TipoActa`, `has_statistics`, `source_updated_at` y `last_seen_at`; una reprogramación actualiza el mismo Game.",
+        "AC6: PlayerGameStat es único por `(game_id, player_registration_id)` y admite como nullable minutos/milisegundos, puntos, tiros anotados e intentados, rebotes, asistencias, robos, pérdidas, tapones, faltas, valoración y plus_minus; no contiene puntuación fantasy.",
+        "AC7: RawFabPayload conserva endpoint, entity_type, external_id nullable, retrieved_at, HTTP status, checksum y JSON; antes de persistir elimina recursivamente `key`, `id_dispositivo`, token, password y secret, y nunca se devuelve desde consultas públicas por defecto.",
+        "AC8: La migración inicial deportiva puede aplicarse y revertirse en PostgreSQL de desarrollo; `prisma validate` pasa y los tests de integración verifican constraints, rollback transaccional, reprogramación e idempotencia real.",
+        "AC9: El ingestor Python es el escritor de datos FAB mediante repositorios PostgreSQL; Prisma sigue siendo la fuente de verdad del esquema y la PWA no consulta FAB directamente."
       ],
       "scope": [
         "prisma/**",
@@ -255,9 +260,13 @@
         "services/fab_ingestor/**",
         "tests/**",
         "docs/**",
+        ".env.example",
         "spec.json"
       ],
-      "spec_approved": false
+      "spec_approved": false,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-09-04T22:10:17.062Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes."
     },
     {
       "id": "sprint-3-active-competition-discovery",

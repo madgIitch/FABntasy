@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import random
+import secrets
 import time
 import urllib.error
 import urllib.parse
@@ -99,7 +100,17 @@ class FabClient:
         self._last_request_at: float | None = None
 
     def register_device(self) -> Credentials:
-        payload = self._post("/dispositivo.ashx", {"accion": "registrar"}, authenticated=False)
+        payload = self._post(
+            "/dispositivo.ashx",
+            {
+                "accion": "registrar",
+                "uid": secrets.token_hex(8),
+                "plataforma": "ANDROID",
+                "tipo_dispositivo": "PHONE",
+                "version": "5.0.27",
+            },
+            authenticated=False,
+        )
         if str(payload.get("resultado", "")).lower() != "correcto":
             raise FabResponseError("FAB device registration was rejected")
         device_id, key = payload.get("id_dispositivo"), payload.get("key")

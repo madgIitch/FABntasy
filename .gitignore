@@ -1,6 +1,8 @@
+# Local environment files and secrets
 .env
 .env.*
 !.env.example
+.local/
 node_modules/
 .venv/
 __pycache__/

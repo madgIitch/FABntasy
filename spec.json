@@ -274,7 +274,7 @@
     {
       "id": "sprint-3-active-competition-discovery",
       "name": "Sprint 3 - Active Competition Discovery",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.0.4",
       "dependencies": [

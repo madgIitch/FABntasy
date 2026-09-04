@@ -30,3 +30,16 @@ Decisiones registradas:
 - **tests:** Los gates obligatorios cubren TypeScript, lint, Vitest, pytest y Prisma validate.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-1-fab-client -->
+## 2026-09-04 · sprint-1-fab-client aprobado
+
+Contexto: se aprobó el spec `sprint-1-fab-client` (Sprint 1 - FAB Client).
+
+Decisiones registradas:
+
+- **auth_secrets:** `id_dispositivo` y `key` solo viven en configuración server-side y nunca aparecen en logs o excepciones.
+- **rollback_compat:** `FabClient` es una frontera reemplazable y el modo mock permite operar sin red.
+- **tests:** Fixtures y mocks cubren registro, rotación, paginación, timeout y errores sin red real.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

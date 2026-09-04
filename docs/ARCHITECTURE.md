@@ -67,3 +67,24 @@ Objetivo no negociable:
 - **external_contracts:** Los entrypoints son apps/web y services/fab_ingestor; el ingestor mock no llama a FAB.
 - **edge_cases:** La configuración ausente, el modo mock y la ejecución desde CI quedan cubiertos por defaults seguros y tests.
 - **ui_states:** La PWA entrega únicamente un shell mínimo con estados de arranque y error básicos, sin funcionalidades de producto.
+
+<!-- harness:sprint-1-fab-client -->
+## sprint-1-fab-client · Sprint 1 - FAB Client
+
+
+
+### Scope aprobado
+
+  - `services/fab_ingestor/**`
+  - `tests/**`
+  - `docs/**`
+  - `.env.example`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** El cliente devuelve modelos tipados de dispositivo, partidos, categorías y equipos sin acoplarse a Prisma.
+- **external_contracts:** Las búsquedas usan exclusivamente POST form-urlencoded contra `/v2/busqueda.ashx`; el registro usa `/dispositivo.ashx`.
+- **edge_cases:** La paginación usa `skip`, termina con la respuesta corta o el total y evita páginas concurrentes.
+- **ui_states:** No aplica: el cliente no expone UI ni se consume directamente desde el navegador.
+

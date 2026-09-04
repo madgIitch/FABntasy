@@ -175,7 +175,7 @@
     {
       "id": "sprint-1-fab-client",
       "name": "Sprint 1 - FAB Client",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.0.2",
       "dependencies": [
@@ -198,13 +198,13 @@
       ],
       "deliverable": "Un FabClient Python obtiene y valida las respuestas ya confirmadas de Afición FAB.",
       "acceptance": [
-        "AC1: register_device reproduce el POST a /dispositivo.ashx y valida resultado=correcto, id_dispositivo y key.",
-        "AC2: search_match, search_category y search_team usan exclusivamente /v2/busqueda.ashx con parámetros form-urlencoded.",
-        "AC3: La paginación usa skip y nunca solicita páginas concurrentes del mismo recurso.",
-        "AC4: Una key nueva devuelta por FAB sustituye de forma atómica a la anterior.",
-        "AC5: Logs y excepciones no contienen id_dispositivo, key ni bodies completos con credenciales.",
-        "AC6: 429 y 5xx aplican backoff acotado; 4xx no se reintentan en bucle.",
-        "AC7: Tests unitarios no requieren acceso real a FAB y cubren registro, rotación de key, paginación, timeout y error."
+        "register_device reproduce el POST a `/dispositivo.ashx` y valida `resultado=correcto`, `id_dispositivo` y `key`.",
+        "search_match, search_category y search_team usan exclusivamente `/v2/busqueda.ashx` con parámetros form-urlencoded.",
+        "La paginación usa `skip` y nunca solicita páginas concurrentes del mismo recurso.",
+        "Una key nueva devuelta por FAB sustituye de forma atómica a la anterior.",
+        "Logs y excepciones no contienen `id_dispositivo`, `key` ni bodies completos con credenciales.",
+        "429 y 5xx aplican backoff acotado; 4xx no se reintentan en bucle.",
+        "Tests unitarios no requieren acceso real a FAB y cubren registro, rotación de key, paginación, timeout y error."
       ],
       "scope": [
         "services/fab_ingestor/**",
@@ -213,7 +213,13 @@
         ".env.example",
         "spec.json"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-09-04T18:06:15.773Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-04T18:06:15.878Z"
     },
     {
       "id": "sprint-2-sports-data-model",

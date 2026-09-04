@@ -121,7 +121,7 @@
     {
       "id": "sprint-0-project-foundation",
       "name": "Sprint 0 - Project Foundation",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.0.1",
       "dependencies": [],
@@ -146,12 +146,12 @@
       ],
       "deliverable": "El repositorio instala, compila, prueba y arranca shells mínimos de PWA e ingestor.",
       "acceptance": [
-        "AC1: apps/web y services/fab_ingestor son los únicos entrypoints ejecutables del producto inicial.",
-        "AC2: pnpm typecheck, pnpm lint, pnpm test, python -m pytest y prisma validate terminan con código 0 en CI.",
-        "AC3: Ninguna variable que contenga FAB_DEVICE, FAB_KEY, SECRET, PASSWORD o TOKEN puede usar prefijo NEXT_PUBLIC_.",
-        "AC4: El ingestor importa su configuración exclusivamente desde variables server-side y puede arrancar en modo mock sin red.",
-        "AC5: Existe docs/ARCHITECTURE.md con el flujo FAB -> ingestor -> PostgreSQL -> API propia -> PWA.",
-        "AC6: Sprint 0 no implementa autenticación, fantasy, mercado ni llamadas reales a FAB."
+        "apps/web y services/fab_ingestor son los únicos entrypoints ejecutables del producto inicial.",
+        "pnpm typecheck, pnpm lint, pnpm test, python -m pytest y prisma validate terminan con código 0 en CI.",
+        "Ninguna variable que contenga FAB_DEVICE, FAB_KEY, SECRET, PASSWORD o TOKEN puede usar prefijo NEXT_PUBLIC_.",
+        "El ingestor importa su configuración exclusivamente desde variables server-side y puede arrancar en modo mock sin red.",
+        "Existe docs/ARCHITECTURE.md con el flujo FAB → ingestor → PostgreSQL → API propia → PWA.",
+        "Sprint 0 no implementa autenticación, fantasy, mercado ni llamadas reales a FAB."
       ],
       "scope": [
         "apps/web/**",
@@ -164,7 +164,13 @@
         "docs/**",
         "spec.json"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-09-04T17:25:02.645Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-04T17:25:02.798Z"
     },
     {
       "id": "sprint-1-fab-client",

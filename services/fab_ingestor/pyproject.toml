@@ -1,7 +1,0 @@
-[project]
-name = "fabntasy-fab-ingestor"
-version = "0.0.1"
-requires-python = ">=3.12"
-dependencies = []
-[tool.pytest.ini_options]
-testpaths = ["tests"]

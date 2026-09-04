@@ -22,3 +22,16 @@ Decisiones registradas:
 - **tests:** Se cubren los comandos de TypeScript, lint, tests, pytest y validación Prisma definidos por el spec.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-1-fab-client -->
+## 2026-09-04 · sprint-1-fab-client aprobado
+
+Contexto: se aprobó el spec `sprint-1-fab-client` (Sprint 1 - FAB Client).
+
+Decisiones registradas:
+
+- **auth_secrets:** id_dispositivo y key nunca se registran, incluyen en excepciones ni se exponen mediante variables públicas.
+- **rollback_compat:** El cliente queda aislado detrás de FabClient y no modifica el modelo deportivo ni introduce llamadas FAB desde la PWA.
+- **tests:** Fixtures anonimizadas y transporte simulado cubren registro, rotación, paginación, timeout, reintentos y errores sin red real.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

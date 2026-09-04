@@ -1,0 +1,209 @@
+from __future__ import annotations
+
+import json
+import random
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass
+from typing import ClassVar, Protocol
+
+
+class FabError(RuntimeError):
+    """Base error whose message is always safe to log."""
+
+
+class FabResponseError(FabError):
+    pass
+
+
+class FabTransportError(FabError):
+    pass
+
+
+@dataclass(frozen=True)
+class Credentials:
+    device_id: str
+    key: str
+
+
+class CredentialStore(Protocol):
+    def load(self) -> Credentials | None: ...
+
+    def replace(self, credentials: Credentials) -> None: ...
+
+
+class MemoryCredentialStore:
+    def __init__(self, credentials: Credentials | None = None) -> None:
+        self._credentials = credentials
+
+    def load(self) -> Credentials | None:
+        return self._credentials
+
+    def replace(self, credentials: Credentials) -> None:
+        self._credentials = credentials
+
+
+Transport = Callable[[str, Mapping[str, str], float], tuple[int, bytes]]
+
+
+def _urllib_transport(url: str, fields: Mapping[str, str], timeout: float) -> tuple[int, bytes]:
+    body = urllib.parse.urlencode(fields).encode("utf-8")
+    request = urllib.request.Request(
+        url,
+        data=body,
+        headers={
+            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": "FABntasy-ingestor/0.1 (+responsible-data-sync)",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            return response.status, response.read()
+    except urllib.error.HTTPError as error:
+        return error.code, error.read()
+    except (urllib.error.URLError, TimeoutError) as error:
+        raise FabTransportError("FAB request failed or timed out") from error
+
+
+class FabClient:
+    SEARCH_ACTIONS: ClassVar[dict[str, str]] = {
+        "match": "buscarPartido",
+        "category": "buscarCategoria",
+        "team": "buscarEquipo",
+    }
+
+    def __init__(
+        self,
+        credential_store: CredentialStore,
+        *,
+        base_url: str = "https://appaficion.andaluzabaloncesto.org",
+        transport: Transport = _urllib_transport,
+        timeout: float = 10.0,
+        max_retries: int = 3,
+        min_interval: float = 0.25,
+        sleeper: Callable[[float], None] = time.sleep,
+        clock: Callable[[], float] = time.monotonic,
+    ) -> None:
+        self._store = credential_store
+        self._base_url = base_url.rstrip("/")
+        self._transport = transport
+        self._timeout = timeout
+        self._max_retries = max_retries
+        self._min_interval = min_interval
+        self._sleep = sleeper
+        self._clock = clock
+        self._last_request_at: float | None = None
+
+    def register_device(self) -> Credentials:
+        payload = self._post("/dispositivo.ashx", {"accion": "registrar"}, authenticated=False)
+        if str(payload.get("resultado", "")).lower() != "correcto":
+            raise FabResponseError("FAB device registration was rejected")
+        device_id, key = payload.get("id_dispositivo"), payload.get("key")
+        valid_device = isinstance(device_id, (str, int)) and bool(str(device_id))
+        if not valid_device or not isinstance(key, str) or not key:
+            raise FabResponseError("FAB device registration returned an invalid response")
+        credentials = Credentials(str(device_id), key)
+        self._store.replace(credentials)
+        return credentials
+
+    def search_match(self, text: str, *, page_size: int = 20) -> list[dict]:
+        return self._search("match", text, page_size)
+
+    def search_category(self, text: str, *, page_size: int = 20) -> list[dict]:
+        return self._search("category", text, page_size)
+
+    def search_team(self, text: str, *, page_size: int = 20) -> list[dict]:
+        return self._search("team", text, page_size)
+
+    def _search(self, resource: str, text: str, page_size: int) -> list[dict]:
+        if page_size <= 0:
+            raise ValueError("page_size must be positive")
+        action = self.SEARCH_ACTIONS[resource]
+        items: list[dict] = []
+        skip = 0
+        while True:
+            payload = self._post(
+                "/v2/busqueda.ashx",
+                {"accion": action, "texto": text, "skip": str(skip)},
+            )
+            page = self._extract_page(payload, resource)
+            items.extend(page)
+            server_page_size = payload.get("numeroMaximoResultados", page_size)
+            try:
+                step = int(server_page_size)
+            except (TypeError, ValueError):
+                step = page_size
+            if step <= 0:
+                step = page_size
+            if not page or len(page) < step:
+                return items
+            skip += step
+
+    @staticmethod
+    def _extract_page(payload: dict, resource: str) -> list[dict]:
+        candidates = {
+            "match": ("partidos", "Partidos"),
+            "category": ("categorias", "Categorias"),
+            "team": ("equipos", "Equipos"),
+        }[resource]
+        for key in candidates:
+            value = payload.get(key)
+            if isinstance(value, list) and all(isinstance(item, dict) for item in value):
+                return value
+        raise FabResponseError("FAB search returned an invalid response")
+
+    def _post(self, path: str, fields: Mapping[str, str], *, authenticated: bool = True) -> dict:
+        request_fields = dict(fields)
+        if authenticated:
+            credentials = self._store.load()
+            if credentials is None:
+                raise FabResponseError("FAB credentials are not configured")
+            request_fields.update(id_dispositivo=credentials.device_id, key=credentials.key)
+
+        for attempt in range(self._max_retries + 1):
+            self._rate_limit()
+            try:
+                status, raw = self._transport(self._base_url + path, request_fields, self._timeout)
+            except FabTransportError:
+                if attempt >= self._max_retries:
+                    raise
+                self._sleep(self._backoff(attempt))
+                continue
+            if status == 429 or 500 <= status < 600:
+                if attempt >= self._max_retries:
+                    raise FabTransportError(f"FAB request failed with HTTP {status}")
+                self._sleep(self._backoff(attempt))
+                continue
+            if status < 200 or status >= 300:
+                raise FabTransportError(f"FAB request failed with HTTP {status}")
+            try:
+                payload = json.loads(raw)
+            except (json.JSONDecodeError, UnicodeDecodeError) as error:
+                raise FabResponseError("FAB returned invalid JSON") from error
+            if not isinstance(payload, dict):
+                raise FabResponseError("FAB returned an invalid response")
+            self._rotate_key(payload)
+            return payload
+        raise AssertionError("retry loop exhausted")
+
+    def _rotate_key(self, payload: dict) -> None:
+        new_key = payload.get("key")
+        current = self._store.load()
+        if isinstance(new_key, str) and new_key and current is not None and new_key != current.key:
+            self._store.replace(Credentials(current.device_id, new_key))
+
+    def _rate_limit(self) -> None:
+        now = self._clock()
+        if self._last_request_at is not None:
+            remaining = self._min_interval - (now - self._last_request_at)
+            if remaining > 0:
+                self._sleep(remaining)
+        self._last_request_at = self._clock()
+
+    @staticmethod
+    def _backoff(attempt: int) -> float:
+        return min(8.0, 0.5 * (2**attempt)) + random.uniform(0, 0.1)

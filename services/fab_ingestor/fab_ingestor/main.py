@@ -3,6 +3,7 @@ import json
 import os
 
 from .auth import FileCredentialStore
+from .boxscore import sync_competition_stats, sync_game_stats
 from .client import Credentials, FabClient
 from .config import Settings
 from .discovery import discover_categories, select_competition, sync_competition_teams
@@ -22,11 +23,14 @@ def main() -> None:
             "select-competition",
             "sync-competition-teams",
             "sync-competition-games",
+            "sync-game-stats",
+            "sync-competition-stats",
         ),
         default="status",
     )
     parser.add_argument("--query", default="Sevilla")
     parser.add_argument("--category-id")
+    parser.add_argument("--game-id")
     parser.add_argument("--season", default=os.getenv("FAB_ACTIVE_SEASON", "2026/2027"))
     parser.add_argument("--role", choices=("validation", "primary"), default="validation")
     parser.add_argument(
@@ -37,6 +41,29 @@ def main() -> None:
     args = parser.parse_args()
     settings = Settings.from_env()
     store = FileCredentialStore(settings.credentials_file)
+
+    if args.command in {"sync-game-stats", "sync-competition-stats"}:
+        if not settings.database_url:
+            raise SystemExit("DATABASE_URL is required to sync statistics")
+        if args.command == "sync-game-stats" and not args.game_id:
+            parser.error("sync-game-stats requires --game-id")
+        if args.command == "sync-competition-stats" and not args.category_id:
+            parser.error("sync-competition-stats requires --category-id")
+        with SportsRepository.connect(settings.database_url) as repository:
+            client = FabClient(store)
+            summary = (
+                sync_game_stats(client, repository, external_game_id=str(args.game_id))
+                if args.command == "sync-game-stats"
+                else sync_competition_stats(
+                    client, repository, category_competition_id=str(args.category_id)
+                )
+            )
+        print(
+            "Statistics synchronized "
+            f"(games={summary.games}, players_created={summary.players_created}, "
+            f"players_updated={summary.players_updated}, rejected={summary.rejected})"
+        )
+        return
 
     if args.command == "sync-competition-games":
         if not args.category_id:

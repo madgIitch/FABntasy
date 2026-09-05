@@ -1,12 +1,24 @@
+import json
 import os
 from datetime import UTC, datetime
+from pathlib import Path
 
 import pytest
 
+from fab_ingestor.boxscore import sync_game_stats
 from fab_ingestor.repository import ExternalIdentityConflict, SportsRepository
 
 DATABASE_URL = os.getenv("FABNTASY_TEST_DATABASE_URL")
 pytestmark = pytest.mark.skipif(not DATABASE_URL, reason="requires migrated PostgreSQL test database")
+
+
+class FixtureStatsClient:
+    def __init__(self, payload):
+        self.payload = payload
+
+    def get_match_stats(self, match_id, *, payload_sink):
+        payload_sink(self.payload)
+        return self.payload
 
 
 def test_external_upsert_is_idempotent_and_conflicts_are_rejected():
@@ -130,3 +142,88 @@ def test_game_external_identity_survives_reprogramming_and_transaction_rolls_bac
         ).fetchone()
         assert first == second
         assert persisted == (delayed,)
+
+
+def test_boxscore_upsert_is_idempotent_and_corrections_replace_values():
+    assert DATABASE_URL is not None
+    payload = json.loads(
+        (Path(__file__).parent / "fixtures" / "fab_boxscore.json").read_text(encoding="utf-8")
+    )
+    suffix = str(__import__("uuid").uuid4())
+    external_game_id = f"integration-boxscore-{suffix}"
+    with (
+        SportsRepository.connect(DATABASE_URL) as repository,
+        repository.connection.transaction(force_rollback=True),
+    ):
+        federation_id = repository.upsert_federation(name=f"Boxscore Federation {suffix}")
+        competition_id = repository.upsert_from_external(
+            source="TEST",
+            entity_type="competition",
+            external_id=f"competition-{suffix}",
+            values={"federation_id": federation_id, "name": f"Competition {suffix}"},
+        )
+        season_id = repository.upsert_from_external(
+            source="TEST",
+            entity_type="season",
+            external_id=f"season-{suffix}",
+            values={"name": f"Season {suffix}"},
+        )
+        competition_season_id = repository.upsert_from_external(
+            source="TEST",
+            entity_type="competition_season",
+            external_id=f"competition-season-{suffix}",
+            values={"competition_id": competition_id, "season_id": season_id},
+        )
+        team_ids = []
+        for side in ("home", "away"):
+            team_id = repository.upsert_from_external(
+                source="TEST",
+                entity_type="team",
+                external_id=f"{side}-{suffix}",
+                values={"name": f"{side} {suffix}"},
+            )
+            repository.upsert_from_external(
+                source="TEST",
+                entity_type="team_registration",
+                external_id=f"registration-{side}-{suffix}",
+                values={
+                    "team_id": team_id,
+                    "competition_season_id": competition_season_id,
+                },
+            )
+            team_ids.append(team_id)
+        game_id = repository.upsert_from_external(
+            source="FAB",
+            entity_type="game",
+            external_id=external_game_id,
+            values={
+                "competition_season_id": competition_season_id,
+                "home_team_id": team_ids[0],
+                "away_team_id": team_ids[1],
+                "status": "finished",
+                "has_statistics": True,
+            },
+        )
+
+        first = sync_game_stats(
+            FixtureStatsClient(payload), repository, external_game_id=external_game_id
+        )
+        payload["estadisticas"]["estadisticasequipolocal"][0]["puntos"] = 14
+        second = sync_game_stats(
+            FixtureStatsClient(payload), repository, external_game_id=external_game_id
+        )
+
+        assert (first.players_created, second.players_updated) == (2, 2)
+        assert repository.connection.execute(
+            "SELECT count(*) FROM player_game_stats WHERE game_id = %s", (game_id,)
+        ).fetchone() == (2,)
+        assert repository.connection.execute(
+            """
+            SELECT points FROM player_game_stats
+            WHERE game_id = %s ORDER BY points DESC LIMIT 1
+            """,
+            (game_id,),
+        ).fetchone() == (14,)
+        assert repository.connection.execute(
+            "SELECT stats_sync_status FROM games WHERE id = %s", (game_id,)
+        ).fetchone() == ("stats_final",)

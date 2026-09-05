@@ -240,6 +240,45 @@ def test_category_schedule_requires_exactly_one_group_or_round():
         client.get_category_matches("category", "phase", group_id="group", round_id="round")
 
 
+def test_match_stats_uses_confirmed_form_contract_and_validates_shape():
+    calls = []
+
+    def transport(url, fields, timeout):
+        calls.append((url, dict(fields)))
+        return response({"resultado": "correcto", "estadisticas": {}, "partido": {}})
+
+    client = FabClient(
+        MemoryCredentialStore(Credentials("device", "secret")),
+        transport=transport,
+        min_interval=0,
+    )
+    assert client.get_match_stats("opaque-game")["resultado"] == "correcto"
+    assert calls == [
+        (
+            "https://appaficion.andaluzabaloncesto.org/v2/envivo/estadisticas.ashx",
+            {"id_partido": "opaque-game", "id_dispositivo": "device", "key": "secret"},
+        )
+    ]
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"resultado": "error", "estadisticas": {}, "partido": {}},
+        {"resultado": "correcto", "estadisticas": []},
+        {"resultado": "correcto", "estadisticas": {}, "partido": []},
+    ],
+)
+def test_match_stats_rejects_incomplete_responses(payload):
+    client = FabClient(
+        MemoryCredentialStore(Credentials("device", "secret")),
+        transport=lambda *_: response(payload),
+        min_interval=0,
+    )
+    with pytest.raises(FabResponseError, match="invalid response"):
+        client.get_match_stats("opaque-game")
+
+
 def test_file_store_replaces_credentials_atomically(tmp_path):
     path = tmp_path / "private" / "credentials.json"
     store = FileCredentialStore(path)

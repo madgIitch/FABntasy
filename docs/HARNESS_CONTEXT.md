@@ -24,7 +24,15 @@ Este documento resume el contexto de `fabntasy_command_cookbook.md` y `fantasy_f
 
 `buscarCategoria` -> competición/categoría -> grupos/fases -> jornadas -> partidos -> `TipoActa=ESTADÍSTICAS` -> boxscore JSON -> PostgreSQL -> API propia -> PWA.
 
-Las firmas exactas de `fasesGrupos`, `Jornadas` y `horariosJornadas`, además de la respuesta real de estadísticas de un partido terminado, siguen pendientes de validación. No inventar parámetros ni usar scraping visual como sustituto.
+Las firmas de `fasesGrupos`, `Jornadas`, `horariosJornadas` y la respuesta de estadísticas ya se validaron mediante llamadas reales. No inventar parámetros ni usar scraping visual como sustituto.
+
+## Sincronización de boxscores
+
+- Partido explícito: `uv run python -m fab_ingestor sync-game-stats --game-id <ID_FAB>`.
+- Competición seleccionada: `uv run python -m fab_ingestor sync-competition-stats --category-id <ID_CATEGORIA>`.
+- Solo son elegibles partidos sincronizados, terminados y con `TipoActa=ESTADÍSTICAS`.
+- Un payload incompleto se conserva saneado como RAW, no publica filas normalizadas y queda reintentable.
+- El contrato se validó inicialmente con un partido ACB terminado del 02/09/2026. La primera acta terminada de Copa Delegación y la primera de 1.ª Provincial son validaciones operativas posteriores y no bloquean el despliegue inicial de la liga provincial.
 
 ## Límites de Sprint 0
 

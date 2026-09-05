@@ -377,7 +377,7 @@
     {
       "id": "sprint-5-boxscore-ingestion",
       "name": "Sprint 5 - Boxscore Ingestion",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.1.0",
       "dependencies": [
@@ -400,13 +400,14 @@
       ],
       "deliverable": "Un partido terminado puede transformarse desde FAB a un boxscore normalizado reproducible.",
       "acceptance": [
-        "AC1: La implementación real no se considera cerrada hasta obtener al menos un boxscore válido de la temporada activa.",
-        "AC2: Cada fila player_game_stats referencia game, player y team.",
-        "AC3: Campos ausentes en FAB se almacenan como null y nunca se inventan como cero salvo contrato externo inequívoco.",
-        "AC4: El ingestor conserva puntos y, cuando existan, tiros, rebotes, asistencias, robos, pérdidas, tapones, faltas, minutos, valoración y +/-.",
-        "AC5: Reingerir el mismo boxscore actualiza la fila y conserva el payload anterior para auditoría.",
-        "AC6: Una respuesta incompleta o contradictoria no marca el partido como stats_final.",
-        "AC7: Tests verifican mapping, nullability, cambios posteriores y ausencia de duplicados."
+        "AC1: `FabClient.get_match_stats(id_partido)` usa exclusivamente POST form-urlencoded `/v2/envivo/estadisticas.ashx` con credenciales server-side e `id_partido`, valida `resultado`, `estadisticas` y `partido`, y nunca expone credenciales.",
+        "AC2: El contrato se valida con al menos un partido FAB terminado cuyo `TipoActa` sea `ESTADÍSTICAS`; la respuesta se conserva saneada y se convierte en fixture anonimizada antes de cerrar el mapper.",
+        "AC3: Cada fila PlayerGameStat referencia Game y PlayerRegistration del equipo correcto; IDs FAB estables se reutilizan y, si faltan, la identidad provisional incluye partido/equipo sin fusionar por nombre globalmente.",
+        "AC4: Se conservan como nullable puntos, minutos, titularidad, tiros, rebotes, asistencias, robos/recuperaciones, pérdidas, tapones, faltas, valoración y más/menos; un campo ausente nunca se transforma en cero.",
+        "AC5: Reingerir el mismo boxscore actualiza las mismas filas y mantiene todos los payloads RAW por checksum; una corrección posterior de FAB reemplaza valores normalizados de forma auditable.",
+        "AC6: Solo un boxscore estructuralmente completo y coherente marca el Game como `stats_final`; respuestas incompletas, equipos desconocidos o jugadores contradictorios hacen rollback y dejan el partido reintentable.",
+        "AC7: El CLI permite sincronizar un partido explícito y todos los partidos terminados elegibles de una CompetitionSeason, mostrando únicamente conteos de partidos/jugadores creados, actualizados o rechazados.",
+        "AC8: Tests sin red cubren contrato, mapping completo, nullability, identidad, correcciones, duplicados e inconsistencias; integración PostgreSQL verifica idempotencia y rollback."
       ],
       "scope": [
         "services/fab_ingestor/**",
@@ -415,7 +416,13 @@
         "docs/**",
         "spec.json"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-09-05T03:15:26.644Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-05T03:20:00.165Z"
     },
     {
       "id": "sprint-6-ingestion-orchestrator",

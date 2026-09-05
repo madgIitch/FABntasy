@@ -4,6 +4,7 @@ import json
 from collections.abc import Mapping
 from contextlib import contextmanager
 from typing import Any, ClassVar
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from uuid import UUID, uuid4
 
 import psycopg
@@ -25,7 +26,7 @@ class SportsRepository:
     @classmethod
     @contextmanager
     def connect(cls, database_url: str):
-        with psycopg.connect(database_url) as connection:
+        with psycopg.connect(_psycopg_url(database_url), autocommit=True) as connection:
             yield cls(connection)
 
     def upsert_federation(self, *, name: str, country_code: str = "ES") -> UUID:
@@ -41,7 +42,6 @@ class SportsRepository:
         ).fetchone()
         assert row is not None
         return row[0]
-
     ENTITY_TABLES: ClassVar[dict[str, str]] = {
         "federation": "federations",
         "competition": "competitions",
@@ -202,6 +202,105 @@ class SportsRepository:
             raise ValueError("FAB match team did not resolve to exactly one registered team")
         return rows[0][0]
 
+    def get_game_stats_context(self, external_game_id: str) -> dict[str, Any]:
+        row = self.connection.execute(
+            """
+            SELECT g.id, g.competition_season_id, g.home_team_id, g.away_team_id,
+                   home.id, away.id, g.status, g.has_statistics
+            FROM external_ids ids
+            JOIN games g ON g.id = ids.entity_id
+            JOIN team_registrations home
+              ON home.team_id = g.home_team_id
+             AND home.competition_season_id = g.competition_season_id
+            JOIN team_registrations away
+              ON away.team_id = g.away_team_id
+             AND away.competition_season_id = g.competition_season_id
+            WHERE ids.source = 'FAB' AND ids.entity_type = 'game' AND ids.external_id = %s
+            """,
+            (external_game_id,),
+        ).fetchone()
+        if row is None:
+            raise ValueError("FAB game did not resolve to one synchronized game")
+        return {
+            "game_id": row[0],
+            "competition_season_id": row[1],
+            "home_team_id": row[2],
+            "away_team_id": row[3],
+            "home_registration_id": row[4],
+            "away_registration_id": row[5],
+            "status": row[6],
+            "has_statistics": row[7],
+        }
+
+    def list_eligible_stats_games(self, competition_season_id: UUID) -> list[str]:
+        rows = self.connection.execute(
+            """
+            SELECT ids.external_id
+            FROM games g
+            JOIN external_ids ids
+              ON ids.entity_id = g.id AND ids.source = 'FAB' AND ids.entity_type = 'game'
+            WHERE g.competition_season_id = %s AND g.status = 'finished'
+              AND g.has_statistics = true AND g.sync_status = 'active'
+            ORDER BY g.scheduled_at, g.id
+            """,
+            (competition_season_id,),
+        ).fetchall()
+        return [row[0] for row in rows]
+
+    def upsert_player_registration(
+        self,
+        *,
+        player_external_id: str,
+        display_name: str,
+        provisional: bool,
+        team_registration_id: UUID,
+        competition_season_id: UUID,
+        shirt_number: str | None,
+    ) -> tuple[UUID, bool]:
+        existed = self.resolve_external_id(
+            source="FAB", entity_type="player", external_id=player_external_id
+        )
+        player_id = self.upsert_from_external(
+            source="FAB",
+            entity_type="player",
+            external_id=player_external_id,
+            values={"display_name": display_name, "provisional": provisional},
+        )
+        registration_id = self.upsert_from_external(
+            source="FAB",
+            entity_type="player_registration",
+            external_id=f"{player_external_id}:{team_registration_id}",
+            values={
+                "player_id": player_id,
+                "team_registration_id": team_registration_id,
+                "competition_season_id": competition_season_id,
+                "shirt_number": shirt_number,
+            },
+        )
+        return registration_id, existed is None
+
+    def mark_game_stats_final(self, game_id: UUID) -> None:
+        self.connection.execute(
+            """
+            UPDATE games SET stats_sync_status = 'stats_final', stats_synced_at = CURRENT_TIMESTAMP,
+                             updated_at = CURRENT_TIMESTAMP
+            WHERE id = %s
+            """,
+            (game_id,),
+        )
+
+    def delete_game_stats_except(self, game_id: UUID, registration_ids: set[UUID]) -> None:
+        if registration_ids:
+            self.connection.execute(
+                """
+                DELETE FROM player_game_stats
+                WHERE game_id = %s AND player_registration_id <> ALL(%s)
+                """,
+                (game_id, list(registration_ids)),
+            )
+        else:
+            self.connection.execute("DELETE FROM player_game_stats WHERE game_id = %s", (game_id,))
+
     def mark_missing_games_stale(self, competition_season_id: UUID, seen_game_ids: set[UUID]) -> int:
         if seen_game_ids:
             row = self.connection.execute(
@@ -256,3 +355,16 @@ class SportsRepository:
         ).fetchone()
         assert row is not None
         return row[0]
+
+
+def _psycopg_url(database_url: str) -> str:
+    """Remove Prisma-only URL options without logging connection secrets."""
+    parts = urlsplit(database_url)
+    query = urlencode(
+        [
+            (key, value)
+        for key, value in parse_qsl(parts.query, keep_blank_values=True)
+        if key not in {"pgbouncer", "schema"}
+        ]
+    )
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, query, parts.fragment))

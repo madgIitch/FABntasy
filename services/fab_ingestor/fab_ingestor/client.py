@@ -136,6 +136,28 @@ class FabClient:
     def search_team(self, text: str, *, page_size: int = 20) -> list[dict]:
         return self._search("team", text, page_size)
 
+    def get_match_stats(
+        self,
+        match_id: str,
+        *,
+        payload_sink: Callable[[dict], None] | None = None,
+    ) -> dict:
+        if not match_id:
+            raise ValueError("match_id cannot be empty")
+        payload = self._post(
+            "/v2/envivo/estadisticas.ashx",
+            {"id_partido": match_id},
+        )
+        if payload_sink is not None:
+            payload_sink(payload)
+        if (
+            str(payload.get("resultado", "")).lower() != "correcto"
+            or not isinstance(payload.get("estadisticas"), dict)
+            or not isinstance(payload.get("partido"), dict)
+        ):
+            raise FabResponseError("FAB match statistics returned an invalid response")
+        return payload
+
     def get_team_phases(self, team_id: str) -> dict:
         if not team_id:
             raise ValueError("team_id cannot be empty")

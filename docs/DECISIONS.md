@@ -74,3 +74,16 @@ Decisiones registradas:
 - **tests:** Fixtures anonimizadas y tests cubren contrato, mapeo, alta, reprogramación, resultado, duplicados, stale y rollback; integración usa PostgreSQL real y las pruebas normales no llaman a FAB.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-5-boxscore-ingestion -->
+## 2026-09-05 · sprint-5-boxscore-ingestion aprobado
+
+Contexto: se aprobó el spec `sprint-5-boxscore-ingestion` (Sprint 5 - Boxscore Ingestion).
+
+Decisiones registradas:
+
+- **auth_secrets:** El endpoint solo se consume desde FabClient con credenciales server-side; RAW y logs se sanean.
+- **rollback_compat:** La escritura de jugadores, inscripciones, estadísticas y estado del partido es transaccional; migraciones únicamente aditivas.
+- **tests:** Fixtures anonimizadas y tests cubren mapping, nullability, identidad provisional/estable, correcciones, duplicados, contradicciones y rollback PostgreSQL.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

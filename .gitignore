@@ -10,5 +10,6 @@ __pycache__/
 *.egg-info/
 *.tsbuildinfo
 .pytest_cache/
+.pytest-*/
 .harness/harness-state.json
 .harness/interviews/

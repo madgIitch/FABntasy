@@ -1,0 +1,56 @@
+{
+  "resultado": "correcto",
+  "error": "",
+  "partido": {
+    "estado_partido": "FINALIZADO",
+    "tipo_acta": "ESTADÍSTICAS",
+    "idlocal": "team-home",
+    "idvisitante": "team-away",
+    "local": "EQUIPO LOCAL",
+    "visitante": "EQUIPO VISITANTE"
+  },
+  "estadisticas": {
+    "equipolocal": "EQUIPO LOCAL",
+    "equipovisitante": "EQUIPO VISITANTE",
+    "estadisticasequipolocal": [
+      {
+        "componente_id": "anon-local-1",
+        "idequipo": "team-home",
+        "nombre": "Jugador Local 1",
+        "dorsal": "7",
+        "quintetotitular": true,
+        "tiempo_jugado": "21:30",
+        "milisegundos_jugados": 1290000,
+        "puntos": 12,
+        "canasta1p": 2,
+        "tiro1p": 3,
+        "canasta2p": 2,
+        "tiro2p": 5,
+        "canasta3p": 2,
+        "tiro3p": 6,
+        "reboteofensivo": 1,
+        "rebotedefensivo": 4,
+        "rebotes": 5,
+        "asistencias": 3,
+        "recuperaciones": 2,
+        "perdidas": 1,
+        "taponescometidos": 1,
+        "taponesrecibidos": 0,
+        "faltascometidas": 2,
+        "faltasrecibidas": 3,
+        "valoracion": 16,
+        "masMenos": 4
+      }
+    ],
+    "estadisticasequipovisitante": [
+      {
+        "componente_id": null,
+        "idequipo": "team-away",
+        "nombre": "Jugador Visitante 1",
+        "dorsal": null,
+        "puntos": 8,
+        "asistencias": null
+      }
+    ]
+  }
+}

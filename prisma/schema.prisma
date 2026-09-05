@@ -181,6 +181,8 @@ model Game {
   sourceUpdatedAt     DateTime?         @map("source_updated_at") @db.Timestamptz(3)
   lastSeenAt          DateTime          @default(now()) @map("last_seen_at") @db.Timestamptz(3)
   syncStatus          String            @default("active") @map("sync_status")
+  statsSyncStatus     String            @default("pending") @map("stats_sync_status")
+  statsSyncedAt       DateTime?         @map("stats_synced_at") @db.Timestamptz(3)
   competitionSeason   CompetitionSeason @relation(fields: [competitionSeasonId], references: [id], onDelete: Cascade)
   group               Group?            @relation(fields: [groupId], references: [id], onDelete: SetNull)
   round               Round?            @relation(fields: [roundId], references: [id], onDelete: SetNull)

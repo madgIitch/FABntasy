@@ -532,7 +532,7 @@
     {
       "id": "sprint-8-sports-explorer",
       "name": "Sprint 8 - Sports Explorer",
-      "status": "pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.2.1",
       "dependencies": [
@@ -571,7 +571,10 @@
         "docs/**",
         "spec.json"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-05T13:23:49.616Z"
     },
     {
       "id": "sprint-9-fantasy-scoring-engine",

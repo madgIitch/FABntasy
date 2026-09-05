@@ -1,19 +1,17 @@
 # Sesión actual
 
-Feature: **sprint-0-project-foundation · Sprint 0 - Project Foundation** — estado: `review_pending`.
+Feature: **sprint-10-fantasy-team-roster · Sprint 10 - Fantasy Team and Roster** — estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
-- intentos: 3
+- intentos: 1
 
 ## Siguiente acción
 
-- Revisar el diff del commit `feat(Sprint 0 - Project Foundation)` y cerrar con `node .harness/spec.mjs done sprint-0-project-foundation` (o `git revert` para descartarlo).
+- Revisar el diff del commit `feat(Sprint 10 - Fantasy Team and Roster)` y cerrar con `node .harness/spec.mjs done sprint-10-fantasy-team-roster` (o `git revert` para descartarlo).
 
 ## Último resultado
 
 | intento | resultado | gate fallido | tts(s) | coste |
 |--:|--|--|--:|--:|
-| 1 | FALLO | diff-scope | 238.4 | — |
-| 2 | FALLO | ruff | 150.4 | — |
-| 3 | OK | — | 200.3 | — |
+| 1 | OK | — | 729.5 | — |

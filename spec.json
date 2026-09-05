@@ -377,7 +377,7 @@
     {
       "id": "sprint-5-boxscore-ingestion",
       "name": "Sprint 5 - Boxscore Ingestion",
-      "status": "spec_ready",
+      "status": "done",
       "sdd": true,
       "milestone": "0.1.0",
       "dependencies": [

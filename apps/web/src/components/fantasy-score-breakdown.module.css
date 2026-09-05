@@ -1,0 +1,10 @@
+.panel { max-width: 100%; min-width: 0; border: 1px solid #d8d4c9; border-radius: 14px; padding: 14px; background: #fffdf7; color: #171713; }
+.heading { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.score { font-size: clamp(1.8rem, 8vw, 2.8rem); font-weight: 800; }
+.meta, .formula { overflow-wrap: anywhere; }
+.formula { margin: 12px 0; padding: 10px; border-radius: 8px; background: #f0ede4; }
+.terms { display: grid; gap: 8px; margin: 0; }
+.term { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; border-top: 1px solid #e4dfd4; padding-top: 8px; }
+.term dd, .term dt { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.explanation { grid-column: 1 / -1; color: #625e55; font-size: .875rem; }
+@media (max-width: 360px) { .panel { padding: 12px; } .term { grid-template-columns: 1fr; } .explanation { grid-column: 1; } }

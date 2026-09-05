@@ -23,6 +23,14 @@ Decisiones registradas:
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
 
+## 2026-09-05 · Snapshot y unidad transaccional del scoring fantasy
+
+Contexto: el spec fija determinismo e histórico, pero requiere concretar el límite de recomputación y la representación fuente.
+
+Decisión: `player-game-stat.v1` usa JSON canónico con orden fijo y decimales como texto; su SHA-256 es `source_stats_version`. La unidad atómica de recomputación es una jornada de una `competitionSeason` y un ruleset explícito, con aislamiento serializable, retry de conflictos y unicidad por inputs. El indicador `recalculated` es metadato de presentación y no reemplaza el estado de cálculo persistido.
+
+Consecuencia: no hay publicación parcial de una jornada; correcciones y nuevas versiones crean filas aditivas y el cliente siempre solicita una versión concreta.
+
 ## 2026-09-05 · Canastio adopta diseño mobile-first
 
 Contexto: la portada y las superficies deportivas deben funcionar primero en teléfonos de 360–430 px; en el viewport iPhone XR el titular, el logo ambiental y el CTA competían por espacio.

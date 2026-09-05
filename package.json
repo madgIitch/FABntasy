@@ -4,6 +4,7 @@
   "packageManager": "pnpm@9.15.0",
   "scripts": {
     "dev": "corepack pnpm --filter @fabntasy/web dev",
+    "postinstall": "prisma generate",
     "typecheck": "corepack pnpm --filter @fabntasy/web typecheck",
     "lint": "corepack pnpm --filter @fabntasy/web lint",
     "test": "corepack pnpm --filter @fabntasy/web test",

@@ -17,3 +17,4 @@ services/fab_ingestor/.test-*/
 tests/.tmp/
 .harness/harness-state.json
 .harness/interviews/
+supabase/.temp/

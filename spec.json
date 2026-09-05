@@ -478,7 +478,7 @@
     {
       "id": "sprint-7-pwa-auth-shell",
       "name": "Sprint 7 - PWA Auth and Shell",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.2.0",
       "dependencies": [
@@ -501,12 +501,15 @@
       ],
       "deliverable": "Un usuario puede entrar en la PWA, autenticarse y navegar por un shell instalable.",
       "acceptance": [
-        "AC1: La app funciona en navegador móvil y desktop con un único codebase.",
-        "AC2: Las rutas privadas no renderizan datos fantasy sin sesión válida.",
-        "AC3: Ningún secreto FAB aparece en HTML, JS, source maps ni respuestas al cliente.",
-        "AC4: El manifest permite instalación standalone en navegadores compatibles.",
-        "AC5: El service worker cachea solo el app shell y recursos seguros; mutaciones fantasy requieren red.",
-        "AC6: La shell sigue siendo utilizable si FAB está caída porque solo consume nuestra API."
+        "AC1: Registro, inicio y cierre de sesión usan Supabase Auth con email/contraseña; el alta exige verificación de correo y la recuperación usa enlaces de un solo uso con retorno permitido a la aplicación.",
+        "AC2: Las rutas privadas validan la identidad de Supabase server-side antes de renderizar; una sesión ausente, inválida o caducada redirige al login sin filtrar datos privados.",
+        "AC3: Existe un perfil de aplicación enlazado al UUID de Supabase Auth, creado idempotentemente sin almacenar hashes de contraseña ni duplicar la identidad del proveedor.",
+        "AC4: Solo la clave publicable de Supabase puede llegar al cliente; service-role key, secretos FAB, DATABASE_URL y tokens de sesión no aparecen en HTML, bundles, source maps, logs ni respuestas públicas.",
+        "AC5: Registro, login y recuperación presentan estados accesibles de carga, éxito, credenciales inválidas, email no verificado, enlace expirado, rate limit, offline y error inesperado, sin revelar si una cuenta ajena existe.",
+        "AC6: La aplicación ofrece un shell responsive mobile-first con navegación Inicio, Mi equipo, Mercado, Ligas, Jugadores y Perfil; las secciones aún no implementadas muestran estados vacíos coherentes sin inventar datos.",
+        "AC7: El manifest permite instalación standalone y el service worker cachea únicamente shell y recursos públicos versionados; nunca cachea respuestas autenticadas ni permite mutaciones offline.",
+        "AC8: La protección de auth usa cookies Secure/HttpOnly/SameSite cuando corresponda, redirects allowlisted, rate limiting y defensas CSRF para mutaciones; los callbacks rechazan destinos externos.",
+        "AC9: Tests sin servicios reales cubren formularios, callbacks, refresh/caducidad de sesión, rutas privadas, redacción de secretos, manifest y política de caché; una prueba de integración verifica el flujo Supabase en entorno de test."
       ],
       "scope": [
         "apps/web/**",
@@ -515,9 +518,16 @@
         "tests/**",
         "public/**",
         "docs/**",
+        ".env.example",
         "spec.json"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-09-05T12:29:17.679Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:b1e5fa282a5bda221d39aead06d43b7b9469c95a350c94fda3e876f74d959d9f",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-05T12:29:17.804Z"
     },
     {
       "id": "sprint-8-sports-explorer",

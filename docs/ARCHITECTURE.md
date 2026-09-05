@@ -188,3 +188,26 @@ Objetivo no negociable:
 - **edge_cases:** PostgreSQL advisory locks evitan solapes incluso entre procesos; una terminación libera el lock con la conexión; `stats_final` se salta salvo `--force-stats`.
 - **ui_states:** Sin UI; operación por CLI, logs estructurados y tabla `ingestion_runs`.
 
+<!-- harness:sprint-7-pwa-auth-shell -->
+## sprint-7-pwa-auth-shell · Sprint 7 - PWA Auth and Shell
+
+
+
+### Scope aprobado
+
+  - `apps/web/**`
+  - `prisma/**`
+  - `packages/**`
+  - `tests/**`
+  - `public/**`
+  - `docs/**`
+  - `.env.example`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** Perfil de aplicación enlazado uno a uno con el UUID de Supabase Auth; la contraseña no se replica en Prisma.
+- **external_contracts:** Supabase Auth por email/contraseña con verificación y recuperación por correo mediante SDK SSR oficial.
+- **edge_cases:** Redirecciones seguras, refresh de sesión, múltiples pestañas y retorno desde enlaces de verificación o recuperación.
+- **ui_states:** Shell responsive con estados de carga, error y offline; navegación privada protegida.
+

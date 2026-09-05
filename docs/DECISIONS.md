@@ -100,3 +100,16 @@ Decisiones registradas:
 - **tests:** Reloj y sleeper inyectables; tests sin esperas reales para calendario, locks, retries, circuit breaker y shutdown; PostgreSQL valida exclusión mutua y runs.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-7-pwa-auth-shell -->
+## 2026-09-05 · sprint-7-pwa-auth-shell aprobado
+
+Contexto: se aprobó el spec `sprint-7-pwa-auth-shell` (Sprint 7 - PWA Auth and Shell).
+
+Decisiones registradas:
+
+- **auth_secrets:** Cookies seguras y validación server-side; service-role key y secretos FAB exclusivamente en servidor.
+- **rollback_compat:** Migración aditiva para el perfil; desactivar auth no altera las tablas deportivas existentes.
+- **tests:** Tests unitarios y de integración para middleware, callbacks, formularios, sesión, protección de rutas y manifest/service worker.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

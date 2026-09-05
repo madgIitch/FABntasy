@@ -232,3 +232,26 @@ Objetivo no negociable:
 - **edge_cases:** Contempla partidos sin estadísticas, campos nullable, listados grandes paginados y datos todavía no sincronizados.
 - **ui_states:** Incluye clasificación/calendario, ficha de partido con o sin boxscore, ficha de jugador, búsqueda y filtros básicos.
 
+<!-- harness:sprint-9-fantasy-scoring-engine -->
+## sprint-9-fantasy-scoring-engine · Sprint 9 - Fantasy Scoring Engine
+
+
+
+### Scope aprobado
+
+  - `packages/domain/**`
+  - `prisma/**`
+  - `apps/web/src/server/**`
+  - `apps/web/src/app/**`
+  - `apps/web/src/components/**`
+  - `tests/**`
+  - `docs/**`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** FantasyScoringRuleSet es inmutable, versionado y asociado como mínimo a competitionSeason y tipo de cálculo. Sus parámetros declarativos incluyen fórmula, coeficientes, estadísticas requeridas, normalización, muestra mínima, límites, DNP, bonus y redondeo. FantasyPlayerGameScore referencia PlayerGameStat, jugador, partido, ruleset y source_stats_version; persiste raw_score y normalized_score nullable, estado, código estable, breakdown JSON y timestamps. source_stats_version es el SHA-256 del snapshot canónico y existe unicidad por (player_game_stat_id, ruleset_id, source_stats_version). Las identidades dudosas no se fusionan entre temporadas.
+- **external_contracts:** El contrato server-side documenta tipos y nullabilidad para status, errorCode nullable, playerId, gameId, competitionId, competitionSeasonId, rawScore nullable, normalizedFantasyPoints nullable, rulesetId, rulesetVersion, sourceStatsVersion y breakdown. El breakdown mantiene orden canónico según el orden de términos declarado por el ruleset y contiene rawTerms, normalization y finalScore; cada término conserva estadística o expresión, valor original nullable, coeficiente o condición, contribución Decimal sin redondear y valor presentado cuando corresponda. El score se obtiene de la suma Decimal sin redondear y se redondea únicamente al final, no sumando contribuciones ya redondeadas. Las respuestas no calculables o pendientes usan status y errorCode estables con scores null. La versión activa o solicitada siempre es explícita y las versiones nuevas son aditivas.
+- **edge_cases:** El ruleset v1 queda definido y explícitamente calibrable. Provincial: RawProv = PTS + 0.50×3PM + 0.25×FTM - 0.50×FC; 2PM no se suma porque ya está contenido en PTS. Nacional: RawNac = PTS + 1.20×REB + 1.50×AST + 3.00×STL + 3.00×BLK - 1.50×TO - 0.50×(FGA-FGM) - 0.50×(FTA-FTM) - 0.50×FC. v1 no aplica bonus y permite raw negativos. La población de normalización contiene las actuaciones calculables, no-DNP, de la misma competitionSeason y jornada. Usa media y desviación estándar poblacional: Z=(raw-media)/desviación y FP=clamp(20+10×Z,0,50). Requiere al menos 20 actuaciones y desviación mayor que cero. Los empates de raw reciben el mismo Z y FP. DNP exige minutos=0 y todas las estadísticas presentes=0, produce 0 FP y queda fuera de la población. Se usa Decimal sin redondeos intermedios; raw y FP se redondean al final a una decimal mediante half-up. Los parámetros se conservan dentro de cada versión y toda recalibración crea una versión nueva.
+- **ui_states:** La ficha de jugador y el boxscore muestran los FP normalizados como cifra principal y un desglose expandible con fórmula, términos brutos, población de referencia, posición relativa y transformación final. Identifican competición, temporada y versión; distinguen mediante texto calculado, DNP, pendiente por muestra, datos incompletos, error y recalculado. No convierten ausencias en cero y funcionan desde 320 px sin scroll horizontal involuntario.
+

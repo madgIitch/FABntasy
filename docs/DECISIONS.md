@@ -142,3 +142,16 @@ Decisiones registradas:
 - **tests:** E2E cubre calendario, partido con estadísticas, partido sin estadísticas y ficha de jugador; las consultas y agregados se prueban sin red FAB.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-9-fantasy-scoring-engine -->
+## 2026-09-05 · sprint-9-fantasy-scoring-engine aprobado
+
+Contexto: se aprobó el spec `sprint-9-fantasy-scoring-engine` (Sprint 9 - Fantasy Scoring Engine).
+
+Decisiones registradas:
+
+- **auth_secrets:** El motor se ejecuta exclusivamente en servidor sobre estadísticas persistidas, no necesita credenciales FAB nuevas y no expone credenciales ni RawFabPayload en API, breakdown, errores o logs.
+- **rollback_compat:** Los rulesets publicados son inmutables y solo puede existir uno activo por competitionSeason y tipo de cálculo. La activación y reactivación son transaccionales y auditables. Retirar una versión la marca RETIRED sin borrar reglas ni resultados. Las correcciones de datos y los cambios de versión generan resultados separados por source_stats_version y ruleset, preservando el histórico.
+- **tests:** Los casos dorados v1 quedan decidibles. Provincial: PTS=20, 3PM=2, FTM=4 y FC=3 produce raw=20.5. Nacional: PTS=20, REB=8, AST=5, STL=2, BLK=1, TO=3, FGM=7, FGA=15, FTM=4, FTA=6 y FC=3 produce raw=35.1. Con media=20 y desviación=10, raw=20.5 produce 20.5 FP; con media=25 y desviación=10, raw=35.1 produce 30.1 FP. Z≤-2 produce 0 FP y Z≥3 produce 50 FP. DNP produce 0 FP y no entra en la muestra. Una población de 19 o desviación cero produce PENDING/INSUFFICIENT_NORMALIZATION_SAMPLE con FP null; un null requerido produce NOT_CALCULABLE/MISSING_REQUIRED_STAT con ambos scores null. Las fronteras half-up incluyen 20.04→20.0 y 20.05→20.1. Se cubren además raw negativos, empates, null opcional, ausencia de bonus en v1 y actuaciones equivalentes entre ligas. Tests puros verifican determinismo, orden y serialización canónicos, SHA-256 y breakdown; PostgreSQL verifica constraints, idempotencia, concurrencia, rollback e histórico entre versiones. Los tests no dependen de la red FAB.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

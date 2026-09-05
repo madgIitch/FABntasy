@@ -5,7 +5,11 @@ import { db } from "./db";
 type Client = PrismaClient | Prisma.TransactionClient;
 export type TeamActor = Readonly<{ authUserId: string }>;
 export type RosterInput = Readonly<{ playerRegistrationIds: readonly string[]; expectedVersion?: number }>;
-export type LineupInput = Readonly<{ starters: readonly string[]; substitutes: readonly string[]; expectedVersion: number }>;
+export type LineupInput = Readonly<{
+  starterPlayerRegistrationIds: readonly string[];
+  substitutePlayerRegistrationIds: readonly string[];
+  expectedVersion: number;
+}>;
 
 export class FantasyTeamServiceError extends Error {
   constructor(public readonly code: FantasyTeamRuleError["code"], public readonly status: number) { super(code); }
@@ -57,9 +61,10 @@ async function serializeTeam(client: Client, teamId: string, roundNumber?: numbe
   const snapshot = (slot: NonNullable<typeof lineup>["slots"][number]) => ({ playerRegistrationId: slot.playerRegistrationId, playerId: slot.playerIdSnapshot,
     displayName: slot.displayNameSnapshot, realTeamId: slot.realTeamIdSnapshot, realTeamName: slot.realTeamNameSnapshot,
     acquisitionPrice: asNumber(slot.acquisitionPrice), currentMarketPrice: slot.marketPriceSnapshot === null ? null : asNumber(slot.marketPriceSnapshot) });
-  return { id: team.id, competitionSeasonId: team.competitionSeasonId, version: team.version,
+  return { teamId: team.id, competitionSeasonId: team.competitionSeasonId, version: team.version,
     rules: { identifier: team.rosterRuleSet.identifier, version: team.rosterRuleSet.version },
-    budget: { total: asNumber(team.rosterRuleSet.budgetCredits), used, remaining: asNumber(team.rosterRuleSet.budgetCredits) - used }, roster,
+    budgetTotal: asNumber(team.rosterRuleSet.budgetCredits), budgetUsed: used,
+    budgetRemaining: asNumber(team.rosterRuleSet.budgetCredits) - used, roster,
     lineup: lineup ? { roundNumber: lineup.roundNumber, status: lineup.status, cutoffAt: lineup.cutoffAt.toISOString(), lockedAt: lineup.lockedAt?.toISOString() ?? null,
       starters: lineup.slots.filter((x) => x.role === "STARTER").map(snapshot), substitutes: lineup.slots.filter((x) => x.role === "SUBSTITUTE").map(snapshot) } : null };
 }
@@ -111,28 +116,34 @@ export async function putRoster(actor: TeamActor, competitionSeasonId: string, i
 
 export async function putLineup(actor: TeamActor, competitionSeasonId: string, roundNumber: number, input: LineupInput) {
   if (!featureEnabled()) fail("FEATURE_DISABLED");
-  if (!Number.isInteger(roundNumber) || roundNumber < 1 || !Array.isArray(input.starters) || !Array.isArray(input.substitutes) || !Number.isInteger(input.expectedVersion)) fail("INVALID_INPUT", 422);
+  if (!Number.isInteger(roundNumber) || roundNumber < 1 || !Array.isArray(input.starterPlayerRegistrationIds) || !Array.isArray(input.substitutePlayerRegistrationIds) || !Number.isInteger(input.expectedVersion)) fail("INVALID_INPUT", 422);
   try {
     return await db.$transaction(async (tx) => {
       const owner = await profileId(tx, actor);
       const team = await tx.fantasyTeam.findUnique({ where: { userProfileId_competitionSeasonId: { userProfileId: owner, competitionSeasonId } }, include: { rosterRuleSet: true, rosterSlots: { select: playerSelect } } });
       if (!team) fail("TEAM_NOT_FOUND", 404);
       if (team.version !== input.expectedVersion) fail("VERSION_CONFLICT");
-      validateLineup(input.starters, input.substitutes, team.rosterSlots.map((x) => x.playerRegistrationId), {
+      validateLineup(input.starterPlayerRegistrationIds, input.substitutePlayerRegistrationIds, team.rosterSlots.map((x) => x.playerRegistrationId), {
         identifier: team.rosterRuleSet.identifier, version: team.rosterRuleSet.version, budgetCredits: asNumber(team.rosterRuleSet.budgetCredits), rosterSize: team.rosterRuleSet.rosterSize,
         starters: team.rosterRuleSet.starterCount, substitutes: team.rosterRuleSet.substituteCount, maxPerRealTeam: team.rosterRuleSet.maxPerRealTeam,
         positionLimits: team.rosterRuleSet.positionLimits as Record<string, number>, coldStartPriceCredits: asNumber(team.rosterRuleSet.coldStartPriceCredits),
       });
+      const [{ now }] = await tx.$queryRaw<Array<{ now: Date }>>(Prisma.sql`SELECT clock_timestamp() AS now`);
+      const current = await tx.fantasyLineup.findFirst({ where: { fantasyTeamId: team.id, roundNumber, supersededAt: null } });
+      // A persisted cutoff is authoritative once reached, even if the game is
+      // subsequently postponed. This prevents a closed round from reopening.
+      if (current && isCutoffClosed(now, current.cutoffAt)) {
+        if (current.status === "DRAFT") await tx.fantasyLineup.update({ where: { id: current.id }, data: { status: "LOCKED", lockedAt: now } });
+        fail("LINEUP_LOCKED");
+      }
       const games = await tx.$queryRaw<Array<{ scheduled_at: Date; source_timezone: string | null }>>(Prisma.sql`SELECT scheduled_at, source_timezone FROM games WHERE competition_season_id=${competitionSeasonId}::uuid AND round_number=${roundNumber} AND sync_status='active' ORDER BY scheduled_at ASC FOR UPDATE`);
       if (!games.length || games.some((game) => !game.scheduled_at || !game.source_timezone)) fail("CUTOFF_UNAVAILABLE");
       const cutoffAt = games[0].scheduled_at;
-      const [{ now }] = await tx.$queryRaw<Array<{ now: Date }>>(Prisma.sql`SELECT clock_timestamp() AS now`);
       if (isCutoffClosed(now, cutoffAt)) fail("LINEUP_LOCKED");
-      const current = await tx.fantasyLineup.findFirst({ where: { fantasyTeamId: team.id, roundNumber, supersededAt: null } });
       if (current) await tx.fantasyLineup.update({ where: { id: current.id }, data: { supersededAt: now } });
       const lineup = await tx.fantasyLineup.create({ data: { fantasyTeamId: team.id, roundNumber, revision: (current?.revision ?? 0) + 1, cutoffAt } });
       const byId = new Map(team.rosterSlots.map((slot) => [slot.playerRegistrationId, slot]));
-      await tx.fantasyLineupSlot.createMany({ data: [...input.starters.map((id, ordinal) => ({ id, ordinal, role: "STARTER" })), ...input.substitutes.map((id, ordinal) => ({ id, ordinal, role: "SUBSTITUTE" }))].map(({ id, ordinal, role }) => {
+      await tx.fantasyLineupSlot.createMany({ data: [...input.starterPlayerRegistrationIds.map((id, ordinal) => ({ id, ordinal, role: "STARTER" })), ...input.substitutePlayerRegistrationIds.map((id, ordinal) => ({ id, ordinal, role: "SUBSTITUTE" }))].map(({ id, ordinal, role }) => {
         const slot = byId.get(id)!; const player = slot.playerRegistration.player; const realTeam = slot.playerRegistration.teamRegistration.team;
         return { fantasyLineupId: lineup.id, playerRegistrationId: id, role, ordinal, playerIdSnapshot: player.id, displayNameSnapshot: player.displayName,
           realTeamIdSnapshot: realTeam.id, realTeamNameSnapshot: realTeam.name, acquisitionPrice: slot.acquisitionPrice };

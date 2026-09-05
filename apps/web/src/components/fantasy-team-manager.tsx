@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import styles from "./fantasy-team-manager.module.css";
 
 type Player = { playerRegistrationId: string; displayName: string; realTeamName: string; acquisitionPrice: number };
-type Team = { version: number; budget: { total: number; used: number; remaining: number }; roster: Player[]; lineup: null | { status: "DRAFT" | "LOCKED"; cutoffAt: string; starters: Player[]; substitutes: Player[] } };
+type Team = { version: number; budgetTotal: number; budgetUsed: number; budgetRemaining: number; roster: Player[]; lineup: null | { status: "DRAFT" | "LOCKED"; cutoffAt: string; starters: Player[]; substitutes: Player[] } };
 type ViewState = "loading" | "empty" | "ready" | "saving" | "saved" | "error" | "offline" | "conflict";
 
 const credits = new Intl.NumberFormat("es-ES", { maximumFractionDigits: 0 });
@@ -24,7 +24,7 @@ export function FantasyTeamManager({ competitionSeasonId, roundNumber, initialTe
   useEffect(() => {
     if (initialTeam !== undefined) return;
     const controller = new AbortController();
-    fetch(`/api/fantasy/teams/${competitionSeasonId}?roundNumber=${roundNumber}`, { signal: controller.signal })
+    fetch(`/api/fantasy/team/lineups/${roundNumber}?competitionSeasonId=${encodeURIComponent(competitionSeasonId)}`, { signal: controller.signal })
       .then(async (response) => ({ response, body: await response.json() }))
       .then(({ response, body }) => {
         if (response.status === 404) { setState("empty"); return; }
@@ -40,8 +40,8 @@ export function FantasyTeamManager({ competitionSeasonId, roundNumber, initialTe
     if (!team || !navigator.onLine) { setState("offline"); return; }
     setState("saving");
     try {
-      const response = await fetch(`/api/fantasy/teams/${competitionSeasonId}/lineups/${roundNumber}`, { method: "PUT", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ starters, substitutes: substitutes.map((x) => x.playerRegistrationId), expectedVersion: team.version }) });
+      const response = await fetch(`/api/fantasy/team/lineups/${roundNumber}`, { method: "PUT", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ competitionSeasonId, starterPlayerRegistrationIds: starters, substitutePlayerRegistrationIds: substitutes.map((x) => x.playerRegistrationId), expectedVersion: team.version }) });
       const body = await response.json();
       if (body.error?.code === "VERSION_CONFLICT") { setState("conflict"); return; }
       if (!response.ok) { setState("error"); return; }
@@ -53,7 +53,7 @@ export function FantasyTeamManager({ competitionSeasonId, roundNumber, initialTe
     if (!navigator.onLine) { setState("offline"); return; }
     setState("saving");
     try {
-      const response = await fetch(`/api/fantasy/teams/${competitionSeasonId}`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ playerRegistrationIds: rosterDraft }) });
+      const response = await fetch("/api/fantasy/team", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ competitionSeasonId, expectedVersion: null, playerRegistrationIds: rosterDraft }) });
       const body = await response.json();
       if (!response.ok) { setState(body.error?.code === "VERSION_CONFLICT" ? "conflict" : "error"); return; }
       setTeam(body.data); setState("saved");
@@ -76,9 +76,9 @@ export function FantasyTeamManager({ competitionSeasonId, roundNumber, initialTe
   return <section className={styles.panel} aria-busy={state === "saving"}>
     <header><p className={styles.eyebrow}>Plantilla fantasy</p><h1>Mi equipo</h1></header>
     <div className={styles.budget} aria-label="Resumen de presupuesto">
-      <span><small>Presupuesto total</small>{credits.format(team.budget.total)} créditos</span>
-      <span><small>Usado</small>{credits.format(team.budget.used)} créditos</span>
-      <span><small>Restante</small>{credits.format(team.budget.remaining)} créditos</span>
+      <span><small>Presupuesto total</small>{credits.format(team.budgetTotal)} créditos</span>
+      <span><small>Usado</small>{credits.format(team.budgetUsed)} créditos</span>
+      <span><small>Restante</small>{credits.format(team.budgetRemaining)} créditos</span>
     </div>
     {state === "offline" && <p className={styles.notice} role="status">Sin conexión. Tu borrador se conserva en este dispositivo y no se enviará todavía.</p>}
     {state === "conflict" && <p className={styles.notice} role="alert">La plantilla cambió en otro lugar. Tu borrador sigue aquí: recarga o vuelve a aplicarlo.</p>}

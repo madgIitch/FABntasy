@@ -327,7 +327,7 @@
     {
       "id": "sprint-4-schedule-and-games-ingestion",
       "name": "Sprint 4 - Schedule and Games Ingestion",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.0.5",
       "dependencies": [

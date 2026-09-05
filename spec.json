@@ -579,7 +579,7 @@
     {
       "id": "sprint-9-fantasy-scoring-engine",
       "name": "Sprint 9 - Fantasy Scoring Engine",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.3.0",
       "dependencies": [

@@ -427,7 +427,7 @@
     {
       "id": "sprint-6-ingestion-orchestrator",
       "name": "Sprint 6 - Ingestion Orchestrator",
-      "status": "spec_ready",
+      "status": "done",
       "sdd": true,
       "milestone": "0.1.1",
       "dependencies": [

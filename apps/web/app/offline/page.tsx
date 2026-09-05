@@ -1,0 +1,1 @@
+export default function OfflinePage() { return <main className="auth-page"><section className="auth-panel"><p className="eyebrow">Sin conexión</p><h1>La cancha sigue aquí</h1><p>Conéctate para consultar datos o realizar cambios en tu equipo.</p></section></main>; }

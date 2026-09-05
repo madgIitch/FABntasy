@@ -7,6 +7,22 @@
     "lint": "eslint .",
     "test": "vitest run"
   },
-  "dependencies": { "next": "^15.0.0", "react": "^19.0.0", "react-dom": "^19.0.0" },
-  "devDependencies": { "@eslint/eslintrc": "^3.2.0", "@next/eslint-plugin-next": "^15.0.0", "@types/node": "^22.0.0", "@types/react": "^19.0.0", "@types/react-dom": "^19.0.0", "eslint": "^9.0.0", "eslint-config-next": "^15.0.0", "typescript": "^5.7.0", "vitest": "^2.1.0" }
+  "dependencies": {
+    "@supabase/ssr": "^0.12.6",
+    "@supabase/supabase-js": "^2.115.0",
+    "next": "^15.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.2.0",
+    "@next/eslint-plugin-next": "^15.0.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^15.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  }
 }

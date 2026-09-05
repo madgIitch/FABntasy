@@ -1,0 +1,1 @@
+export default function Loading() { return <main className="app-main" aria-busy="true"><div className="loading-line" /><div className="loading-block" /><div className="loading-line short" /></main>; }

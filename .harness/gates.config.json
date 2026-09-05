@@ -3,8 +3,8 @@
     { "name": "typecheck", "cmd": "pnpm typecheck", "blocking": true },
     { "name": "lint", "cmd": "pnpm lint", "blocking": true },
     { "name": "test", "cmd": "pnpm test", "blocking": true },
-    { "name": "python-test", "cmd": "python -m pytest services/fab_ingestor", "blocking": true },
-    { "name": "ruff", "cmd": "ruff check services/fab_ingestor", "blocking": true },
+    { "name": "python-test", "cmd": "uv run --directory services/fab_ingestor python -m pytest", "blocking": true },
+    { "name": "ruff", "cmd": "uv run --directory services/fab_ingestor ruff check .", "blocking": true },
     { "name": "prisma-validate", "cmd": "pnpm exec prisma validate", "blocking": true },
     { "name": "diff-scope", "blocking": true }
   ]

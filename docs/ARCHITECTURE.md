@@ -125,3 +125,25 @@ Objetivo no negociable:
 - **external_contracts:** Discovery usa exclusivamente `buscarCategoria`. La APK confirma que la enumeración exhaustiva parte de `/v2/categoria.ashx`: `accion=fasesGrupos` usa `id_categoria_competicion`, y `accion=equipos` usa `id_fase`, `id_grupo`, `jornada`, `tipo_fase` y `ventana`. Ambos contratos se validaron también contra Copa Delegación real.
 - **edge_cases:** El nombre no determina temporada ni identidad; los IDs opacos permanecen texto; repetir selección/sync es idempotente; `DESCANSA` se descarta como marcador de calendario; si un equipo aparece en más de un grupo/fase, su TeamRegistration no recibe un grupo ambiguo.
 - **ui_states:** La administración inicial es CLI: listado de candidatos, selección explícita por `IdCompeticionCategoria` y resumen de sync; no se implementa UI web en este sprint.
+
+<!-- harness:sprint-4-schedule-and-games-ingestion -->
+## sprint-4-schedule-and-games-ingestion · Sprint 4 - Schedule and Games Ingestion
+
+
+
+### Scope aprobado
+
+  - `services/fab_ingestor/**`
+  - `prisma/**`
+  - `tests/**`
+  - `docs/**`
+  - `.env.example`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** Game conserva el ID FAB estable, equipos, fase/grupo/ronda, jornada, horario con zona Europe/Madrid, estado y resultado. Se añade un estado de sincronización para distinguir registros presentes y stale sin borrarlos.
+- **external_contracts:** La APK confirma `/v2/categoria.ashx`: `Jornadas` y `horariosJornadas` usan `id_categoria_competicion`, `id_fase`, `id_grupo`, `id_ronda`, `fecha_inicial` y `fecha_final`. Se validarán respuestas reales de Copa Delegación antes de normalizar.
+- **edge_cases:** `DESCANSA` no crea partidos; aplazamientos y cambios de hora actualizan el mismo Game por ID FAB; valores o equipos no resolubles bloquean ese recorrido sin fusionar por nombre.
+- **ui_states:** La operación del sprint es CLI (`sync-competition-games`); no se añade interfaz web.
+

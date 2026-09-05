@@ -1,4 +1,5 @@
 import os
+from datetime import UTC, datetime
 
 import pytest
 
@@ -58,3 +59,74 @@ def test_raw_payload_is_sanitized_and_deduplicated():
             payload={"key": "secret-two", "name": "Team"},
         )
         assert first == second
+
+
+def test_game_external_identity_survives_reprogramming_and_transaction_rolls_back():
+    assert DATABASE_URL is not None
+    external_game_id = f"integration-game-{__import__('uuid').uuid4()}"
+    with (
+        SportsRepository.connect(DATABASE_URL) as repository,
+        repository.connection.transaction(force_rollback=True),
+    ):
+        federation_id = repository.upsert_federation(name="Integration Federation")
+        competition_id = repository.upsert_from_external(
+            source="TEST",
+            entity_type="competition",
+            external_id=f"competition-{external_game_id}",
+            values={"federation_id": federation_id, "name": external_game_id},
+        )
+        season_id = repository.upsert_from_external(
+            source="TEST",
+            entity_type="season",
+            external_id=f"season-{external_game_id}",
+            values={"name": external_game_id},
+        )
+        competition_season_id = repository.upsert_from_external(
+            source="TEST",
+            entity_type="competition_season",
+            external_id=f"competition-season-{external_game_id}",
+            values={"competition_id": competition_id, "season_id": season_id},
+        )
+        group_id = repository.upsert_from_external(
+            source="TEST",
+            entity_type="group",
+            external_id=f"group-{external_game_id}",
+            values={"competition_season_id": competition_season_id, "name": external_game_id},
+        )
+        home_id = repository.upsert_from_external(
+            source="TEST",
+            entity_type="team",
+            external_id=f"home-{external_game_id}",
+            values={"name": "Home"},
+        )
+        away_id = repository.upsert_from_external(
+            source="TEST",
+            entity_type="team",
+            external_id=f"away-{external_game_id}",
+            values={"name": "Away"},
+        )
+        original = datetime(2026, 9, 10, 18, tzinfo=UTC)
+        delayed = datetime(2026, 9, 10, 20, tzinfo=UTC)
+        values = {
+            "competition_season_id": competition_season_id,
+            "group_id": group_id,
+            "home_team_id": home_id,
+            "away_team_id": away_id,
+            "scheduled_at": original,
+            "status": "scheduled",
+            "sync_status": "active",
+        }
+        first = repository.upsert_from_external(
+            source="FAB", entity_type="game", external_id=external_game_id, values=values
+        )
+        second = repository.upsert_from_external(
+            source="FAB",
+            entity_type="game",
+            external_id=external_game_id,
+            values={**values, "scheduled_at": delayed},
+        )
+        persisted = repository.connection.execute(
+            "SELECT scheduled_at FROM games WHERE id = %s", (first,)
+        ).fetchone()
+        assert first == second
+        assert persisted == (delayed,)

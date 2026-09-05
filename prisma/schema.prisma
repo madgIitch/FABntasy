@@ -180,6 +180,7 @@ model Game {
   hasStatistics       Boolean           @default(false) @map("has_statistics")
   sourceUpdatedAt     DateTime?         @map("source_updated_at") @db.Timestamptz(3)
   lastSeenAt          DateTime          @default(now()) @map("last_seen_at") @db.Timestamptz(3)
+  syncStatus          String            @default("active") @map("sync_status")
   competitionSeason   CompetitionSeason @relation(fields: [competitionSeasonId], references: [id], onDelete: Cascade)
   group               Group?            @relation(fields: [groupId], references: [id], onDelete: SetNull)
   round               Round?            @relation(fields: [roundId], references: [id], onDelete: SetNull)
@@ -190,6 +191,7 @@ model Game {
   updatedAt           DateTime          @updatedAt @map("updated_at")
 
   @@index([competitionSeasonId, roundNumber])
+  @@index([competitionSeasonId, syncStatus])
   @@index([scheduledAt])
   @@map("games")
 }

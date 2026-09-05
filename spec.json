@@ -327,7 +327,7 @@
     {
       "id": "sprint-4-schedule-and-games-ingestion",
       "name": "Sprint 4 - Schedule and Games Ingestion",
-      "status": "pending",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.0.5",
       "dependencies": [
@@ -349,21 +349,30 @@
       ],
       "deliverable": "La base refleja el calendario activo de la competición y puede actualizarlo de forma idempotente.",
       "acceptance": [
-        "AC1: Una sincronización completa no depende de buscarPartido por nombre de equipo.",
-        "AC2: Cambios de horario actualizan el mismo game y no crean otro.",
-        "AC3: TipoActa se conserva exactamente como valor externo además de una bandera normalizada has_statistics.",
-        "AC4: Un partido terminado mantiene resultado y parciales cuando FAB los proporciona.",
-        "AC5: Un partido que deja de aparecer no se borra automáticamente; se marca como stale hasta confirmación.",
-        "AC6: Tests cubren altas, actualizaciones, reprogramaciones, duplicados y desaparición temporal."
+        "AC1: `sync-competition-games --category-id 10468` recorre exclusivamente los IDs persistidos de categoría, fase, grupo/ronda y jornada mediante `Jornadas` y `horariosJornadas`; no usa `buscarPartido` ni nombres para descubrir partidos.",
+        "AC2: Los contratos POST form-urlencoded de `Jornadas` y `horariosJornadas` coinciden con la APK, se validan contra Copa Delegación real y quedan representados por fixtures anonimizadas sin credenciales.",
+        "AC3: Cada partido se identifica por su ID FAB y se persiste idempotentemente con local, visitante, fecha/hora en `Europe/Madrid`, jornada, fase/grupo/ronda, estado, resultado, parciales disponibles y `TipoActa` original; `has_statistics` se deriva únicamente del valor externo confirmado.",
+        "AC4: Un cambio de horario, estado o resultado actualiza el mismo Game y conserva `source_updated_at` y `last_seen_at`; repetir un payload no duplica Game, equipos ni external IDs.",
+        "AC5: Solo tras completar todo el recorrido sin errores, los partidos previamente conocidos que no aparezcan se marcan `stale`; nunca se borran automáticamente y un recorrido parcial o fallido no altera su presencia.",
+        "AC6: Respuestas FAB usadas por el sync se guardan en RawFabPayload con checksum y sin `key`, `id_dispositivo`, token, password ni secret; una referencia a equipo desconocido o una forma incompatible produce un error contractual y rollback de datos normalizados.",
+        "AC7: La ejecución real sobre Copa Delegación produce un resumen reproducible de grupos, jornadas, partidos nuevos, actualizados y stale, y una segunda ejecución confirma la idempotencia.",
+        "AC8: Tests sin red cubren altas, actualizaciones, reprogramaciones, resultados, duplicados, `DESCANSA`, desaparición temporal y fallo parcial; integración PostgreSQL verifica identidad estable y rollback."
       ],
       "scope": [
         "services/fab_ingestor/**",
         "prisma/**",
         "tests/**",
         "docs/**",
+        ".env.example",
         "spec.json"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-09-04T23:00:36.202Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:5019032d9f8aa7512a1e197fd9b3b6a316673c5f56e226d863fb06d59a048d6a",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-04T23:01:42.674Z"
     },
     {
       "id": "sprint-5-boxscore-ingestion",

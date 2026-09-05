@@ -1,0 +1,20 @@
+{
+  "resultado": "correcto",
+  "partidos": [
+    {
+      "IdPartido": "opaque-game-1",
+      "Estado": "No comenzado",
+      "FechaHora": "/Date(1788988800000)/",
+      "FechaHoraUTC": "/Date(1788981600000)/",
+      "NumeroJornada": 1,
+      "NombreEquipoLocal": "EQUIPO LOCAL ANONIMIZADO",
+      "NombreEquipoVisitante": "EQUIPO VISITANTE ANONIMIZADO",
+      "Resultados": {
+        "ResultadoLocal": "-",
+        "ResultadoVisitante": "-",
+        "ResultadosPeriodo": []
+      },
+      "TipoActa": "ESTADÍSTICAS"
+    }
+  ]
+}

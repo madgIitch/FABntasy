@@ -7,6 +7,7 @@ from .client import Credentials, FabClient
 from .config import Settings
 from .discovery import discover_categories, select_competition, sync_competition_teams
 from .repository import SportsRepository
+from .schedule import sync_competition_games
 
 
 def main() -> None:
@@ -20,6 +21,7 @@ def main() -> None:
             "discover-categories",
             "select-competition",
             "sync-competition-teams",
+            "sync-competition-games",
         ),
         default="status",
     )
@@ -35,6 +37,25 @@ def main() -> None:
     args = parser.parse_args()
     settings = Settings.from_env()
     store = FileCredentialStore(settings.credentials_file)
+
+    if args.command == "sync-competition-games":
+        if not args.category_id:
+            parser.error("sync-competition-games requires --category-id")
+        if not settings.database_url:
+            raise SystemExit("DATABASE_URL is required to sync competition games")
+        with SportsRepository.connect(settings.database_url) as repository:
+            summary = sync_competition_games(
+                FabClient(store),
+                repository,
+                category_competition_id=str(args.category_id),
+            )
+        print(
+            "Competition games synchronized "
+            f"(groups={summary.groups}, matchdays={summary.matchdays}, games={summary.games}, "
+            f"created={summary.created}, updated={summary.updated}, stale={summary.stale}, "
+            f"skipped_byes={summary.skipped_byes})"
+        )
+        return
 
     if args.command == "sync-competition-teams":
         if not args.category_id:

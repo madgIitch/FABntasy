@@ -61,3 +61,16 @@ Decisiones registradas:
 - **tests:** Fixtures anonimizadas cubren discovery, selección, cero resultados, ambigüedad, repetición, RAW y bloqueo contractual; integración PostgreSQL verifica unicidad primaria y rollback.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-4-schedule-and-games-ingestion -->
+## 2026-09-04 · sprint-4-schedule-and-games-ingestion aprobado
+
+Contexto: se aprobó el spec `sprint-4-schedule-and-games-ingestion` (Sprint 4 - Schedule and Games Ingestion).
+
+Decisiones registradas:
+
+- **auth_secrets:** Todas las llamadas pasan por FabClient/FileCredentialStore y RawFabPayload elimina credenciales; CLI solo informa conteos e IDs deportivos.
+- **rollback_compat:** Cada sincronización normalizada es transaccional; no borra Game ni RAW histórico. La migración aditiva de estado de sincronización tiene rollback de desarrollo.
+- **tests:** Fixtures anonimizadas y tests cubren contrato, mapeo, alta, reprogramación, resultado, duplicados, stale y rollback; integración usa PostgreSQL real y las pruebas normales no llaman a FAB.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

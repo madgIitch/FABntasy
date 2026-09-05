@@ -202,6 +202,84 @@ class FabClient:
             raise FabResponseError("FAB category teams returned invalid items")
         return teams
 
+    def get_category_matchdays(
+        self,
+        category_competition_id: str,
+        phase_id: str,
+        *,
+        group_id: str = "",
+        round_id: str = "",
+        payload_sink: Callable[[dict], None] | None = None,
+    ) -> list[dict]:
+        payload = self._category_schedule_request(
+            "Jornadas",
+            category_competition_id,
+            phase_id,
+            group_id=group_id,
+            round_id=round_id,
+        )
+        if payload_sink is not None:
+            payload_sink(payload)
+        matchdays = payload.get("ListaJornadas")
+        if str(payload.get("resultado", "")).lower() != "correcto" or not isinstance(
+            matchdays, list
+        ):
+            raise FabResponseError("FAB category matchdays returned an invalid response")
+        if not all(isinstance(matchday, dict) for matchday in matchdays):
+            raise FabResponseError("FAB category matchdays returned invalid items")
+        return matchdays
+
+    def get_category_matches(
+        self,
+        category_competition_id: str,
+        phase_id: str,
+        *,
+        group_id: str = "",
+        round_id: str = "",
+        payload_sink: Callable[[dict], None] | None = None,
+    ) -> list[dict]:
+        payload = self._category_schedule_request(
+            "horariosJornadas",
+            category_competition_id,
+            phase_id,
+            group_id=group_id,
+            round_id=round_id,
+        )
+        if payload_sink is not None:
+            payload_sink(payload)
+        matches = payload.get("partidos")
+        if str(payload.get("resultado", "")).lower() != "correcto" or not isinstance(matches, list):
+            raise FabResponseError("FAB category matches returned an invalid response")
+        if not all(isinstance(match, dict) for match in matches):
+            raise FabResponseError("FAB category matches returned invalid items")
+        return matches
+
+    def _category_schedule_request(
+        self,
+        action: str,
+        category_competition_id: str,
+        phase_id: str,
+        *,
+        group_id: str,
+        round_id: str,
+    ) -> dict:
+        if not category_competition_id or not phase_id:
+            raise ValueError("category_competition_id and phase_id cannot be empty")
+        if bool(group_id) == bool(round_id):
+            raise ValueError("exactly one of group_id or round_id is required")
+        return self._post(
+            "/v2/categoria.ashx",
+            {
+                "accion": action,
+                "id_categoria_competicion": category_competition_id,
+                "id_fase": phase_id,
+                "id_grupo": group_id if not round_id else "",
+                "id_ronda": round_id,
+                "fecha_inicial": "",
+                "fecha_final": "",
+            },
+        )
+
     def _search(
         self,
         resource: str,

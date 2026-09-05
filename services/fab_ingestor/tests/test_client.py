@@ -198,6 +198,48 @@ def test_category_teams_uses_apk_confirmed_form_contract():
     }
 
 
+@pytest.mark.parametrize(
+    ("method", "action", "collection"),
+    [
+        ("get_category_matchdays", "Jornadas", "ListaJornadas"),
+        ("get_category_matches", "horariosJornadas", "partidos"),
+    ],
+)
+def test_category_schedule_uses_apk_confirmed_contract(method, action, collection):
+    calls = []
+
+    def transport(url, fields, timeout):
+        calls.append((url, dict(fields)))
+        return response({"resultado": "correcto", collection: []})
+
+    client = FabClient(
+        MemoryCredentialStore(Credentials("device", "secret")),
+        transport=transport,
+        min_interval=0,
+    )
+    assert getattr(client, method)("category", "phase", group_id="group") == []
+    assert calls[0][0].endswith("/v2/categoria.ashx")
+    assert calls[0][1] == {
+        "accion": action,
+        "id_categoria_competicion": "category",
+        "id_fase": "phase",
+        "id_grupo": "group",
+        "id_ronda": "",
+        "fecha_inicial": "",
+        "fecha_final": "",
+        "id_dispositivo": "device",
+        "key": "secret",
+    }
+
+
+def test_category_schedule_requires_exactly_one_group_or_round():
+    client = FabClient(MemoryCredentialStore(Credentials("device", "secret")))
+    with pytest.raises(ValueError, match="exactly one"):
+        client.get_category_matchdays("category", "phase")
+    with pytest.raises(ValueError, match="exactly one"):
+        client.get_category_matches("category", "phase", group_id="group", round_id="round")
+
+
 def test_file_store_replaces_credentials_atomically(tmp_path):
     path = tmp_path / "private" / "credentials.json"
     store = FileCredentialStore(path)

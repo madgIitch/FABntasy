@@ -1,0 +1,11 @@
+{
+  "resultado": "correcto",
+  "JornadaActual": "",
+  "ListaJornadas": [
+    {
+      "IdJornada": "opaque-matchday-1",
+      "FechaJornada": "/Date(1788652800000)/",
+      "NumeroJornada": 1
+    }
+  ]
+}

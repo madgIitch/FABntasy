@@ -37,3 +37,12 @@ Las firmas de `fasesGrupos`, `Jornadas`, `horariosJornadas` y la respuesta de es
 ## Límites de Sprint 0
 
 Sprint 0 solo crea la fundación, configuración server-side, modo mock, contratos y migración vacía. No implementa llamadas reales FAB, autenticación, fantasy ni mercado.
+
+## Decisión responsive de producto
+
+- Canastio se diseña mobile-first con referencia base de 360–430 px y `100svh` para el primer viewport.
+- El CTA principal debe quedar visible sin scroll en la portada móvil y tener un alto táctil mínimo de 44 px.
+- La marca y el titular nunca pueden quedar recortados horizontalmente; el logo es ambiental y no compite con el contenido.
+- La navegación inferior móvil contiene como máximo cinco destinos y respeta `safe-area-inset-bottom`.
+- Las tablas deportivas eliminan columnas secundarias en móvil antes de recurrir al scroll horizontal; el boxscore puede desplazarse por necesitar comparación tabular.
+- Estados loading, vacío, error y sin estadísticas deben seguir siendo legibles a 320 px sin depender del color.

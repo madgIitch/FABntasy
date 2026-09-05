@@ -4,14 +4,14 @@ import type { ReactNode } from "react";
 import { logout } from "../auth/actions";
 import { createClient } from "../../src/lib/supabase/server";
 
-const nav = [["/app", "Inicio", "⌂"], ["/app/mi-equipo", "Mi equipo", "◫"], ["/app/mercado", "Mercado", "↗"], ["/app/ligas", "Ligas", "◎"], ["/app/jugadores", "Jugadores", "◇"], ["/app/perfil", "Perfil", "○"]];
+const nav = [["/app", "Inicio", "⌂"], ["/app/competicion", "Competición", "◎"], ["/app/jugadores", "Jugadores", "◇"], ["/app/mi-equipo", "Mi equipo", "◫"], ["/app/mercado", "Mercado", "↗"], ["/app/ligas", "Ligas", "◉"], ["/app/perfil", "Perfil", "○"]];
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const { data: { user } } = await (await createClient()).auth.getUser();
   if (!user) redirect("/login");
   return <div className="app-frame">
     <aside className="side-nav">
-      <Link className="wordmark" href="/app">FAB<span>ntasy</span></Link>
+      <Link className="wordmark" href="/app">Canastio</Link>
       <nav aria-label="Secciones de la aplicación">{nav.map(([href, label, icon]) => <Link href={href} key={href}><i aria-hidden="true">{icon}</i>{label}</Link>)}</nav>
       <form action={logout}><button className="logout-button">Cerrar sesión</button></form>
     </aside>

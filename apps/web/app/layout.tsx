@@ -4,12 +4,12 @@ import { ServiceWorkerRegistration } from "./service-worker-registration";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: { default: "FABntasy", template: "%s · FABntasy" },
+  title: { default: "Canastio", template: "%s · Canastio" },
   description: "El fantasy del baloncesto federado andaluz.",
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, title: "FABntasy", statusBarStyle: "black-translucent" },
+  appleWebApp: { capable: true, title: "Canastio", statusBarStyle: "black-translucent" },
 };
-export const viewport: Viewport = { themeColor: "#07130f", colorScheme: "dark" };
+export const viewport: Viewport = { themeColor: "#07130f", colorScheme: "dark", viewportFit: "cover" };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return <html lang="es"><body>{children}<ServiceWorkerRegistration /></body></html>;

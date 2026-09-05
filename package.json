@@ -3,13 +3,14 @@
   "private": true,
   "packageManager": "pnpm@9.15.0",
   "scripts": {
-    "dev": "pnpm --filter @fabntasy/web dev",
-    "typecheck": "pnpm --filter @fabntasy/web typecheck",
-    "lint": "pnpm --filter @fabntasy/web lint",
-    "test": "pnpm --filter @fabntasy/web test",
+    "dev": "corepack pnpm --filter @fabntasy/web dev",
+    "typecheck": "corepack pnpm --filter @fabntasy/web typecheck",
+    "lint": "corepack pnpm --filter @fabntasy/web lint",
+    "test": "corepack pnpm --filter @fabntasy/web test",
     "prisma": "prisma"
   },
   "devDependencies": {
+    "@prisma/client": "^6.0.0",
     "prisma": "^6.0.0"
   }
 }

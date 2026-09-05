@@ -211,3 +211,24 @@ Objetivo no negociable:
 - **edge_cases:** Redirecciones seguras, refresh de sesión, múltiples pestañas y retorno desde enlaces de verificación o recuperación.
 - **ui_states:** Shell responsive con estados de carga, error y offline; navegación privada protegida.
 
+<!-- harness:sprint-8-sports-explorer -->
+## sprint-8-sports-explorer · Sprint 8 - Sports Explorer
+
+
+
+### Scope aprobado
+
+  - `apps/web/**`
+  - `packages/domain/**`
+  - `prisma/**`
+  - `tests/**`
+  - `docs/**`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** Usa exclusivamente el modelo deportivo normalizado existente; los agregados se derivan de player_game_stats y no se persisten como nueva fuente de verdad.
+- **external_contracts:** La API pública propia expone competición, equipos, partidos y jugadores desde PostgreSQL y pagina los listados grandes.
+- **edge_cases:** Contempla partidos sin estadísticas, campos nullable, listados grandes paginados y datos todavía no sincronizados.
+- **ui_states:** Incluye clasificación/calendario, ficha de partido con o sin boxscore, ficha de jugador, búsqueda y filtros básicos.
+

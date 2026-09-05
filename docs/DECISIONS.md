@@ -23,6 +23,22 @@ Decisiones registradas:
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
 
+## 2026-09-05 · Canastio adopta diseño mobile-first
+
+Contexto: la portada y las superficies deportivas deben funcionar primero en teléfonos de 360–430 px; en el viewport iPhone XR el titular, el logo ambiental y el CTA competían por espacio.
+
+Decisión: usar `100svh`, escala tipográfica acotada, gutters de 16–20 px, targets táctiles mínimos de 44 px y safe areas. En tablas se ocultan datos secundarios en móvil; solo el boxscore conserva desplazamiento horizontal. La navegación inferior queda limitada a cinco destinos prioritarios.
+
+Consecuencia: cada sprint con UI debe verificar 320, 360, 390 y 430 px, además de desktop, y no puede aceptar recortes horizontales ni acciones críticas fuera del primer viewport.
+
+## 2026-09-05 · API pública de lectura deportiva
+
+Contexto: Sprint 8 necesita servir datos deportivos sin acoplar la PWA al ingestor ni a Afición FAB.
+
+Decisión: los Server Components y Route Handlers comparten una capa `src/server/sports.ts` basada en Prisma. Las lecturas públicas se cachean durante 60 segundos, los listados usan páginas fijas de 20 elementos y los agregados de jugador se calculan desde `PlayerGameStat`.
+
+Consecuencia: la API nunca consulta FAB ni expone `RawFabPayload`; una ausencia de estadísticas se representa explícitamente y no como ceros inventados.
+
 <!-- harness:sprint-1-fab-client -->
 ## 2026-09-04 · sprint-1-fab-client aprobado
 
@@ -111,5 +127,18 @@ Decisiones registradas:
 - **auth_secrets:** Cookies seguras y validación server-side; service-role key y secretos FAB exclusivamente en servidor.
 - **rollback_compat:** Migración aditiva para el perfil; desactivar auth no altera las tablas deportivas existentes.
 - **tests:** Tests unitarios y de integración para middleware, callbacks, formularios, sesión, protección de rutas y manifest/service worker.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-8-sports-explorer -->
+## 2026-09-05 · sprint-8-sports-explorer aprobado
+
+Contexto: se aprobó el spec `sprint-8-sports-explorer` (Sprint 8 - Sports Explorer).
+
+Decisiones registradas:
+
+- **auth_secrets:** Las lecturas deportivas pasan por la API propia; no se exponen credenciales, payloads RAW ni llamadas directas a Afición FAB.
+- **rollback_compat:** Es una capa de lectura y presentación sobre el esquema existente; cualquier cambio de Prisma debe ser aditivo y reversible.
+- **tests:** E2E cubre calendario, partido con estadísticas, partido sin estadísticas y ficha de jugador; las consultas y agregados se prueban sin red FAB.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

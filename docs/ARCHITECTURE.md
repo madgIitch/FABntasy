@@ -255,3 +255,26 @@ Objetivo no negociable:
 - **edge_cases:** El ruleset v1 queda definido y explícitamente calibrable. Provincial: RawProv = PTS + 0.50×3PM + 0.25×FTM - 0.50×FC; 2PM no se suma porque ya está contenido en PTS. Nacional: RawNac = PTS + 1.20×REB + 1.50×AST + 3.00×STL + 3.00×BLK - 1.50×TO - 0.50×(FGA-FGM) - 0.50×(FTA-FTM) - 0.50×FC. v1 no aplica bonus y permite raw negativos. La población de normalización contiene las actuaciones calculables, no-DNP, de la misma competitionSeason y jornada. Usa media y desviación estándar poblacional: Z=(raw-media)/desviación y FP=clamp(20+10×Z,0,50). Requiere al menos 20 actuaciones y desviación mayor que cero. Los empates de raw reciben el mismo Z y FP. DNP exige minutos=0 y todas las estadísticas presentes=0, produce 0 FP y queda fuera de la población. Se usa Decimal sin redondeos intermedios; raw y FP se redondean al final a una decimal mediante half-up. Los parámetros se conservan dentro de cada versión y toda recalibración crea una versión nueva.
 - **ui_states:** La ficha de jugador y el boxscore muestran los FP normalizados como cifra principal y un desglose expandible con fórmula, términos brutos, población de referencia, posición relativa y transformación final. Identifican competición, temporada y versión; distinguen mediante texto calculado, DNP, pendiente por muestra, datos incompletos, error y recalculado. No convierten ausencias en cero y funcionan desde 320 px sin scroll horizontal involuntario.
 
+<!-- harness:sprint-10-fantasy-team-roster -->
+## sprint-10-fantasy-team-roster · Sprint 10 - Fantasy Team and Roster
+
+
+
+### Scope aprobado
+
+  - `prisma/**`
+  - `packages/domain/**`
+  - `apps/web/src/server/**`
+  - `apps/web/src/app/**`
+  - `apps/web/src/components/**`
+  - `tests/**`
+  - `docs/**`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** Se define una FantasyTeam única por usuario y competitionSeason, una plantilla exacta de 7 jugadores con 5 titulares y 2 suplentes, sin posiciones, un máximo de 2 jugadores por equipo real y unicidad de jugador en plantilla y snapshot. La fuente autoritativa inicial es el ruleset cold-start, que asigna 3000000 créditos a todos los jugadores. El acquisition_price se captura dentro de la transacción que confirma el roster y permanece inmutable. Cuando Sprint 11 active precios dinámicos, se captura el precio vigente persistido y la ausencia de precio se rechaza con 409 PRICE_UNAVAILABLE.
+- **external_contracts:** Se especifican métodos, rutas, queries y requests de los GET y PUT, el envelope fantasy-team-api.v1, expectedVersion, importes enteros en créditos, timestamps ISO 8601 UTC, nullabilidad y códigos de error. Los GET correctos devuelven 200, el PUT de creación inicial 201 y el PUT de reemplazo 200. Cada elemento de roster contiene playerRegistrationId, playerId, displayName, realTeamId, realTeamName, acquisitionPrice y currentMarketPrice; solo currentMarketPrice puede ser null. lineup es null o contiene roundNumber, status, cutoffAt, lockedAt, starters y substitutes; status es DRAFT o LOCKED, lockedAt es null en DRAFT e ISO UTC en LOCKED, y starters y substitutes contienen snapshots con los mismos campos del roster.
+- **edge_cases:** El bloqueo es inclusivo. El instante decisivo es clock_timestamp() de PostgreSQL leído dentro de la transacción, tras bloquear la jornada e inmediatamente antes de persistir, por lo que una petición iniciada antes del cutoff puede ser rechazada si llega a ese punto en o después del cierre. El cutoff se recalcula por reprogramaciones anteriores al cierre, se fija al bloquearse, nunca reabre y su ausencia produce 409 CUTOFF_UNAVAILABLE.
+- **ui_states:** La UI contempla carga, vacío guiado, guardado, éxito, validación, conflicto y alineación bloqueada. Ante VERSION_CONFLICT conserva el borrador hasta que el usuario recarga o reaplica, sin reintento automático. Offline no envía ni encola cambios y conserva solo el borrador local. Con la feature desactivada, los datos históricos permanecen en solo lectura.
+

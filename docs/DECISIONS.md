@@ -163,3 +163,16 @@ Decisiones registradas:
 - **tests:** Los casos dorados v1 quedan decidibles. Provincial: PTS=20, 3PM=2, FTM=4 y FC=3 produce raw=20.5. Nacional: PTS=20, REB=8, AST=5, STL=2, BLK=1, TO=3, FGM=7, FGA=15, FTM=4, FTA=6 y FC=3 produce raw=35.1. Con media=20 y desviación=10, raw=20.5 produce 20.5 FP; con media=25 y desviación=10, raw=35.1 produce 30.1 FP. Z≤-2 produce 0 FP y Z≥3 produce 50 FP. DNP produce 0 FP y no entra en la muestra. Una población de 19 o desviación cero produce PENDING/INSUFFICIENT_NORMALIZATION_SAMPLE con FP null; un null requerido produce NOT_CALCULABLE/MISSING_REQUIRED_STAT con ambos scores null. Las fronteras half-up incluyen 20.04→20.0 y 20.05→20.1. Se cubren además raw negativos, empates, null opcional, ausencia de bonus en v1 y actuaciones equivalentes entre ligas. Tests puros verifican determinismo, orden y serialización canónicos, SHA-256 y breakdown; PostgreSQL verifica constraints, idempotencia, concurrencia, rollback e histórico entre versiones. Los tests no dependen de la red FAB.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-10-fantasy-team-roster -->
+## 2026-09-05 · sprint-10-fantasy-team-roster aprobado
+
+Contexto: se aprobó el spec `sprint-10-fantasy-team-roster` (Sprint 10 - Fantasy Team and Roster).
+
+Decisiones registradas:
+
+- **auth_secrets:** El actor procede exclusivamente de la sesión server-side. Solo el propietario puede modificar y, hasta Sprint 13, leer. La futura lectura compartida dependerá de una política server-side de liga privada. Inexistencia y acceso no autorizado son indistinguibles mediante 404 TEAM_NOT_FOUND. No se introducen secretos nuevos.
+- **rollback_compat:** Las migraciones y contratos son aditivos; roster y snapshots históricos se conservan indefinidamente. Un flag server-side desactiva las mutaciones con 409 FEATURE_DISABLED mientras los GET históricos siguen disponibles con 200 en solo lectura, sin borrar datos ni alterar contratos deportivos, de autenticación o scoring.
+- **tests:** Se requieren pruebas con PostgreSQL real y concurrencia. Se cubren roster de 7, distribución 5+2, ausencia de posiciones, máximo de 2 jugadores por equipo real, presupuesto exacto de 100000000 créditos y exceso por 1, precio cold-start de 3000000, captura inmutable del acquisition_price, PRICE_UNAVAILABLE en modo dinámico, autorización, reprogramaciones, conflictos de versión, snapshots inmutables, contratos de respuesta y la garantía de que ninguna escritura cuyo clock_timestamp() efectivo sea igual o posterior al cutoff confirma.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

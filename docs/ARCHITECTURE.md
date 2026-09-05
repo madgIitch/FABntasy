@@ -167,3 +167,24 @@ Objetivo no negociable:
 - **edge_cases:** Ausencia no equivale a cero; jugadores sin ID estable son provisionales y se separan por fuente/equipo; correcciones posteriores actualizan filas sin borrar auditoría RAW.
 - **ui_states:** Operación CLI; no se añade interfaz web en este sprint.
 
+<!-- harness:sprint-6-ingestion-orchestrator -->
+## sprint-6-ingestion-orchestrator · Sprint 6 - Ingestion Orchestrator
+
+
+
+### Scope aprobado
+
+  - `services/fab_ingestor/**`
+  - `prisma/**`
+  - `infrastructure/**`
+  - `tests/**`
+  - `docs/**`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** `ingestion_runs` registra job, competición, timestamps, estado, contadores JSON no sensibles y `error_code`; no almacena trazas, credenciales ni payloads.
+- **external_contracts:** Reutiliza los clientes y contratos FAB ya validados en Sprints 1–5; el orquestador no introduce endpoints nuevos.
+- **edge_cases:** PostgreSQL advisory locks evitan solapes incluso entre procesos; una terminación libera el lock con la conexión; `stats_final` se salta salvo `--force-stats`.
+- **ui_states:** Sin UI; operación por CLI, logs estructurados y tabla `ingestion_runs`.
+

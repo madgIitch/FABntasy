@@ -427,7 +427,7 @@
     {
       "id": "sprint-6-ingestion-orchestrator",
       "name": "Sprint 6 - Ingestion Orchestrator",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.1.1",
       "dependencies": [
@@ -450,12 +450,14 @@
       ],
       "deliverable": "La temporada activa se mantiene sincronizada automáticamente mediante un único proceso Python.",
       "acceptance": [
-        "AC1: Dos ejecuciones concurrentes del mismo job no procesan en paralelo la misma competición.",
-        "AC2: El scheduler puede ejecutarse cada 1-3 horas en reposo y cada 5-15 minutos en ventanas de jornada mediante configuración.",
-        "AC3: Un fallo de FAB no elimina datos ya persistidos.",
-        "AC4: ingestion_runs registra inicio, fin, estado, contadores y error_code sin credenciales ni payloads sensibles.",
-        "AC5: Solo se solicitan boxscores de partidos elegibles y los ya definitivos pueden saltarse salvo resync explícito.",
-        "AC6: El proceso termina de forma controlada ante SIGTERM y no deja locks permanentes."
+        "AC1: `sync-all` ejecuta schedule y stats para cada CompetitionSeason activa seleccionada, reutiliza los comandos existentes y devuelve un resumen agregado sin datos sensibles.",
+        "AC2: Un PostgreSQL advisory lock por job y CompetitionSeason impide procesamiento solapado; un segundo proceso registra `skipped_locked` y no modifica datos deportivos.",
+        "AC3: `run-scheduler` usa intervalos configurables de 60–180 minutos en reposo y 5–15 minutos en ventanas de jornada, evaluadas en `Europe/Madrid`; `sync-all` permite ejecución one-shot externa.",
+        "AC4: Cada fase crea un `ingestion_run` con inicio, fin, estado, contadores saneados y `error_code`; nunca persiste secretos, payloads FAB ni mensajes de excepción sin redactar.",
+        "AC5: Fallos transitorios usan retries/backoff acotado y circuit breaker configurable; nunca borran datos previamente confirmados y el siguiente ciclo queda reintentable.",
+        "AC6: Stats solo consulta partidos terminados elegibles cuyo estado no sea `stats_final`, salvo resync explícito mediante `--force-stats`.",
+        "AC7: SIGINT/SIGTERM detiene nuevas fases, deja terminar o revierte la fase transaccional activa dentro del timeout configurado y no deja locks persistentes.",
+        "AC8: Tests sin red cubren calendario, DST, locks, retries, circuit breaker, filtrado `stats_final`, redacción y shutdown; integración PostgreSQL prueba exclusión e `ingestion_runs`."
       ],
       "scope": [
         "services/fab_ingestor/**",
@@ -465,7 +467,13 @@
         "docs/**",
         "spec.json"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-09-05T03:38:14.934Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-05T03:39:04.387Z"
     },
     {
       "id": "sprint-7-pwa-auth-shell",

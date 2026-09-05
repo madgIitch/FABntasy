@@ -136,11 +136,17 @@ def sync_game_stats(
 
 
 def sync_competition_stats(
-    client: FabClient, repository: SportsRepository, *, category_competition_id: str
+    client: FabClient,
+    repository: SportsRepository,
+    *,
+    category_competition_id: str,
+    force: bool = False,
 ) -> BoxscoreSyncSummary:
     competition_season_id, _ = repository.resolve_competition_selection(category_competition_id)
     total = BoxscoreSyncSummary(0, 0, 0, 0)
-    for external_game_id in repository.list_eligible_stats_games(competition_season_id):
+    for external_game_id in repository.list_eligible_stats_games(
+        competition_season_id, force=force
+    ):
         try:
             result = sync_game_stats(client, repository, external_game_id=external_game_id)
         except BoxscoreContractError:

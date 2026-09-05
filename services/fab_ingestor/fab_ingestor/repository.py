@@ -170,6 +170,66 @@ class SportsRepository:
             raise ValueError("category is not a selected FAB competition")
         return row[0], row[1]
 
+    def list_selected_competitions(self) -> list[tuple[UUID, str]]:
+        rows = self.connection.execute(
+            """
+            SELECT cs.id, category.external_id
+            FROM competition_seasons cs
+            JOIN external_ids category
+              ON category.entity_id = cs.id
+             AND category.source = 'FAB_CATEGORY_COMPETITION'
+             AND category.entity_type = 'competition_season'
+            WHERE cs.fantasy_role IN ('validation', 'primary')
+            ORDER BY CASE cs.fantasy_role WHEN 'primary' THEN 0 ELSE 1 END, cs.id
+            """
+        ).fetchall()
+        return [(row[0], row[1]) for row in rows]
+
+    @contextmanager
+    def advisory_lock(self, job_name: str, competition_season_id: UUID):
+        lock_key = f"fabntasy:{job_name}:{competition_season_id}"
+        with self.connection.transaction():
+            row = self.connection.execute(
+                "SELECT pg_try_advisory_xact_lock(hashtextextended(%s, 0))", (lock_key,)
+            ).fetchone()
+            acquired = bool(row and row[0])
+            yield acquired
+
+    def start_ingestion_run(self, job_name: str, competition_season_id: UUID | None) -> UUID:
+        run_id = uuid4()
+        self.connection.execute(
+            """
+            INSERT INTO ingestion_runs (id, job_name, competition_season_id, status)
+            VALUES (%s, %s, %s, 'running')
+            """,
+            (run_id, job_name, competition_season_id),
+        )
+        return run_id
+
+    def finish_ingestion_run(
+        self,
+        run_id: UUID,
+        *,
+        status: str,
+        counters: Mapping[str, int] | None = None,
+        error_code: str | None = None,
+    ) -> None:
+        if status not in {"succeeded", "failed", "skipped_locked", "cancelled"}:
+            raise ValueError("invalid ingestion run status")
+        self.connection.execute(
+            """
+            UPDATE ingestion_runs
+            SET finished_at = CURRENT_TIMESTAMP, status = %s, counters = %s::jsonb, error_code = %s
+            WHERE id = %s
+            """,
+            (
+                status,
+                json.dumps(dict(counters), sort_keys=True) if counters is not None else None,
+                error_code,
+                run_id,
+            ),
+        )
+
     def list_competition_groups(self, competition_season_id: UUID) -> list[tuple[UUID, str, str]]:
         rows = self.connection.execute(
             """
@@ -232,7 +292,9 @@ class SportsRepository:
             "has_statistics": row[7],
         }
 
-    def list_eligible_stats_games(self, competition_season_id: UUID) -> list[str]:
+    def list_eligible_stats_games(
+        self, competition_season_id: UUID, *, force: bool = False
+    ) -> list[str]:
         rows = self.connection.execute(
             """
             SELECT ids.external_id
@@ -241,9 +303,10 @@ class SportsRepository:
               ON ids.entity_id = g.id AND ids.source = 'FAB' AND ids.entity_type = 'game'
             WHERE g.competition_season_id = %s AND g.status = 'finished'
               AND g.has_statistics = true AND g.sync_status = 'active'
+              AND (%s OR g.stats_sync_status <> 'stats_final')
             ORDER BY g.scheduled_at, g.id
             """,
-            (competition_season_id,),
+            (competition_season_id, force),
         ).fetchall()
         return [row[0] for row in rows]
 

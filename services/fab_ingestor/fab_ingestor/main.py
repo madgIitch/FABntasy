@@ -1,12 +1,21 @@
 import argparse
 import json
 import os
+from threading import Event
 
 from .auth import FileCredentialStore
 from .boxscore import sync_competition_stats, sync_game_stats
 from .client import Credentials, FabClient
 from .config import Settings
 from .discovery import discover_categories, select_competition, sync_competition_teams
+from .orchestrator import (
+    CircuitBreaker,
+    IngestionOrchestrator,
+    RetryPolicy,
+    Scheduler,
+    install_signal_handlers,
+    parse_journey_windows,
+)
 from .repository import SportsRepository
 from .schedule import sync_competition_games
 
@@ -25,12 +34,15 @@ def main() -> None:
             "sync-competition-games",
             "sync-game-stats",
             "sync-competition-stats",
+            "sync-all",
+            "run-scheduler",
         ),
         default="status",
     )
     parser.add_argument("--query", default="Sevilla")
     parser.add_argument("--category-id")
     parser.add_argument("--game-id")
+    parser.add_argument("--force-stats", action="store_true")
     parser.add_argument("--season", default=os.getenv("FAB_ACTIVE_SEASON", "2026/2027"))
     parser.add_argument("--role", choices=("validation", "primary"), default="validation")
     parser.add_argument(
@@ -41,6 +53,54 @@ def main() -> None:
     args = parser.parse_args()
     settings = Settings.from_env()
     store = FileCredentialStore(settings.credentials_file)
+
+    if args.command in {"sync-all", "run-scheduler"}:
+        if not settings.database_url:
+            raise SystemExit("DATABASE_URL is required to run ingestion")
+        stop_event = Event()
+        install_signal_handlers(stop_event)
+        with SportsRepository.connect(settings.database_url) as repository:
+            orchestrator = IngestionOrchestrator(
+                FabClient(
+                    store,
+                    timeout=settings.request_timeout_seconds,
+                    cancellation_check=stop_event.is_set,
+                ),
+                repository,
+                retry_policy=RetryPolicy(
+                    attempts=settings.retry_attempts,
+                    initial_delay=settings.retry_initial_delay_seconds,
+                    max_delay=settings.retry_max_delay_seconds,
+                ),
+                breaker=CircuitBreaker(
+                    failure_threshold=settings.circuit_failure_threshold,
+                    recovery_seconds=settings.circuit_recovery_seconds,
+                ),
+            )
+            if args.command == "sync-all":
+                summary = orchestrator.sync_all(
+                    force_stats=args.force_stats, stop_event=stop_event
+                )
+                print(
+                    "Ingestion synchronized "
+                    f"(competitions={summary.competitions}, "
+                    f"phases_succeeded={summary.phases_succeeded}, "
+                    f"phases_failed={summary.phases_failed}, "
+                    f"skipped_locked={summary.skipped_locked})"
+                )
+                if summary.phases_failed:
+                    raise SystemExit(1)
+            else:
+                scheduler = Scheduler(
+                    orchestrator,
+                    idle_minutes=settings.scheduler_idle_minutes,
+                    active_minutes=settings.scheduler_active_minutes,
+                    windows=parse_journey_windows(settings.journey_windows),
+                )
+                print("FAB ingestion scheduler started")
+                scheduler.run(stop_event)
+                print("FAB ingestion scheduler stopped")
+        return
 
     if args.command in {"sync-game-stats", "sync-competition-stats"}:
         if not settings.database_url:

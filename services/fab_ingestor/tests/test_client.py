@@ -5,6 +5,7 @@ import pytest
 from fab_ingestor.auth import FileCredentialStore
 from fab_ingestor.client import (
     Credentials,
+    FabCancelledError,
     FabClient,
     FabResponseError,
     FabTransportError,
@@ -134,6 +135,16 @@ def test_timeout_is_retried_then_reported_without_details():
     with pytest.raises(FabTransportError, match="timed out"):
         client.search_match("x")
     assert attempts == 2
+
+
+def test_cancellation_stops_before_transport_call():
+    client = FabClient(
+        MemoryCredentialStore(Credentials("d", "k")),
+        transport=lambda *_: pytest.fail("transport must not run"),
+        cancellation_check=lambda: True,
+    )
+    with pytest.raises(FabCancelledError, match="cancelled"):
+        client.search_match("x")
 
 
 def test_team_phases_uses_confirmed_endpoint_and_fields():

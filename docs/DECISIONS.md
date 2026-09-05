@@ -87,3 +87,16 @@ Decisiones registradas:
 - **tests:** Fixtures anonimizadas y tests cubren mapping, nullability, identidad provisional/estable, correcciones, duplicados, contradicciones y rollback PostgreSQL.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-6-ingestion-orchestrator -->
+## 2026-09-05 · sprint-6-ingestion-orchestrator aprobado
+
+Contexto: se aprobó el spec `sprint-6-ingestion-orchestrator` (Sprint 6 - Ingestion Orchestrator).
+
+Decisiones registradas:
+
+- **auth_secrets:** El worker usa exclusivamente configuración server-side y solo emite códigos de error y contadores saneados.
+- **rollback_compat:** Migración aditiva; jobs transaccionales por fase; advisory locks transaccionales compatibles con el pool de Supabase y cierre controlado ante SIGINT/SIGTERM.
+- **tests:** Reloj y sleeper inyectables; tests sin esperas reales para calendario, locks, retries, circuit breaker y shutdown; PostgreSQL valida exclusión mutua y runs.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

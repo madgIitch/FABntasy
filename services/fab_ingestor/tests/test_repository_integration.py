@@ -227,3 +227,38 @@ def test_boxscore_upsert_is_idempotent_and_corrections_replace_values():
         assert repository.connection.execute(
             "SELECT stats_sync_status FROM games WHERE id = %s", (game_id,)
         ).fetchone() == ("stats_final",)
+        assert external_game_id not in repository.list_eligible_stats_games(
+            competition_season_id
+        )
+        assert external_game_id in repository.list_eligible_stats_games(
+            competition_season_id, force=True
+        )
+
+
+def test_advisory_lock_excludes_second_connection_and_run_is_sanitized():
+    assert DATABASE_URL is not None
+    competition_season_id = __import__("uuid").uuid4()
+    with (
+        SportsRepository.connect(DATABASE_URL) as first,
+        SportsRepository.connect(DATABASE_URL) as second,
+        first.advisory_lock("sync_all", competition_season_id) as first_acquired,
+        second.advisory_lock("sync_all", competition_season_id) as second_acquired,
+    ):
+        assert first_acquired is True
+        assert second_acquired is False
+
+    with (
+        SportsRepository.connect(DATABASE_URL) as repository,
+        repository.connection.transaction(force_rollback=True),
+    ):
+        run_id = repository.start_ingestion_run("integration", None)
+        repository.finish_ingestion_run(
+            run_id,
+            status="failed",
+            counters={"attempts": 3},
+            error_code="FAB_TRANSPORT",
+        )
+        row = repository.connection.execute(
+            "SELECT status, counters, error_code FROM ingestion_runs WHERE id = %s", (run_id,)
+        ).fetchone()
+        assert row == ("failed", {"attempts": 3}, "FAB_TRANSPORT")

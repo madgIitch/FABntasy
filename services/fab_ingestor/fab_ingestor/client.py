@@ -24,6 +24,10 @@ class FabTransportError(FabError):
     pass
 
 
+class FabCancelledError(FabError):
+    pass
+
+
 @dataclass(frozen=True)
 class Credentials:
     device_id: str
@@ -88,6 +92,7 @@ class FabClient:
         min_interval: float = 0.25,
         sleeper: Callable[[float], None] = time.sleep,
         clock: Callable[[], float] = time.monotonic,
+        cancellation_check: Callable[[], bool] = lambda: False,
     ) -> None:
         self._store = credential_store
         self._base_url = base_url.rstrip("/")
@@ -98,6 +103,7 @@ class FabClient:
         self._sleep = sleeper
         self._clock = clock
         self._last_request_at: float | None = None
+        self._cancelled = cancellation_check
 
     def register_device(self) -> Credentials:
         payload = self._post(
@@ -357,6 +363,8 @@ class FabClient:
             request_fields.update(id_dispositivo=credentials.device_id, key=credentials.key)
 
         for attempt in range(self._max_retries + 1):
+            if self._cancelled():
+                raise FabCancelledError("FAB request cancelled")
             self._rate_limit()
             try:
                 status, raw = self._transport(self._base_url + path, request_fields, self._timeout)

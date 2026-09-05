@@ -14,6 +14,7 @@ model UserProfile {
   displayName String?  @map("display_name")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
+  fantasyTeams FantasyTeam[]
 
   @@map("user_profiles")
 }
@@ -73,6 +74,8 @@ model CompetitionSeason {
   ingestionRuns        IngestionRun[]
   fantasyRuleSets      FantasyScoringRuleSet[]
   fantasyRuleSetEvents FantasyRuleSetActivation[]
+  fantasyRosterRuleSets FantasyRosterRuleSet[]
+  fantasyTeams          FantasyTeam[]
   createdAt            DateTime                   @default(now()) @map("created_at")
   updatedAt            DateTime                   @updatedAt @map("updated_at")
 
@@ -166,12 +169,105 @@ model PlayerRegistration {
   teamRegistration    TeamRegistration  @relation(fields: [teamRegistrationId], references: [id], onDelete: Cascade)
   competitionSeason   CompetitionSeason @relation(fields: [competitionSeasonId], references: [id], onDelete: Cascade)
   stats               PlayerGameStat[]
+  fantasyRosterSlots  FantasyRosterSlot[]
+  fantasyLineupSlots  FantasyLineupSlot[]
   createdAt           DateTime          @default(now()) @map("created_at")
   updatedAt           DateTime          @updatedAt @map("updated_at")
 
   @@unique([playerId, teamRegistrationId])
   @@index([competitionSeasonId])
   @@map("player_registrations")
+}
+
+model FantasyRosterRuleSet {
+  id                    String            @id @default(uuid()) @db.Uuid
+  competitionSeasonId   String            @map("competition_season_id") @db.Uuid
+  identifier            String
+  version               String
+  budgetCredits         BigInt            @map("budget_credits")
+  rosterSize            Int               @map("roster_size")
+  starterCount          Int               @map("starter_count")
+  substituteCount       Int               @map("substitute_count")
+  maxPerRealTeam        Int               @map("max_per_real_team")
+  positionLimits        Json              @default("{}") @map("position_limits")
+  coldStartPriceCredits BigInt            @map("cold_start_price_credits")
+  status                String            @default("ACTIVE")
+  competitionSeason     CompetitionSeason @relation(fields: [competitionSeasonId], references: [id], onDelete: Restrict)
+  fantasyTeams          FantasyTeam[]
+  createdAt             DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([competitionSeasonId, identifier, version])
+  @@index([competitionSeasonId, status])
+  @@map("fantasy_roster_rule_sets")
+}
+
+model FantasyTeam {
+  id                    String               @id @default(uuid()) @db.Uuid
+  userProfileId         String               @map("user_profile_id") @db.Uuid
+  competitionSeasonId   String               @map("competition_season_id") @db.Uuid
+  rosterRuleSetId       String               @map("roster_rule_set_id") @db.Uuid
+  version               Int                  @default(1)
+  userProfile           UserProfile          @relation(fields: [userProfileId], references: [id], onDelete: Restrict)
+  competitionSeason     CompetitionSeason    @relation(fields: [competitionSeasonId], references: [id], onDelete: Restrict)
+  rosterRuleSet         FantasyRosterRuleSet @relation(fields: [rosterRuleSetId], references: [id], onDelete: Restrict)
+  rosterSlots           FantasyRosterSlot[]
+  lineups               FantasyLineup[]
+  createdAt             DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime             @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@unique([userProfileId, competitionSeasonId])
+  @@map("fantasy_teams")
+}
+
+model FantasyRosterSlot {
+  id                   String             @id @default(uuid()) @db.Uuid
+  fantasyTeamId        String             @map("fantasy_team_id") @db.Uuid
+  playerRegistrationId String             @map("player_registration_id") @db.Uuid
+  acquisitionPrice     BigInt             @map("acquisition_price")
+  fantasyTeam          FantasyTeam        @relation(fields: [fantasyTeamId], references: [id], onDelete: Cascade)
+  playerRegistration   PlayerRegistration @relation(fields: [playerRegistrationId], references: [id], onDelete: Restrict)
+  createdAt            DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([fantasyTeamId, playerRegistrationId])
+  @@map("fantasy_roster_slots")
+}
+
+model FantasyLineup {
+  id              String              @id @default(uuid()) @db.Uuid
+  fantasyTeamId   String              @map("fantasy_team_id") @db.Uuid
+  roundNumber     Int                 @map("round_number")
+  revision        Int
+  status          String              @default("DRAFT")
+  cutoffAt        DateTime            @map("cutoff_at") @db.Timestamptz(3)
+  lockedAt        DateTime?           @map("locked_at") @db.Timestamptz(3)
+  supersededAt    DateTime?           @map("superseded_at") @db.Timestamptz(3)
+  fantasyTeam     FantasyTeam         @relation(fields: [fantasyTeamId], references: [id], onDelete: Restrict)
+  slots           FantasyLineupSlot[]
+  createdAt       DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([fantasyTeamId, roundNumber, revision])
+  @@index([fantasyTeamId, roundNumber, supersededAt])
+  @@map("fantasy_lineups")
+}
+
+model FantasyLineupSlot {
+  id                   String             @id @default(uuid()) @db.Uuid
+  fantasyLineupId      String             @map("fantasy_lineup_id") @db.Uuid
+  playerRegistrationId String             @map("player_registration_id") @db.Uuid
+  role                 String
+  ordinal              Int
+  playerIdSnapshot     String             @map("player_id_snapshot") @db.Uuid
+  displayNameSnapshot  String             @map("display_name_snapshot")
+  realTeamIdSnapshot   String             @map("real_team_id_snapshot") @db.Uuid
+  realTeamNameSnapshot String             @map("real_team_name_snapshot")
+  acquisitionPrice     BigInt             @map("acquisition_price")
+  marketPriceSnapshot  BigInt?            @map("market_price_snapshot")
+  fantasyLineup        FantasyLineup      @relation(fields: [fantasyLineupId], references: [id], onDelete: Restrict)
+  playerRegistration   PlayerRegistration @relation(fields: [playerRegistrationId], references: [id], onDelete: Restrict)
+
+  @@unique([fantasyLineupId, playerRegistrationId])
+  @@unique([fantasyLineupId, role, ordinal])
+  @@map("fantasy_lineup_slots")
 }
 
 model Game {

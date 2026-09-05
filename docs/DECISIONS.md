@@ -23,6 +23,14 @@ Decisiones registradas:
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
 
+## 2026-09-06 · Revisiones inmutables de alineación y cutoff autoritativo
+
+Contexto: Sprint 10 exige permitir guardados antes del cierre y conservar snapshots aunque cambien plantilla, precios, jugadores o calendario.
+
+Decisión: cada guardado crea una revisión de `fantasy_lineups` con slots snapshot inmutables; la anterior solo se marca como sustituida. La revisión vigente se serializa por equipo y jornada, captura el primer `scheduled_at` persistido como cutoff, exige `source_timezone`, bloquea los partidos y compara inclusivamente con `clock_timestamp()` dentro de una transacción serializable. El primer GET posterior materializa `LOCKED` sin recalcular el cutoff capturado.
+
+Consecuencia: el histórico sobrevive a cambios posteriores, no hay dos revisiones vigentes concurrentes y el reloj cliente nunca decide el cierre.
+
 ## 2026-09-05 · Snapshot y unidad transaccional del scoring fantasy
 
 Contexto: el spec fija determinismo e histórico, pero requiere concretar el límite de recomputación y la representación fuente.

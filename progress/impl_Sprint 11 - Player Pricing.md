@@ -17,8 +17,10 @@
 - `uv run --directory services/fab_ingestor python -m pytest`: 46 OK, 5 omitidos por requerir PostgreSQL de integración
 - `uv run --directory services/fab_ingestor ruff check .`: OK
 - `pnpm exec prisma validate`: OK
+- `pnpm exec prisma migrate deploy`: migración `20260906000200_player_pricing` aplicada en Supabase
+- `pnpm exec prisma migrate status`: esquema actualizado
 - `git diff --check`: OK
 
 ## Pendiente
 
-- Aplicar la migración en un PostgreSQL de desarrollo y ejecutar el smoke humano de La Bolsa Canastio antes de marcar el sprint como `done`.
+- Ejecutar el smoke humano de La Bolsa Canastio antes de marcar el sprint como `done`.

@@ -8,7 +8,7 @@ Feature: **sprint-11-player-pricing · Sprint 11 - Player Pricing** — estado: 
 
 ## Siguiente acción
 
-- Aplicar la migración en PostgreSQL de desarrollo, realizar el smoke humano de `/app/mercado` y cerrar con `node .harness/spec.mjs done sprint-11-player-pricing`.
+- Realizar el smoke humano de `/app/mercado` y cerrar con `node .harness/spec.mjs done sprint-11-player-pricing`.
 
 ## Último resultado
 

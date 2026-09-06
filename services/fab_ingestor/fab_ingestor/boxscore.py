@@ -82,6 +82,7 @@ def sync_game_stats(
     )
     if any(not isinstance(rows, list) or not rows for _, rows, _, _ in sides):
         raise BoxscoreContractError("FAB boxscore is incomplete")
+    _validate_score_totals(game_payload, sides)
 
     stable_ids: set[str] = set()
     seen_registration_ids = set()
@@ -133,6 +134,27 @@ def sync_game_stats(
         repository.delete_game_stats_except(context["game_id"], seen_registration_ids)
         repository.mark_game_stats_final(context["game_id"])
     return BoxscoreSyncSummary(1, created, updated, 0)
+
+
+def _validate_score_totals(game_payload: dict[str, Any], sides: tuple) -> None:
+    """Reject internally inconsistent payloads instead of guessing player stats.
+
+    Copa Delegación has returned complete-looking player rows whose aggregate is
+    exactly twice the authoritative scoreboard. Dividing individual rows is not
+    safe because several counting stats are odd, so the payload remains RAW and
+    retriable until FAB publishes a coherent revision.
+    """
+    expected = (game_payload.get("tanteo_local"), game_payload.get("tanteo_visitante"))
+    for (_, rows, _, _), score in zip(sides, expected, strict=True):
+        if score in (None, ""):
+            continue
+        try:
+            scoreboard = int(score)
+            player_total = sum(int(row.get("puntos") or 0) for row in rows)
+        except (TypeError, ValueError) as error:
+            raise BoxscoreContractError("FAB boxscore score total is invalid") from error
+        if player_total != scoreboard:
+            raise BoxscoreContractError("FAB player points do not match the final score")
 
 
 def sync_competition_stats(

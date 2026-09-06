@@ -123,3 +123,16 @@ def test_player_on_wrong_team_is_rejected():
     with pytest.raises(BoxscoreContractError, match="wrong team"):
         sync_game_stats(Client(payload), repository, external_game_id="opaque-game")
     assert repository.final is False
+
+
+def test_player_totals_must_match_authoritative_scoreboard():
+    payload = json.loads(json.dumps(FIXTURE))
+    payload["partido"]["tanteo_local"] = 6
+    payload["partido"]["tanteo_visitante"] = 4
+    repository = Repository()
+
+    with pytest.raises(BoxscoreContractError, match="do not match"):
+        sync_game_stats(Client(payload), repository, external_game_id="opaque-game")
+    assert len(repository.raw) == 1
+    assert repository.stats == {}
+    assert repository.final is False

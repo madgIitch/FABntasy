@@ -60,6 +60,18 @@ class FailingClient(FakeClient):
         raise ScheduleContractError("partial FAB failure")
 
 
+class EmptyScheduleClient(FakeClient):
+    def get_category_matchdays(self, category, phase, *, group_id, payload_sink):
+        payload = {"resultado": "correcto", "ListaJornadas": []}
+        payload_sink(payload)
+        return []
+
+    def get_category_matches(self, category, phase, *, group_id, payload_sink):
+        payload = {"resultado": "correcto", "partidos": []}
+        payload_sink(payload)
+        return []
+
+
 class FakeRepository:
     def __init__(self, *, existing_game=False):
         self.connection = self
@@ -137,4 +149,14 @@ def test_partial_failure_never_marks_existing_games_stale():
         sync_competition_games(
             FailingClient(), repository, category_competition_id="10468"
         )
+    assert repository.stale_seen is None
+
+
+def test_empty_non_authoritative_schedule_preserves_known_games():
+    repository = FakeRepository(existing_game=True)
+    summary = sync_competition_games(
+        EmptyScheduleClient(), repository, category_competition_id="10468"
+    )
+    assert summary.games == 0
+    assert summary.stale == 0
     assert repository.stale_seen is None

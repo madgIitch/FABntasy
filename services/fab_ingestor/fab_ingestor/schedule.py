@@ -150,7 +150,14 @@ def sync_competition_games(
             else:
                 updated += 1
 
-        stale = repository.mark_missing_games_stale(competition_season_id, seen_internal_ids)
+        # An empty FAB schedule is not an authoritative empty snapshot. The endpoint
+        # occasionally returns resultado=correcto with no matchdays while search still
+        # exposes active games. Preserve known games and retry on the next run.
+        stale = (
+            repository.mark_missing_games_stale(competition_season_id, seen_internal_ids)
+            if matchdays_seen
+            else 0
+        )
 
     return ScheduleSyncSummary(
         groups=len(groups),

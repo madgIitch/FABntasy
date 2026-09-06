@@ -33,6 +33,8 @@ Las firmas de `fasesGrupos`, `Jornadas`, `horariosJornadas` y la respuesta de es
 - Solo son elegibles partidos sincronizados, terminados y con `TipoActa=ESTADÍSTICAS`.
 - Un payload incompleto se conserva saneado como RAW, no publica filas normalizadas y queda reintentable.
 - El contrato se validó inicialmente con un partido ACB terminado del 02/09/2026. La primera acta terminada de Copa Delegación y la primera de 1.ª Provincial son validaciones operativas posteriores y no bloquean el despliegue inicial de la liga provincial.
+- Validación Copa Delegación del 06/09/2026: FAB publicó boxscores completos pero incoherentes, con suma de puntos de jugadores exactamente doble al marcador final (62–182 frente a 31–91) y 400 minutos agregados por equipo. El ingestor debe conservar el RAW, rechazar la normalización y reintentar; nunca divide estadísticas para intentar corregirlas.
+- Una respuesta correcta pero vacía de `Jornadas`/`horariosJornadas` no constituye un snapshot autoritativo y no puede marcar partidos conocidos como `stale`.
 
 ## Límites de Sprint 0
 

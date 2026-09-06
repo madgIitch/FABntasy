@@ -57,7 +57,7 @@ export default async function MyTeamPage() {
   const eligiblePlayers = initialTeam ? [] : await db.playerRegistration.findMany({
     where: { competitionSeasonId: seasonId }, take: 80,
     orderBy: { player: { displayName: "asc" } },
-    select: { id: true, player: { select: { displayName: true } }, teamRegistration: { select: { team: { select: { name: true } } } } },
+    select: { id: true, player: { select: { displayName: true } }, teamRegistration: { select: { team: { select: { name: true } } } }, prices: { orderBy: { updatedAt: "desc" }, take: 1, select: { currentPrice: true } } },
   });
 
   return <FantasyTeamManager
@@ -69,7 +69,8 @@ export default async function MyTeamPage() {
       playerRegistrationId: item.id,
       displayName: item.player.displayName,
       realTeamName: item.teamRegistration.team.name,
-      acquisitionPrice: 3_000_000,
+      acquisitionPrice: item.prices[0] ? Number(item.prices[0].currentPrice) : 3_000_000,
+      currentMarketPrice: item.prices[0] ? Number(item.prices[0].currentPrice) : null,
     }))}
   />;
 }

@@ -4,3 +4,4 @@
 @media(max-width:720px){.summary{gap:.5rem}.summary span{padding-left:.65rem}.court{min-height:29rem;border-radius:1.3rem}.player{width:6.6rem}.player>span{width:2.7rem}.bench{grid-template-columns:1fr;gap:.7rem}.benchPlayers{justify-content:center}.dataView{grid-template-columns:1fr;min-height:29rem;padding-top:.5rem}.dataView header br{display:none}}
 @media(max-width:380px){.court{min-height:27rem}.spot2{left:23%}.spot3{left:77%}.spot4{left:30%}.spot5{left:70%}.player{width:5.8rem}.player strong{font-size:.72rem}.summary strong{font-size:1.15rem}}
 @media(prefers-reduced-motion:reduce){.stage{animation:none}}
+.marketValue{display:grid!important;grid-template-columns:1fr!important;justify-items:end}.marketValue small{color:var(--muted);font-size:.58rem!important;text-transform:uppercase}

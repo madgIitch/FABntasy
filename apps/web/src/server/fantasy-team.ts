@@ -45,12 +45,13 @@ async function activeRules(tx: Prisma.TransactionClient, competitionSeasonId: st
 
 const playerSelect = { playerRegistrationId: true, acquisitionPrice: true, playerRegistration: { select: {
   player: { select: { id: true, displayName: true } }, teamRegistration: { select: { team: { select: { id: true, name: true } } } },
+  prices: { orderBy: { updatedAt: "desc" as const }, take: 1, select: { currentPrice: true } },
 } } } as const;
 
-function rosterDto(slots: readonly { playerRegistrationId: string; acquisitionPrice: bigint; playerRegistration: { player: { id: string; displayName: string }; teamRegistration: { team: { id: string; name: string } } } }[]) {
+function rosterDto(slots: readonly { playerRegistrationId: string; acquisitionPrice: bigint; playerRegistration: { player: { id: string; displayName: string }; teamRegistration: { team: { id: string; name: string } }; prices: { currentPrice: bigint }[] } }[]) {
   return slots.map((slot) => ({ playerRegistrationId: slot.playerRegistrationId, playerId: slot.playerRegistration.player.id,
     displayName: slot.playerRegistration.player.displayName, realTeamId: slot.playerRegistration.teamRegistration.team.id,
-    realTeamName: slot.playerRegistration.teamRegistration.team.name, acquisitionPrice: asNumber(slot.acquisitionPrice), currentMarketPrice: null }));
+    realTeamName: slot.playerRegistration.teamRegistration.team.name, acquisitionPrice: asNumber(slot.acquisitionPrice), currentMarketPrice: slot.playerRegistration.prices[0] ? asNumber(slot.playerRegistration.prices[0].currentPrice) : null }));
 }
 
 async function serializeTeam(client: Client, teamId: string, roundNumber?: number) {
@@ -93,9 +94,16 @@ export async function putRoster(actor: TeamActor, competitionSeasonId: string, i
     return await db.$transaction(async (tx) => {
       const owner = await profileId(tx, actor);
       const rules = await activeRules(tx, competitionSeasonId);
-      const registrations = await tx.playerRegistration.findMany({ where: { id: { in: [...input.playerRegistrationIds] }, competitionSeasonId }, include: { teamRegistration: { select: { teamId: true } } } });
+      const registrations = await tx.playerRegistration.findMany({ where: { id: { in: [...input.playerRegistrationIds] }, competitionSeasonId }, include: {
+        teamRegistration: { select: { teamId: true } }, prices: { orderBy: { updatedAt: "desc" }, take: 1, select: { currentPrice: true } },
+      } });
       if (registrations.length !== new Set(input.playerRegistrationIds).size) fail("ROSTER_INVALID");
-      validateRoster(input.playerRegistrationIds.map((id) => { const registration = registrations.find((x) => x.id === id)!; return { playerRegistrationId: id, realTeamId: registration.teamRegistration.teamId, priceCredits: asNumber(rules.coldStartPriceCredits) }; }), {
+      const dynamicPricingActive = await tx.playerPrice.count({ where: { competitionSeasonId } }) > 0;
+      const acquisitionPrices = new Map(registrations.map((registration) => {
+        if (dynamicPricingActive && !registration.prices[0]) fail("PRICE_UNAVAILABLE");
+        return [registration.id, registration.prices[0]?.currentPrice ?? rules.coldStartPriceCredits] as const;
+      }));
+      validateRoster(input.playerRegistrationIds.map((id) => { const registration = registrations.find((x) => x.id === id)!; return { playerRegistrationId: id, realTeamId: registration.teamRegistration.teamId, priceCredits: asNumber(acquisitionPrices.get(id)!) }; }), {
         identifier: rules.identifier, version: rules.version, budgetCredits: asNumber(rules.budgetCredits), rosterSize: rules.rosterSize,
         starters: rules.starterCount, substitutes: rules.substituteCount, maxPerRealTeam: rules.maxPerRealTeam,
         positionLimits: rules.positionLimits as Record<string, number>, coldStartPriceCredits: asNumber(rules.coldStartPriceCredits),
@@ -108,7 +116,7 @@ export async function putRoster(actor: TeamActor, competitionSeasonId: string, i
         team = await tx.fantasyTeam.update({ where: { id: team.id, version: input.expectedVersion }, data: { version: { increment: 1 }, rosterRuleSetId: rules.id } });
         await tx.fantasyRosterSlot.deleteMany({ where: { fantasyTeamId: team.id } });
       }
-      await tx.fantasyRosterSlot.createMany({ data: input.playerRegistrationIds.map((playerRegistrationId) => ({ fantasyTeamId: team!.id, playerRegistrationId, acquisitionPrice: rules.coldStartPriceCredits })) });
+      await tx.fantasyRosterSlot.createMany({ data: input.playerRegistrationIds.map((playerRegistrationId) => ({ fantasyTeamId: team!.id, playerRegistrationId, acquisitionPrice: acquisitionPrices.get(playerRegistrationId)! })) });
       return { created, team: await serializeTeam(tx, team.id) };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   } catch (error) { mapPrisma(error); }

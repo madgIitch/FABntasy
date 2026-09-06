@@ -10,6 +10,14 @@ una decisión de arquitectura relevante durante implementación.
 
 <!-- Nuevas entradas debajo -->
 
+## 2026-09-06 · Las ligas privadas preceden al mercado entre usuarios
+
+Contexto: los clausulazos solo tienen sentido dentro de un ámbito competitivo compartido y necesitan identificar propietario, comprador, límites y jornada de una liga concreta.
+
+Decisión: intercambiar los antiguos Sprints 12 y 13. El Sprint 12 crea ligas privadas y memberships; el Sprint 13 implementa mercado, transacciones y clausulazos. El Sprint 11 prepara el modelo económico de cláusulas sin ejecutar transferencias entre usuarios.
+
+Consecuencia: rankings dependen del nuevo `sprint-12-private-leagues`; home depende del nuevo `sprint-13-market-transactions`. Los specs de los Sprints 11–13 siguen pendientes de entrevista y aprobación antes de implementar.
+
 <!-- harness:sprint-0-project-foundation -->
 ## 2026-09-04 · sprint-0-project-foundation aprobado
 
@@ -182,5 +190,18 @@ Decisiones registradas:
 - **auth_secrets:** El actor procede exclusivamente de la sesión server-side. Solo el propietario puede modificar y, hasta Sprint 13, leer. La futura lectura compartida dependerá de una política server-side de liga privada. Inexistencia y acceso no autorizado son indistinguibles mediante 404 TEAM_NOT_FOUND. No se introducen secretos nuevos.
 - **rollback_compat:** Las migraciones y contratos son aditivos; roster y snapshots históricos se conservan indefinidamente. Un flag server-side desactiva las mutaciones con 409 FEATURE_DISABLED mientras los GET históricos siguen disponibles con 200 en solo lectura, sin borrar datos ni alterar contratos deportivos, de autenticación o scoring.
 - **tests:** Se requieren pruebas con PostgreSQL real y concurrencia. Se cubren roster de 7, distribución 5+2, ausencia de posiciones, máximo de 2 jugadores por equipo real, presupuesto exacto de 100000000 créditos y exceso por 1, precio cold-start de 3000000, captura inmutable del acquisition_price, PRICE_UNAVAILABLE en modo dinámico, autorización, reprogramaciones, conflictos de versión, snapshots inmutables, contratos de respuesta y la garantía de que ninguna escritura cuyo clock_timestamp() efectivo sea igual o posterior al cutoff confirma.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-11-player-pricing -->
+## 2026-09-06 · sprint-11-player-pricing aprobado
+
+Contexto: se aprobó el spec `sprint-11-player-pricing` (Sprint 11 - Player Pricing).
+
+Decisiones registradas:
+
+- **auth_secrets:** Cálculo exclusivamente server-side sin secretos nuevos.
+- **rollback_compat:** Datos aditivos y fallback cold-start.
+- **tests:** Cobertura pura, PostgreSQL y UI/API.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

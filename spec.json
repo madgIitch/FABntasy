@@ -694,7 +694,7 @@
     {
       "id": "sprint-11-player-pricing",
       "name": "Sprint 11 - Player Pricing",
-      "status": "pending",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.4.0",
       "dependencies": [
@@ -710,6 +710,7 @@
       ],
       "tasks": [
         "Crear player_prices y price_events.",
+        "Crear perfiles e histórico de cláusula por jugador adquirido.",
         "Definir algoritmo inicial de valoración.",
         "Incluir rendimiento reciente y demanda fantasy mediante parámetros configurables.",
         "Definir límites diarios/semanales de variación.",
@@ -718,12 +719,23 @@
       ],
       "deliverable": "Cada jugador elegible tiene un precio reproducible y un histórico de cambios.",
       "acceptance": [
-        "AC1: Toda variación de precio registra precio anterior, nuevo, motivo y versión del algoritmo.",
-        "AC2: El precio nunca es negativo ni supera límites configurados.",
-        "AC3: Una ejecución repetida del mismo periodo no duplica price_events.",
-        "AC4: El algoritmo puede ejecutarse sin modificar puntuaciones fantasy.",
-        "AC5: La UI muestra precio actual y tendencia sin prometer valor monetario real.",
-        "AC6: Tests cubren jugador nuevo, alta/baja demanda, rendimiento extremo y límites."
+        "AC1: Cada playerRegistration elegible comienza con un precio global provisional de 5.000.000 créditos, compartido por todas las ligas privadas, y tiene como máximo un precio vigente por competitionSeason y versión.",
+        "AC2: Cada cálculo registra un PriceEvent inmutable con periodo, inputs, forma, media, rating, percentil, objetivo, precio anterior/nuevo, límites, motivo y versión.",
+        "AC3: La forma pondera las tres últimas actuaciones fantasy definitivas 50/30/20, renormaliza pesos con una o dos, y el rating combina 70% forma con 30% media de temporada.",
+        "AC4: Con al menos 20 jugadores calculables, el objetivo interpola linealmente la curva percentil/precio 0→2 M, 20→3 M, 40→6 M, 60→9 M, 80→14 M, 95→18 M y 100→22 M; empates comparten percentil medio.",
+        "AC5: Con una cohorte menor de 20, el precio permanece provisional en 5 M y se informa INSUFFICIENT_MARKET_SAMPLE.",
+        "AC6: La convergencia usa alpha 0,50 durante las tres primeras jornadas confirmadas y 0,25 después; cada cambio queda limitado a +12% y -10% por jornada.",
+        "AC7: Un partido aplazado o sin partido no cambia el precio. Un DNP no entra como cero y aplica -2%, -3% o -4% según sea el primero, segundo o tercer DNP consecutivo, con suelo de 2 M.",
+        "AC8: Si el producto arranca con jornadas disputadas, reconstruye precios cronológicamente desde 5 M usando las mismas reglas y eventos que una ejecución ordinaria.",
+        "AC9: Los importes se persisten como enteros y el resultado final se redondea half-up al crédito, sin redondeos intermedios.",
+        "AC10: Repetir competitionSeason, roundNumber, algorithmVersion y la misma revisión de inputs no duplica eventos ni cambia el resultado.",
+        "AC11: Una corrección de scores crea una revisión auditable del periodo sin borrar eventos previos ni modificar puntuaciones fantasy; una ejecución fallida no publica parcialmente la cohorte.",
+        "AC12: Compras, ventas, propiedad y demanda no afectan al precio en v1; popularidad y porcentaje de propiedad pueden mostrarse como información separada.",
+        "AC13: La cláusula base es 175% de max(precio pagado, precio vigente), redondeada half-up; el precio pagado sigue siendo el coste histórico de plantilla y la plusvalía es precio vigente menos precio pagado.",
+        "AC14: Sprint 11 no vende, mueve saldo, incrementa cláusulas ni transfiere jugadores; esas operaciones quedan para Sprint 13.",
+        "AC15: La lectura global devuelve precio, estado provisional/confirmado, variación, tendencia, máximo, mínimo, periodo y versión sin secretos ni RAW.",
+        "AC16: La UI muestra La Bolsa Canastio, precio, plusvalía cuando proceda, tendencia e histórico como créditos de juego, con estados legibles desde 320 px y sin presentarlo como dinero o asesoramiento real.",
+        "AC17: Tests cubren cold start, percentiles, empates, muestra insuficiente, ventanas, límites, redondeo, DNP consecutivo, aplazamiento, backfill, idempotencia, concurrencia, revisiones y cláusula base sin red FAB."
       ],
       "scope": [
         "apps/web/**",
@@ -733,68 +745,31 @@
         "docs/**",
         "spec.json"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-09-06T00:56:37.225Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:cd846ae27bad0ea55af32bd5d31e58fc9071af2422b78f1a1e005b45e7bdc944",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-06T00:57:00.697Z"
     },
     {
-      "id": "sprint-12-market-transactions",
-      "name": "Sprint 12 - Market and Transactions",
+      "id": "sprint-12-private-leagues",
+      "name": "Sprint 12 - Private Leagues",
       "status": "pending",
       "sdd": true,
       "milestone": "0.4.1",
-      "dependencies": [
-        "sprint-11-player-pricing"
-      ],
-      "objective": "Implementar compra y venta de jugadores con consistencia de presupuesto y plantilla.",
-      "user_stories": [
-        {
-          "id": "HU12.1",
-          "story": "Como usuario quiero fichar y vender jugadores desde un mercado simple."
-        }
-      ],
-      "tasks": [
-        "Crear market_transactions y ledger de presupuesto.",
-        "Implementar compra directa al precio vigente para el MVP.",
-        "Implementar venta según regla configurable.",
-        "Crear filtros de mercado por posición, precio, equipo y rendimiento.",
-        "Añadir confirmación de transacción.",
-        "Resolver concurrencia sobre saldo y roster."
-      ],
-      "deliverable": "Los usuarios pueden comprar y vender jugadores sin inconsistencias de saldo.",
-      "acceptance": [
-        "AC1: Compra, saldo y roster se actualizan en una única transacción DB.",
-        "AC2: Dos compras concurrentes que excedan presupuesto no pueden dejar saldo negativo.",
-        "AC3: Cada operación conserva el precio aplicado en ese instante.",
-        "AC4: Vender un jugador fuera de la plantilla falla sin modificar saldo.",
-        "AC5: Las operaciones tras cutoff respetan las reglas aprobadas de jornada.",
-        "AC6: La UI muestra confirmación y resultado definitivo del servidor."
-      ],
-      "scope": [
-        "apps/web/**",
-        "packages/domain/**",
-        "prisma/**",
-        "tests/**",
-        "docs/**",
-        "spec.json"
-      ],
-      "spec_approved": false
-    },
-    {
-      "id": "sprint-13-private-leagues",
-      "name": "Sprint 13 - Private Leagues",
-      "status": "pending",
-      "sdd": true,
-      "milestone": "0.5.0",
       "dependencies": [
         "sprint-10-fantasy-team-roster"
       ],
       "objective": "Permitir crear ligas privadas y unirse mediante enlace o código.",
       "user_stories": [
         {
-          "id": "HU13.1",
+          "id": "HU12.1",
           "story": "Como usuario quiero crear una liga para competir con mis amigos o compañeros de equipo."
         },
         {
-          "id": "HU13.2",
+          "id": "HU12.2",
           "story": "Como usuario quiero unirme desde un enlace compartido por WhatsApp."
         }
       ],
@@ -817,6 +792,60 @@
       ],
       "scope": [
         "apps/web/**",
+        "packages/domain/**",
+        "prisma/**",
+        "tests/**",
+        "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-13-market-transactions",
+      "name": "Sprint 13 - Market, Transactions and Release Clauses",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.5.0",
+      "dependencies": [
+        "sprint-11-player-pricing",
+        "sprint-12-private-leagues"
+      ],
+      "objective": "Implementar compra, venta y clausulazos entre miembros de una liga con consistencia de presupuesto y plantilla.",
+      "user_stories": [
+        {
+          "id": "HU13.1",
+          "story": "Como usuario quiero fichar y vender jugadores desde el mercado de mi liga."
+        },
+        {
+          "id": "HU13.2",
+          "story": "Como usuario quiero pagar la cláusula de un jugador rival cuando las reglas de jornada lo permitan."
+        }
+      ],
+      "tasks": [
+        "Crear market_transactions y ledger de presupuesto por liga.",
+        "Implementar compra directa y venta según las reglas configuradas.",
+        "Implementar clausulazo no rechazable con el 100% del importe para el propietario.",
+        "Implementar un blindaje de 24 horas por usuario y jornada.",
+        "Proteger al jugador fichado hasta la siguiente jornada.",
+        "Limitar a un clausulazo realizado y uno recibido por usuario y jornada.",
+        "Cerrar los clausulazos 24 horas antes de la jornada y durante su disputa.",
+        "Crear filtros de mercado, confirmaciones y resolución transaccional de concurrencia."
+      ],
+      "deliverable": "Los miembros de una liga pueden comprar, vender, proteger y clausular jugadores sin inconsistencias de saldo o plantilla.",
+      "acceptance": [
+        "AC1: Compra, venta, clausulazo, saldos y rosters afectados se actualizan en una única transacción DB.",
+        "AC2: Dos operaciones concurrentes no pueden dejar saldo negativo, duplicar un jugador ni superar las restricciones de roster.",
+        "AC3: Cada operación conserva el precio o cláusula aplicado y sus reglas vigentes en ese instante.",
+        "AC4: El clausulazo no puede rechazarse y transfiere el 100% al propietario anterior.",
+        "AC5: Cada usuario puede realizar como máximo un clausulazo y recibir como máximo uno por jornada; al recibirlo, el resto de su plantilla queda protegido hasta la siguiente jornada.",
+        "AC6: Cada usuario puede blindar un jugador por jornada durante 24 horas, sin protección permanente.",
+        "AC7: Un jugador recién fichado queda protegido hasta la siguiente jornada.",
+        "AC8: Los clausulazos cierran 24 horas antes del inicio autoritativo de la jornada y permanecen cerrados durante ella.",
+        "AC9: Vender o clausular un jugador no elegible falla sin modificar ningún saldo, roster, límite o protección.",
+        "AC10: La UI muestra la cláusula, protecciones, cierre, confirmación y resultado definitivo del servidor."
+      ],
+      "scope": [
+        "apps/web/**",
         "prisma/**",
         "tests/**",
         "docs/**",
@@ -833,7 +862,7 @@
       "dependencies": [
         "sprint-9-fantasy-scoring-engine",
         "sprint-10-fantasy-team-roster",
-        "sprint-13-private-leagues"
+        "sprint-12-private-leagues"
       ],
       "objective": "Calcular automáticamente la puntuación de cada equipo fantasy por jornada y construir rankings.",
       "user_stories": [
@@ -876,7 +905,7 @@
       "sdd": true,
       "milestone": "0.6.0",
       "dependencies": [
-        "sprint-12-market-transactions",
+        "sprint-13-market-transactions",
         "sprint-14-round-scoring-rankings"
       ],
       "objective": "Unificar próxima jornada, equipo, mercado, puntos y ligas en una portada útil.",

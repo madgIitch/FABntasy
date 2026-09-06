@@ -278,3 +278,24 @@ Objetivo no negociable:
 - **edge_cases:** El bloqueo es inclusivo. El instante decisivo es clock_timestamp() de PostgreSQL leído dentro de la transacción, tras bloquear la jornada e inmediatamente antes de persistir, por lo que una petición iniciada antes del cutoff puede ser rechazada si llega a ese punto en o después del cierre. El cutoff se recalcula por reprogramaciones anteriores al cierre, se fija al bloquearse, nunca reabre y su ausencia produce 409 CUTOFF_UNAVAILABLE.
 - **ui_states:** La UI contempla carga, vacío guiado, guardado, éxito, validación, conflicto y alineación bloqueada. Ante VERSION_CONFLICT conserva el borrador hasta que el usuario recarga o reaplica, sin reintento automático. Offline no envía ni encola cambios y conserva solo el borrador local. Con la feature desactivada, los datos históricos permanecen en solo lectura.
 
+<!-- harness:sprint-11-player-pricing -->
+## sprint-11-player-pricing · Sprint 11 - Player Pricing
+
+
+
+### Scope aprobado
+
+  - `apps/web/**`
+  - `packages/domain/**`
+  - `prisma/**`
+  - `tests/**`
+  - `docs/**`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** Precio vigente separado de eventos históricos y de la cláusula derivada.
+- **external_contracts:** Job, lectura y función de cláusula definidos.
+- **edge_cases:** Cold start, ventanas, límites, redondeo y correcciones decididos.
+- **ui_states:** Estados y responsive definidos.
+

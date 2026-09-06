@@ -2,6 +2,7 @@
 
 - `ARCHITECTURE.md` — visión general, componentes, flujo de datos.
 - `DECISIONS.md` — registro de decisiones (ADR). El harness añade entradas al tomar decisiones relevantes.
+- `PLAYER_PRICING.md` — contrato del precio global, evolución, DNP, histórico y cláusula base.
 - `CONVENTIONS.md` — convenciones de código, naming, ramas.
 
 El agente lee esta carpeta antes de implementar. `spec.mjs approve` añade contexto mínimo automáticamente

@@ -76,6 +76,8 @@ model CompetitionSeason {
   fantasyRuleSetEvents FantasyRuleSetActivation[]
   fantasyRosterRuleSets FantasyRosterRuleSet[]
   fantasyTeams          FantasyTeam[]
+  playerPrices          PlayerPrice[]
+  playerPriceEvents     PlayerPriceEvent[]
   createdAt            DateTime                   @default(now()) @map("created_at")
   updatedAt            DateTime                   @updatedAt @map("updated_at")
 
@@ -171,6 +173,8 @@ model PlayerRegistration {
   stats               PlayerGameStat[]
   fantasyRosterSlots  FantasyRosterSlot[]
   fantasyLineupSlots  FantasyLineupSlot[]
+  prices              PlayerPrice[]
+  priceEvents         PlayerPriceEvent[]
   createdAt           DateTime          @default(now()) @map("created_at")
   updatedAt           DateTime          @updatedAt @map("updated_at")
 
@@ -230,6 +234,56 @@ model FantasyRosterSlot {
 
   @@unique([fantasyTeamId, playerRegistrationId])
   @@map("fantasy_roster_slots")
+}
+
+model PlayerPrice {
+  id                   String             @id @default(uuid()) @db.Uuid
+  playerRegistrationId String             @map("player_registration_id") @db.Uuid
+  competitionSeasonId  String             @map("competition_season_id") @db.Uuid
+  algorithmVersion     String             @map("algorithm_version")
+  currentPrice         BigInt             @map("current_price")
+  status               String             @default("PROVISIONAL")
+  lastRoundNumber      Int?               @map("last_round_number")
+  allTimeHigh          BigInt             @map("all_time_high")
+  allTimeLow           BigInt             @map("all_time_low")
+  playerRegistration   PlayerRegistration @relation(fields: [playerRegistrationId], references: [id], onDelete: Restrict)
+  competitionSeason    CompetitionSeason  @relation(fields: [competitionSeasonId], references: [id], onDelete: Restrict)
+  events               PlayerPriceEvent[]
+  createdAt            DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@unique([playerRegistrationId, competitionSeasonId, algorithmVersion])
+  @@index([competitionSeasonId, algorithmVersion, currentPrice])
+  @@map("player_prices")
+}
+
+model PlayerPriceEvent {
+  id                   String             @id @default(uuid()) @db.Uuid
+  playerPriceId        String             @map("player_price_id") @db.Uuid
+  playerRegistrationId String             @map("player_registration_id") @db.Uuid
+  competitionSeasonId  String             @map("competition_season_id") @db.Uuid
+  roundNumber          Int                @map("round_number")
+  algorithmVersion     String             @map("algorithm_version")
+  inputRevision        String             @map("input_revision") @db.Char(64)
+  status               String
+  previousPrice        BigInt             @map("previous_price")
+  targetPrice          BigInt?            @map("target_price")
+  newPrice             BigInt             @map("new_price")
+  recentForm           Decimal?           @map("recent_form") @db.Decimal(18, 6)
+  seasonAverage        Decimal?           @map("season_average") @db.Decimal(18, 6)
+  marketRating         Decimal?           @map("market_rating") @db.Decimal(18, 6)
+  percentile           Decimal?           @db.Decimal(9, 6)
+  dnpStreak            Int                @default(0) @map("dnp_streak")
+  inputSnapshot        Json               @map("input_snapshot")
+  playerPrice          PlayerPrice        @relation(fields: [playerPriceId], references: [id], onDelete: Restrict)
+  playerRegistration   PlayerRegistration @relation(fields: [playerRegistrationId], references: [id], onDelete: Restrict)
+  competitionSeason    CompetitionSeason  @relation(fields: [competitionSeasonId], references: [id], onDelete: Restrict)
+  createdAt            DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([playerPriceId, roundNumber, algorithmVersion, inputRevision])
+  @@index([competitionSeasonId, roundNumber, algorithmVersion])
+  @@index([playerRegistrationId, createdAt])
+  @@map("player_price_events")
 }
 
 model FantasyLineup {

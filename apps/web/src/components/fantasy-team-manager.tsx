@@ -52,7 +52,7 @@ export function FantasyTeamManager({ competitionSeasonId, roundNumber, initialTe
   }
 
   if (!team) return <main className={`app-main ${styles.page}`}><Header roundNumber={roundNumber} /><section className={styles.builder}>
-    <div><p className="eyebrow">Plantilla inicial</p><h2>Elige tus siete</h2><p>Máximo dos jugadores del mismo equipo. Cada alta cuesta 3 M.</p></div>
+    <div><p className="eyebrow">Plantilla inicial</p><h2>Elige tus siete</h2><p>Máximo dos jugadores del mismo equipo. El precio vigente se confirma al guardar.</p></div>
     <fieldset className={styles.available}><legend>{rosterDraft.length} de 7 seleccionados</legend>{eligiblePlayers.map((player) => <label key={player.playerRegistrationId}><input type="checkbox" checked={rosterDraft.includes(player.playerRegistrationId)} disabled={!rosterDraft.includes(player.playerRegistrationId) && rosterDraft.length >= 7} onChange={(event) => setRosterDraft((current) => event.target.checked ? [...current, player.playerRegistrationId] : current.filter((id) => id !== player.playerRegistrationId))} /><span><strong>{player.displayName}</strong><small>{player.realTeamName}</small></span><b>{credits.format(player.acquisitionPrice)}</b></label>)}</fieldset>
     <button className={styles.primary} disabled={rosterDraft.length !== 7 || status === "saving"} onClick={() => void createRoster()}>{status === "saving" ? "Creando…" : "Crear equipo"}</button><Feedback status={status} />
   </section></main>;
@@ -79,7 +79,7 @@ function DataView({ view, players, starters, metrics }: { view: Exclude<View, "c
     const recent = metric?.recentPoints ?? [];
     const average = recent.length ? recent.reduce((sum, value) => sum + value, 0) / recent.length : null;
     return <li key={player.playerRegistrationId}><span><i>{starters.includes(player.playerRegistrationId) ? "T" : "S"}</i><strong>{player.displayName}</strong><small>{player.realTeamName}</small></span>
-      {view === "market" && <b>{credits.format(player.currentMarketPrice ?? player.acquisitionPrice)}</b>}
+      {view === "market" && <span className={styles.marketValue}><b>{credits.format(player.currentMarketPrice ?? player.acquisitionPrice)}</b><small>{player.currentMarketPrice == null ? "Precio pagado" : `${player.currentMarketPrice - player.acquisitionPrice >= 0 ? "+" : ""}${credits.format(player.currentMarketPrice - player.acquisitionPrice)} plusvalía`}</small></span>}
       {view === "points" && <b className={metric?.roundPoints == null ? styles.noData : styles.score}>{metric?.roundPoints == null ? "Sin datos" : metric.roundPoints.toFixed(1)}</b>}
       {view === "form" && <div className={styles.formLine}>{recent.length ? <><span>{recent.map((value, index) => <em key={index} style={{ "--level": `${Math.max(12, Math.min(100, value * 2))}%` } as CSSProperties} title={`${value.toFixed(1)} puntos`} />)}</span><b>{average!.toFixed(1)} <small>media</small></b></> : <b className={styles.noData}>Sin partidos</b>}</div>}
     </li>;

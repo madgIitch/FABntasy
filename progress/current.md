@@ -1,6 +1,6 @@
 # Sesión actual
 
-Feature: **sprint-10-fantasy-team-roster · Sprint 10 - Fantasy Team and Roster** — estado: `review_pending`.
+Feature: **sprint-11-player-pricing · Sprint 11 - Player Pricing** — estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,10 +8,10 @@ Feature: **sprint-10-fantasy-team-roster · Sprint 10 - Fantasy Team and Roster*
 
 ## Siguiente acción
 
-- Revisar el diff del commit `feat(Sprint 10 - Fantasy Team and Roster)` y cerrar con `node .harness/spec.mjs done sprint-10-fantasy-team-roster` (o `git revert` para descartarlo).
+- Aplicar la migración en PostgreSQL de desarrollo, realizar el smoke humano de `/app/mercado` y cerrar con `node .harness/spec.mjs done sprint-11-player-pricing`.
 
 ## Último resultado
 
 | intento | resultado | gate fallido | tts(s) | coste |
 |--:|--|--|--:|--:|
-| 1 | OK | — | 729.5 | — |
+| 1 | OK | — | — | — |

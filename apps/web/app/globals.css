@@ -28,3 +28,16 @@
 
 @media(max-width:480px){.hero-logo{right:50%;top:34%;width:min(76vw,19rem);transform:translate(50%,-50%);filter:invert(1);opacity:.2;mix-blend-mode:screen;animation:none}}
 @media(max-width:360px){.hero-logo{right:50%;width:17rem;transform:translate(50%,-50%)}}
+
+/* Keep the mobile shell bound to the visual viewport, even when page content is wider. */
+@media(max-width:720px){
+  html,body{width:100%;max-width:100%;overflow-x:clip}
+  .app-frame,.workspace{width:100%;max-width:100%;min-width:0}
+  .workspace main{max-width:100%;min-width:0;overflow-x:clip}
+  .workspace{padding-bottom:calc(4.25rem + env(safe-area-inset-bottom))}
+  .bottom-nav{position:fixed;inset:auto 0 0 0;width:auto;max-width:100%;min-width:0;grid-template-columns:repeat(5,minmax(0,1fr));overflow:hidden;transform:translateZ(0)}
+  .bottom-nav a{min-width:0;overflow:hidden}
+  .workspace section:has(>div>[aria-label="Competición"]),.workspace section:has(>div>[aria-label="Competición"])>div{min-width:0}
+  .workspace section:has(>div>[aria-label="Competición"])>div{grid-template-columns:minmax(0,1fr)}
+  .workspace section:has(>div>[aria-label="Competición"]) input,.workspace section:has(>div>[aria-label="Competición"]) select,.workspace section:has(>div>[aria-label="Competición"]) button{grid-column:1;width:100%;min-width:0;max-width:100%}
+}

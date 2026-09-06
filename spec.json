@@ -819,7 +819,7 @@
     {
       "id": "sprint-13-market-transactions",
       "name": "Sprint 13 - Market, Transactions and Release Clauses",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.5.0",
       "dependencies": [

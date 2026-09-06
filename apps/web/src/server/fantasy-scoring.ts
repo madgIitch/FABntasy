@@ -4,6 +4,7 @@ import {
   sourceStatsVersion, type CanonicalBoxscoreSnapshot, type FantasyBreakdown, type FantasyRuleSet,
 } from "../../../../packages/domain/fantasy-scoring";
 import { db } from "./db";
+import { recomputeRoundRankings } from "./round-rankings";
 
 export interface FantasyScoreDto {
   status: string;
@@ -70,7 +71,7 @@ export async function retireRuleSet(ruleSetId: string, actor: string, reason: st
 }
 
 export async function recomputeRound(competitionSeasonId: string, roundNumber: number, ruleSetId: string) {
-  return retrySerializable(() => db.$transaction(async (tx) => {
+  const count = await retrySerializable(() => db.$transaction(async (tx) => {
     const storedRuleSet = await tx.fantasyScoringRuleSet.findUniqueOrThrow({ where: { id: ruleSetId } });
     if (storedRuleSet.competitionSeasonId !== competitionSeasonId || !storedRuleSet.publishedAt) throw new Error("INVALID_RULESET");
     const ruleset = storedRuleSet.definition as unknown as FantasyRuleSet;
@@ -88,6 +89,8 @@ export async function recomputeRound(competitionSeasonId: string, roundNumber: n
     })), skipDuplicates: true });
     return rows.length;
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }));
+  if (process.env.FANTASY_ROUND_SCORING_ENABLED !== "false") await recomputeRoundRankings(competitionSeasonId, roundNumber);
+  return count;
 }
 
 export async function getFantasyScores(params: { playerId?: string; gameId?: string; rulesetId?: string; rulesetVersion?: string }): Promise<FantasyScoreDto[]> {

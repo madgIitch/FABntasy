@@ -81,6 +81,8 @@ model CompetitionSeason {
   playerPrices          PlayerPrice[]
   playerPriceEvents     PlayerPriceEvent[]
   fantasyLeagues        FantasyLeague[]
+  fantasyRoundScores    FantasyRoundScore[]
+  fantasyTeamTotals     FantasyTeamTotal[]
   createdAt             DateTime                   @default(now()) @map("created_at")
   updatedAt             DateTime                   @updatedAt @map("updated_at")
 
@@ -228,6 +230,8 @@ model FantasyTeam {
   purchases           MarketTransaction[]        @relation("MarketBuyer")
   sales               MarketTransaction[]        @relation("MarketSeller")
   marketProtections   MarketProtection[]
+  roundScores         FantasyRoundScore[]
+  total               FantasyTeamTotal?
   createdAt           DateTime                   @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt           DateTime                   @updatedAt @map("updated_at") @db.Timestamptz(3)
 
@@ -258,6 +262,8 @@ model FantasyLeague {
   createdAt           DateTime                   @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt           DateTime                   @updatedAt @map("updated_at") @db.Timestamptz(3)
   fantasyRosterSlots  FantasyRosterSlot[]
+  roundScores         FantasyRoundScore[]
+  teamTotals          FantasyTeamTotal[]
 
   @@index([competitionSeasonId, status])
   @@index([ownerProfileId])
@@ -446,6 +452,7 @@ model FantasyLineup {
   supersededAt  DateTime?           @map("superseded_at") @db.Timestamptz(3)
   fantasyTeam   FantasyTeam         @relation(fields: [fantasyTeamId], references: [id], onDelete: Restrict)
   slots         FantasyLineupSlot[]
+  roundScores   FantasyRoundScore[]
   createdAt     DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
 
   @@unique([fantasyTeamId, roundNumber, revision])
@@ -561,6 +568,7 @@ model FantasyScoringRuleSet {
   retiredAt           DateTime?                  @map("retired_at") @db.Timestamptz(3)
   competitionSeason   CompetitionSeason          @relation(fields: [competitionSeasonId], references: [id], onDelete: Restrict)
   scores              FantasyPlayerGameScore[]
+  roundScores         FantasyRoundScore[]
   activationEvents    FantasyRuleSetActivation[]
   createdAt           DateTime                   @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt           DateTime                   @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -568,6 +576,58 @@ model FantasyScoringRuleSet {
   @@unique([competitionSeasonId, calculationType, identifier, version])
   @@index([competitionSeasonId, calculationType, status])
   @@map("fantasy_scoring_rule_sets")
+}
+
+model FantasyRoundScore {
+  id                  String                @id @default(uuid()) @db.Uuid
+  fantasyTeamId       String                @map("fantasy_team_id") @db.Uuid
+  leagueId            String                @map("league_id") @db.Uuid
+  competitionSeasonId String                @map("competition_season_id") @db.Uuid
+  roundNumber         Int                   @map("round_number")
+  revision            Int
+  lineupId            String                @map("lineup_id") @db.Uuid
+  ruleSetId           String                @map("rule_set_id") @db.Uuid
+  inputRevision       String                @map("input_revision") @db.Char(64)
+  status              String
+  points              Decimal?              @db.Decimal(18, 6)
+  breakdown           Json
+  publishedAt         DateTime?             @map("published_at") @db.Timestamptz(3)
+  supersededAt        DateTime?             @map("superseded_at") @db.Timestamptz(3)
+  fantasyTeam         FantasyTeam           @relation(fields: [fantasyTeamId], references: [id], onDelete: Restrict)
+  league              FantasyLeague         @relation(fields: [leagueId], references: [id], onDelete: Restrict)
+  competitionSeason   CompetitionSeason     @relation(fields: [competitionSeasonId], references: [id], onDelete: Restrict)
+  lineup              FantasyLineup         @relation(fields: [lineupId], references: [id], onDelete: Restrict)
+  ruleSet             FantasyScoringRuleSet @relation(fields: [ruleSetId], references: [id], onDelete: Restrict)
+  createdAt           DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([fantasyTeamId, roundNumber, revision])
+  @@unique([fantasyTeamId, roundNumber, inputRevision])
+  @@index([competitionSeasonId, roundNumber, status, supersededAt])
+  @@index([leagueId, roundNumber, status, supersededAt])
+  @@map("fantasy_round_scores")
+}
+
+model FantasyTeamTotal {
+  id                     String            @id @default(uuid()) @db.Uuid
+  fantasyTeamId          String            @unique @map("fantasy_team_id") @db.Uuid
+  leagueId               String            @map("league_id") @db.Uuid
+  competitionSeasonId    String            @map("competition_season_id") @db.Uuid
+  totalPoints            Decimal           @default(0) @map("total_points") @db.Decimal(18, 6)
+  lastRoundNumber        Int?              @map("last_round_number")
+  lastRoundPoints        Decimal           @default(0) @map("last_round_points") @db.Decimal(18, 6)
+  bestRoundPoints        Decimal           @default(0) @map("best_round_points") @db.Decimal(18, 6)
+  globalPosition         Int?              @map("global_position")
+  previousGlobalPosition Int?              @map("previous_global_position")
+  leaguePosition         Int?              @map("league_position")
+  previousLeaguePosition Int?              @map("previous_league_position")
+  fantasyTeam            FantasyTeam       @relation(fields: [fantasyTeamId], references: [id], onDelete: Restrict)
+  league                 FantasyLeague     @relation(fields: [leagueId], references: [id], onDelete: Restrict)
+  competitionSeason      CompetitionSeason @relation(fields: [competitionSeasonId], references: [id], onDelete: Restrict)
+  updatedAt              DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([competitionSeasonId, globalPosition])
+  @@index([leagueId, leaguePosition])
+  @@map("fantasy_team_totals")
 }
 
 model FantasyPlayerGameScore {

@@ -885,7 +885,7 @@
     {
       "id": "sprint-14-round-scoring-rankings",
       "name": "Sprint 14 - Round Scoring and Rankings",
-      "status": "spec_ready",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.5.1",
       "dependencies": [

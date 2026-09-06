@@ -320,3 +320,16 @@ Objetivo no negociable:
 - **edge_cases:** Capacidad, reingreso, owner y concurrencia definidos.
 - **ui_states:** Flujos completos y responsive definidos.
 
+<!-- harness:sprint-13-market-transactions -->
+## sprint-13-market-transactions · Sprint 13 - Market, Transactions and Release Clauses
+
+
+
+### Scope aprobado
+
+  - `apps/web/**`
+  - `prisma/**`
+  - `tests/**`
+  - `docs/**`
+  - `spec.json`
+

@@ -819,7 +819,7 @@
     {
       "id": "sprint-13-market-transactions",
       "name": "Sprint 13 - Market, Transactions and Release Clauses",
-      "status": "pending",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.5.0",
       "dependencies": [
@@ -849,16 +849,23 @@
       ],
       "deliverable": "Los miembros de una liga pueden comprar, vender, proteger y clausular jugadores sin inconsistencias de saldo o plantilla.",
       "acceptance": [
-        "AC1: Compra, venta, clausulazo, saldos y rosters afectados se actualizan en una única transacción DB.",
-        "AC2: Dos operaciones concurrentes no pueden dejar saldo negativo, duplicar un jugador ni superar las restricciones de roster.",
-        "AC3: Cada operación conserva el precio o cláusula aplicado y sus reglas vigentes en ese instante.",
-        "AC4: El clausulazo no puede rechazarse y transfiere el 100% al propietario anterior.",
-        "AC5: Cada usuario puede realizar como máximo un clausulazo y recibir como máximo uno por jornada; al recibirlo, el resto de su plantilla queda protegido hasta la siguiente jornada.",
-        "AC6: Cada usuario puede blindar un jugador por jornada durante 24 horas, sin protección permanente.",
-        "AC7: Un jugador recién fichado queda protegido hasta la siguiente jornada.",
-        "AC8: Los clausulazos cierran 24 horas antes del inicio autoritativo de la jornada y permanecen cerrados durante ella.",
-        "AC9: Vender o clausular un jugador no elegible falla sin modificar ningún saldo, roster, límite o protección.",
-        "AC10: La UI muestra la cláusula, protecciones, cierre, confirmación y resultado definitivo del servidor."
+        "Cada jugador tiene como máximo un propietario activo por liga y una compra de jugador libre usa su valor global vigente.",
+        "El saldo inicial es el presupuesto del ruleset menos los precios de adquisición de la plantilla y todo movimiento posterior queda en un ledger inmutable.",
+        "Comprar, vender o clausular actualiza saldo, propiedad, roster e histórico en una única transacción serializable.",
+        "Dos operaciones concurrentes no pueden producir saldo negativo, doble propiedad, duplicados de roster ni superar sus límites.",
+        "La venta devuelve el valor global vigente, libera al jugador y puede dejar la plantilla incompleta; una alineación incompleta sigue siendo inválida.",
+        "La cláusula es 1,75 × max(precio pagado, valor vigente), más la inversión del propietario actual.",
+        "Cada crédito invertido consume saldo y añade dos créditos de cláusula; la inversión no se reembolsa y se reinicia al cambiar el propietario.",
+        "El clausulazo no puede rechazarse, paga el 100 % al propietario anterior y registra como nuevo precio de adquisición el importe total abonado.",
+        "Cada usuario puede activar un blindaje de 24 horas sobre un jugador propio por jornada.",
+        "Un jugador recién adquirido queda protegido hasta el comienzo de la siguiente jornada y, tras recibir un clausulazo, el resto de la plantilla queda protegido hasta esa jornada.",
+        "Cada usuario puede realizar como máximo un clausulazo y recibir como máximo uno por jornada.",
+        "Los clausulazos cierran 24 horas antes del primer partido autoritativo de la jornada y permanecen cerrados durante ella; las alineaciones ya congeladas no cambian.",
+        "Precio ausente, jugador no elegible, protección, cutoff, límites o conflicto concurrente fallan con código estable sin cambios parciales.",
+        "La API obtiene usuario y liga autorizados server-side y devuelve importes enteros, timestamps UTC y el resultado definitivo de cada operación.",
+        "La UI ofrece búsqueda y filtros, muestra valor, adquisición, plusvalía, cláusula, protección y cierre, y confirma saldo y plantilla resultantes antes de mutar.",
+        "Las compras y la popularidad se muestran solo como información y no alteran el algoritmo global de precios.",
+        "Tests unitarios y de integración cubren reglas económicas, límites temporales, concurrencia, autorización y respuestas de error."
       ],
       "scope": [
         "apps/web/**",
@@ -867,7 +874,13 @@
         "docs/**",
         "spec.json"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-09-06T12:56:52.998Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:7c2f4104477a72f82eb2ea7f5042ca96e2ab9fd9d810358255db5f54ae35b8ed",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-06T12:56:54.053Z"
     },
     {
       "id": "sprint-14-round-scoring-rankings",

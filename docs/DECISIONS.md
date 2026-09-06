@@ -218,3 +218,12 @@ Decisiones registradas:
 - **tests:** Dominio, PostgreSQL y E2E definidos.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-13-market-transactions -->
+## 2026-09-06 · sprint-13-market-transactions aprobado
+
+Contexto: se aprobó el spec `sprint-13-market-transactions` (Sprint 13 - Market, Transactions and Release Clauses).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

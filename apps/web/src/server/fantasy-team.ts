@@ -120,7 +120,7 @@ export async function putRoster(actor: TeamActor, competitionSeasonId: string, i
         team = await tx.fantasyTeam.update({ where: { id: team.id, version: input.expectedVersion }, data: { version: { increment: 1 }, rosterRuleSetId: rules.id } });
         await tx.fantasyRosterSlot.deleteMany({ where: { fantasyTeamId: team.id } });
       }
-      await tx.fantasyRosterSlot.createMany({ data: input.playerRegistrationIds.map((playerRegistrationId) => ({ fantasyTeamId: team!.id, playerRegistrationId, acquisitionPrice: acquisitionPrices.get(playerRegistrationId)! })) });
+      await tx.fantasyRosterSlot.createMany({ data: input.playerRegistrationIds.map((playerRegistrationId) => ({ fantasyTeamId: team!.id, leagueId: team!.leagueId, playerRegistrationId, acquisitionPrice: acquisitionPrices.get(playerRegistrationId)! })) });
       return { created, team: await serializeTeam(tx, team.id) };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   } catch (error) { mapPrisma(error); }

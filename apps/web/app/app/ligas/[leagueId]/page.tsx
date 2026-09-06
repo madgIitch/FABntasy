@@ -1,4 +1,4 @@
-import { LeagueDetailActions } from "../../../../src/components/league-detail";
-import { requireLeagueActor } from "../../../../src/server/private-league-http";
-import { getLeague } from "../../../../src/server/private-leagues";
-export default async function LeaguePage({params}:{params:Promise<{leagueId:string}>}){const actor=await requireLeagueActor();const league=await getLeague(actor,(await params).leagueId);const mine=league.memberships.find(m=>m.userProfile.authUserId===actor.authUserId);return <main className="app-main"><header className="workspace-header"><div><p className="eyebrow">{league.competitionSeason.competition.name}</p><h1>{league.name}</h1></div><span className="live-status"><i/> {league.memberships.length}/{league.memberLimit} miembros</span></header><section className="quick-list"><h2>Miembros</h2>{league.memberships.map(m=><div className="fixture compact" key={m.id}><span>{m.role==="OWNER"?"★":"·"}</span><strong>{m.userProfile.displayName??"Jugador Canastio"}</strong><small>{m.role==="OWNER"?"Propietario":"Miembro"}</small></div>)}</section><LeagueDetailActions leagueId={league.id} isOwner={mine?.role==="OWNER"}/></main>}
+import { redirect } from "next/navigation";
+export default async function LeaguePage({params}:{params:Promise<{leagueId:string}>}){
+  redirect(`/app/ligas?league=${encodeURIComponent((await params).leagueId)}`);
+}

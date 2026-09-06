@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 const sections: Record<string, [string, string]> = {
+  jornada: ["Jornada", "Aquí verás el estado de la jornada, tus puntos y los partidos en juego."],
   "mi-equipo": ["Mi equipo", "Aquí construirás tu plantilla y elegirás el quinteto de cada jornada."],
   mercado: ["Mercado", "Los fichajes se habilitarán cuando estén disponibles jugadores y precios."],
   ligas: ["Ligas", "Pronto podrás crear ligas privadas y competir con tu grupo."],

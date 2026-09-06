@@ -4,7 +4,13 @@ import type { ReactNode } from "react";
 import { logout } from "../auth/actions";
 import { createClient } from "../../src/lib/supabase/server";
 
-const nav = [["/app", "Inicio", "⌂"], ["/app/competicion", "Competición", "◎"], ["/app/jugadores", "Jugadores", "◇"], ["/app/mi-equipo", "Mi equipo", "◫"], ["/app/mercado", "Mercado", "↗"], ["/app/ligas", "Ligas", "◉"], ["/app/perfil", "Perfil", "○"]];
+const nav = [
+  ["/app", "Inicio", "⌂"],
+  ["/app/mercado", "Mercado", "⇅"],
+  ["/app/mi-equipo", "Mi equipo", "◉"],
+  ["/app/jornada", "Jornada", "●"],
+  ["/app/ligas", "Liga", "🏆"],
+];
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const { data: { user } } = await (await createClient()).auth.getUser();
@@ -16,6 +22,6 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       <form action={logout}><button className="logout-button">Cerrar sesión</button></form>
     </aside>
     <div className="workspace">{children}</div>
-    <nav className="bottom-nav" aria-label="Navegación móvil">{nav.slice(0, 5).map(([href, label, icon]) => <Link href={href} key={href}><i aria-hidden="true">{icon}</i><span>{label}</span></Link>)}</nav>
+    <nav className="bottom-nav" aria-label="Navegación móvil">{nav.map(([href, label, icon]) => <Link href={href} key={href}><i aria-hidden="true">{icon}</i><span>{label}</span></Link>)}</nav>
   </div>;
 }

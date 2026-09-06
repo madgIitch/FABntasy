@@ -1,106 +1,74 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import styles from "./fantasy-team-manager.module.css";
 
-type Player = { playerRegistrationId: string; displayName: string; realTeamName: string; acquisitionPrice: number };
-type Team = { version: number; budgetTotal: number; budgetUsed: number; budgetRemaining: number; roster: Player[]; lineup: null | { status: "DRAFT" | "LOCKED"; cutoffAt: string; starters: Player[]; substitutes: Player[] } };
-type ViewState = "loading" | "empty" | "ready" | "saving" | "saved" | "error" | "offline" | "conflict";
+type Player = { playerRegistrationId: string; displayName: string; realTeamName: string; acquisitionPrice: number; currentMarketPrice?: number | null };
+type Team = { version: number; budgetTotal: number; budgetUsed: number; budgetRemaining: number; roster: Player[]; lineup: null | { status: string; cutoffAt: string; starters: Player[]; substitutes: Player[] } };
+type View = "court" | "points" | "market" | "form";
+type Status = "ready" | "saving" | "saved" | "error" | "offline" | "conflict";
 
-const credits = new Intl.NumberFormat("es-ES", { maximumFractionDigits: 0 });
+const views: { id: View; label: string }[] = [{ id: "court", label: "Cancha" }, { id: "points", label: "Puntos" }, { id: "market", label: "Mercado" }, { id: "form", label: "Forma" }];
+const credits = new Intl.NumberFormat("es-ES", { notation: "compact", maximumFractionDigits: 1 });
 
-export function FantasyTeamManager({ competitionSeasonId, roundNumber, initialTeam, eligiblePlayers = [] }: { competitionSeasonId: string; roundNumber: number; initialTeam?: Team | null; eligiblePlayers?: Player[] }) {
-  const [team, setTeam] = useState<Team | null>(initialTeam ?? null);
-  const [state, setState] = useState<ViewState>(initialTeam === undefined ? "loading" : initialTeam ? "ready" : "empty");
-  const [starters, setStarters] = useState<string[]>(initialTeam?.lineup?.starters.map((x) => x.playerRegistrationId) ?? []);
+export function FantasyTeamManager({ competitionSeasonId, roundNumber, initialTeam, eligiblePlayers = [] }: { competitionSeasonId: string; roundNumber: number; initialTeam: Team | null; eligiblePlayers?: Player[] }) {
+  const [team, setTeam] = useState(initialTeam);
+  const [view, setView] = useState<View>("court");
+  const [status, setStatus] = useState<Status>("ready");
+  const initialStarters = initialTeam?.lineup?.starters.map((player) => player.playerRegistrationId) ?? initialTeam?.roster.slice(0, 5).map((player) => player.playerRegistrationId) ?? [];
+  const [starters, setStarters] = useState<string[]>(initialStarters);
   const [rosterDraft, setRosterDraft] = useState<string[]>([]);
-  useEffect(() => {
-    const offline = () => setState("offline");
-    const online = () => setState((current) => current === "offline" ? (team ? "ready" : "empty") : current);
-    window.addEventListener("offline", offline); window.addEventListener("online", online);
-    if (!navigator.onLine) offline();
-    return () => { window.removeEventListener("offline", offline); window.removeEventListener("online", online); };
-  }, [team]);
-  useEffect(() => {
-    if (initialTeam !== undefined) return;
-    const controller = new AbortController();
-    fetch(`/api/fantasy/team/lineups/${roundNumber}?competitionSeasonId=${encodeURIComponent(competitionSeasonId)}`, { signal: controller.signal })
-      .then(async (response) => ({ response, body: await response.json() }))
-      .then(({ response, body }) => {
-        if (response.status === 404) { setState("empty"); return; }
-        if (!response.ok) { setState("error"); return; }
-        setTeam(body.data); setStarters(body.data.lineup?.starters.map((x: Player) => x.playerRegistrationId) ?? []); setState("ready");
-      })
-      .catch((error) => { if (error instanceof Error && error.name !== "AbortError") setState(navigator.onLine ? "error" : "offline"); });
-    return () => controller.abort();
-  }, [competitionSeasonId, initialTeam, roundNumber]);
-  const substitutes = useMemo(() => team?.roster.filter((x) => !starters.includes(x.playerRegistrationId)) ?? [], [team, starters]);
+  const substitutes = useMemo(() => team?.roster.filter((player) => !starters.includes(player.playerRegistrationId)) ?? [], [starters, team]);
+  const locked = team?.lineup?.status === "LOCKED";
 
-  async function saveLineup(roundNumber: number) {
-    if (!team || !navigator.onLine) { setState("offline"); return; }
-    setState("saving");
-    try {
-      const response = await fetch(`/api/fantasy/team/lineups/${roundNumber}`, { method: "PUT", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ competitionSeasonId, starterPlayerRegistrationIds: starters, substitutePlayerRegistrationIds: substitutes.map((x) => x.playerRegistrationId), expectedVersion: team.version }) });
-      const body = await response.json();
-      if (body.error?.code === "VERSION_CONFLICT") { setState("conflict"); return; }
-      if (!response.ok) { setState("error"); return; }
-      setTeam(body.data); setState("saved");
-    } catch { setState("offline"); }
+  function toggleStarter(id: string) {
+    if (locked) return;
+    setStarters((current) => current.includes(id) ? current.filter((item) => item !== id) : current.length < 5 ? [...current, id] : current);
+    setStatus("ready");
   }
 
-  async function saveRoster() {
-    if (!navigator.onLine) { setState("offline"); return; }
-    setState("saving");
+  async function saveLineup() {
+    if (!team || !navigator.onLine) { setStatus("offline"); return; }
+    setStatus("saving");
+    try {
+      const response = await fetch(`/api/fantasy/team/lineups/${roundNumber}`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ competitionSeasonId, starterPlayerRegistrationIds: starters, substitutePlayerRegistrationIds: substitutes.map((player) => player.playerRegistrationId), expectedVersion: team.version }) });
+      const body = await response.json();
+      if (body.error?.code === "VERSION_CONFLICT") { setStatus("conflict"); return; }
+      if (!response.ok) { setStatus("error"); return; }
+      setTeam(body.data); setStatus("saved");
+    } catch { setStatus("offline"); }
+  }
+
+  async function createRoster() {
+    if (!navigator.onLine) { setStatus("offline"); return; }
+    setStatus("saving");
     try {
       const response = await fetch("/api/fantasy/team", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ competitionSeasonId, expectedVersion: null, playerRegistrationIds: rosterDraft }) });
       const body = await response.json();
-      if (!response.ok) { setState(body.error?.code === "VERSION_CONFLICT" ? "conflict" : "error"); return; }
-      setTeam(body.data); setState("saved");
-    } catch { setState("offline"); }
+      if (!response.ok) { setStatus("error"); return; }
+      setTeam(body.data); setStarters(body.data.roster.slice(0, 5).map((player: Player) => player.playerRegistrationId)); setStatus("saved");
+    } catch { setStatus("offline"); }
   }
 
-  if (state === "loading") return <section className={styles.panel} aria-live="polite"><h1>Mi equipo</h1><p>Cargando plantilla…</p></section>;
-  if (!team && ["empty", "saving", "error", "offline", "conflict"].includes(state)) return <section className={styles.panel} aria-busy={state === "saving"}>
-    <h1>Mi equipo</h1><h2>Tu plantilla está vacía</h2><p>Elige siete jugadores para empezar: cinco titulares y dos suplentes.</p>
-    {state === "offline" && <p className={styles.notice} role="status">Sin conexión. Conservamos tu selección y no enviaremos cambios.</p>}
-    {state === "error" && <p className={styles.notice} role="alert">La plantilla no es válida o no se pudo guardar.</p>}
-    <fieldset className={styles.picker}><legend>Jugadores disponibles · {rosterDraft.length} de 7</legend>{eligiblePlayers.map((player) => <label key={player.playerRegistrationId}>
-      <input type="checkbox" checked={rosterDraft.includes(player.playerRegistrationId)} disabled={!rosterDraft.includes(player.playerRegistrationId) && rosterDraft.length >= 7}
-        onChange={(event) => setRosterDraft((current) => event.target.checked ? [...current, player.playerRegistrationId] : current.filter((id) => id !== player.playerRegistrationId))} /> {player.displayName} · {player.realTeamName}
-    </label>)}</fieldset>
-    <button disabled={rosterDraft.length !== 7 || state === "saving" || state === "offline"} onClick={() => void saveRoster()}>{state === "saving" ? "Guardando…" : "Crear plantilla"}</button>
-  </section>;
-  if (!team) return <section className={styles.panel}><h1>Mi equipo</h1><p>No se pudo mostrar la plantilla.</p></section>;
-  const locked = team.lineup?.status === "LOCKED";
-  return <section className={styles.panel} aria-busy={state === "saving"}>
-    <header><p className={styles.eyebrow}>Plantilla fantasy</p><h1>Mi equipo</h1></header>
-    <div className={styles.budget} aria-label="Resumen de presupuesto">
-      <span><small>Presupuesto total</small>{credits.format(team.budgetTotal)} créditos</span>
-      <span><small>Usado</small>{credits.format(team.budgetUsed)} créditos</span>
-      <span><small>Restante</small>{credits.format(team.budgetRemaining)} créditos</span>
-    </div>
-    {state === "offline" && <p className={styles.notice} role="status">Sin conexión. Tu borrador se conserva en este dispositivo y no se enviará todavía.</p>}
-    {state === "conflict" && <p className={styles.notice} role="alert">La plantilla cambió en otro lugar. Tu borrador sigue aquí: recarga o vuelve a aplicarlo.</p>}
-    {state === "error" && <p className={styles.notice} role="alert">No se pudo guardar. Revisa la alineación e inténtalo de nuevo.</p>}
-    {state === "saved" && <p className={styles.success} role="status">Alineación guardada.</p>}
-    {locked && <p className={styles.locked}><strong>Alineación congelada</strong><br />Solo lectura desde {new Date(team.lineup!.cutoffAt).toLocaleString("es-ES")}.</p>}
-    <div className={styles.columns}>
-      <RosterGroup title="Titulares" hint="Puntúan esta jornada" players={team.roster.filter((x) => starters.includes(x.playerRegistrationId))} />
-      <RosterGroup title="Banquillo" hint="Suplentes" players={substitutes} />
-    </div>
-    <button disabled={locked || state === "saving" || state === "offline" || starters.length !== 5} onClick={() => void saveLineup(roundNumber)}>
-      {state === "saving" ? "Guardando…" : locked ? "Alineación congelada" : "Guardar alineación"}
-    </button>
-    {!locked && <fieldset className={styles.picker}><legend>Elegir cinco titulares</legend>{team.roster.map((player) => <label key={player.playerRegistrationId}>
-      <input type="checkbox" checked={starters.includes(player.playerRegistrationId)} disabled={!starters.includes(player.playerRegistrationId) && starters.length >= 5}
-        onChange={(event) => setStarters((current) => event.target.checked ? [...current, player.playerRegistrationId] : current.filter((id) => id !== player.playerRegistrationId))} /> {player.displayName}
-    </label>)}</fieldset>}
-  </section>;
+  if (!team) return <main className={`app-main ${styles.page}`}><Header roundNumber={roundNumber} /><section className={styles.builder}>
+    <div><p className="eyebrow">Plantilla inicial</p><h2>Elige tus siete</h2><p>Máximo dos jugadores del mismo equipo. Cada alta cuesta 3 M.</p></div>
+    <fieldset className={styles.available}><legend>{rosterDraft.length} de 7 seleccionados</legend>{eligiblePlayers.map((player) => <label key={player.playerRegistrationId}><input type="checkbox" checked={rosterDraft.includes(player.playerRegistrationId)} disabled={!rosterDraft.includes(player.playerRegistrationId) && rosterDraft.length >= 7} onChange={(event) => setRosterDraft((current) => event.target.checked ? [...current, player.playerRegistrationId] : current.filter((id) => id !== player.playerRegistrationId))} /><span><strong>{player.displayName}</strong><small>{player.realTeamName}</small></span><b>{credits.format(player.acquisitionPrice)}</b></label>)}</fieldset>
+    <button className={styles.primary} disabled={rosterDraft.length !== 7 || status === "saving"} onClick={() => void createRoster()}>{status === "saving" ? "Creando…" : "Crear equipo"}</button><Feedback status={status} />
+  </section></main>;
+
+  const startersList = team.roster.filter((player) => starters.includes(player.playerRegistrationId));
+  return <main className={`app-main ${styles.page}`}><Header roundNumber={roundNumber} />
+    <nav className={styles.views} aria-label="Vista del equipo">{views.map((item) => <button key={item.id} className={view === item.id ? styles.active : ""} onClick={() => setView(item.id)}>{item.label}</button>)}</nav>
+    <section className={styles.summary} aria-label="Presupuesto"><span><small>Valor de compra</small><strong>{credits.format(team.budgetUsed)}</strong></span><span><small>Disponible</small><strong>{credits.format(team.budgetRemaining)}</strong></span><span><small>Plantilla</small><strong>{team.roster.length}/7</strong></span></section>
+    {locked && <p className={styles.locked}>Alineación cerrada · snapshot de la jornada {roundNumber}</p>}
+    <div className={styles.stage} key={view}>{view === "court" ? <Court players={startersList} selected={starters} locked={locked} onToggle={toggleStarter} /> : <DataView view={view} players={team.roster} starters={starters} />}</div>
+    <section className={styles.bench}><div><p className="eyebrow">Rotación</p><h2>Banquillo</h2></div><div className={styles.benchPlayers}>{substitutes.map((player) => <PlayerButton key={player.playerRegistrationId} player={player} active={false} locked={locked} onClick={() => toggleStarter(player.playerRegistrationId)} />)}</div></section>
+    <Feedback status={status} /><button className={styles.primary} disabled={locked || starters.length !== 5 || status === "saving"} onClick={() => void saveLineup()}>{status === "saving" ? "Guardando…" : locked ? "Jornada cerrada" : "Guardar quinteto"}</button>
+  </main>;
 }
 
-function RosterGroup({ title, hint, players }: { title: string; hint: string; players: Player[] }) {
-  return <section className={styles.group}><h2>{title}</h2><p>{hint} · {players.length} jugadores</p><ol>{players.map((player) => <li key={player.playerRegistrationId}>
-    <span><strong>{player.displayName}</strong><small>{player.realTeamName}</small></span><span>{credits.format(player.acquisitionPrice)}</span>
-  </li>)}</ol></section>;
-}
+function Header({ roundNumber }: { roundNumber: number }) { return <header className={`workspace-header ${styles.header}`}><div><p className="eyebrow">Jornada {String(roundNumber).padStart(2, "0")}</p><h1>Mi equipo</h1></div><span className="live-status"><i /> Plantilla activa</span></header>; }
+function Court({ players, selected, locked, onToggle }: { players: Player[]; selected: string[]; locked: boolean; onToggle: (id: string) => void }) { return <section className={styles.court} aria-label="Quinteto titular"><div className={styles.centerCircle} />{players.map((player, index) => <div className={`${styles.courtPlayer} ${styles[`spot${index + 1}`]}`} key={player.playerRegistrationId}><PlayerButton player={player} active={selected.includes(player.playerRegistrationId)} locked={locked} onClick={() => onToggle(player.playerRegistrationId)} /></div>)}</section>; }
+function PlayerButton({ player, active, locked, onClick }: { player: Player; active: boolean; locked: boolean; onClick: () => void }) { return <button className={styles.player} data-active={active} disabled={locked} onClick={onClick}><span>{player.displayName.split(" ").map((part) => part[0]).join("").slice(0, 2)}</span><strong>{player.displayName}</strong><small>{player.realTeamName}</small></button>; }
+function DataView({ view, players, starters }: { view: Exclude<View, "court">; players: Player[]; starters: string[] }) { const label = view === "points" ? "Puntos de jornada" : view === "market" ? "Valor de mercado" : "Estado reciente"; return <section className={styles.dataView}><header><p className="eyebrow">{label}</p><h2>Los mismos jugadores.<br />Otra lectura.</h2></header><ol>{players.map((player) => <li key={player.playerRegistrationId}><span><i>{starters.includes(player.playerRegistrationId) ? "T" : "S"}</i><strong>{player.displayName}</strong><small>{player.realTeamName}</small></span><b>{view === "market" ? credits.format(player.currentMarketPrice ?? player.acquisitionPrice) : "—"}</b></li>)}</ol></section>; }
+function Feedback({ status }: { status: Status }) { if (status === "ready") return null; const copy = { saving: "Guardando cambios…", saved: "Quinteto guardado.", error: "No se pudo guardar. Revisa la jornada y vuelve a intentarlo.", offline: "Sin conexión. El borrador sigue en este dispositivo.", conflict: "El equipo cambió en otra sesión. Conservamos tu selección para que puedas revisarla." }[status]; return <p className={styles.feedback} role={status === "error" || status === "conflict" ? "alert" : "status"}>{copy}</p>; }

@@ -635,7 +635,7 @@
     {
       "id": "sprint-10-fantasy-team-roster",
       "name": "Sprint 10 - Fantasy Team and Roster",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.3.1",
       "dependencies": [

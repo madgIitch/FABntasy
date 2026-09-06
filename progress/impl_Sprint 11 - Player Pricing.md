@@ -7,6 +7,7 @@
 - Persistencia aditiva `player_prices`/`player_price_events`, revisiones por hash, transacción serializable y advisory lock.
 - Backfill cronológico, API `player-price-api.v1` y captura del precio vigente en nuevas adquisiciones.
 - Vista `/app/mercado` y plusvalía en Mi equipo.
+- El mercado renderiza todas las inscripciones desde el cold start de 5 M aunque todavía no existan filas en `player_prices`, e incorpora búsqueda y filtros por equipo, precio, media FP y tendencia.
 - Cláusula base pura al 175%; sin transferencias ni saldo antes del Sprint 13.
 
 ## Verificación

@@ -9,7 +9,7 @@ const nav = [
   ["/app/mercado", "Mercado", "⇅"],
   ["/app/mi-equipo", "Mi equipo", "◉"],
   ["/app/jornada", "Jornada", "●"],
-  ["/app/ligas", "Liga", "🏆"],
+  ["/app/ligas", "Liga", "◆"],
 ];
 
 export default async function AppLayout({ children }: { children: ReactNode }) {

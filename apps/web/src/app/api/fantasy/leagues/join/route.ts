@@ -1,4 +1,4 @@
-import { LeagueServiceError } from "../../../../../server/private-leagues";
 import { leagueError, leagueOk, requireLeagueActor } from "../../../../../server/private-league-http";
-import { joinLeague } from "../../../../../server/private-leagues";
-export async function POST(request: Request) { const { token } = await request.json(); try { return leagueOk(await joinLeague(await requireLeagueActor(), token)); } catch (e) { const response=leagueError(e); if(e instanceof LeagueServiceError&&e.code==="AUTH_REQUIRED"&&typeof token==="string") response.cookies.set("league_invite_intent",token,{httpOnly:true,sameSite:"lax",secure:process.env.NODE_ENV==="production",path:"/",maxAge:86400}); return response; } }
+import { joinLeague,LeagueServiceError } from "../../../../../server/private-leagues";
+const attempts=new Map<string,{count:number;resetAt:number}>();
+export async function POST(request: Request) {let key="";try {const actor=await requireLeagueActor();key=actor.authUserId;const now=Date.now();const current=attempts.get(key);if(current&&current.resetAt>now&&current.count>=5)throw new LeagueServiceError("RATE_LIMITED",429);const result=await joinLeague(actor,await request.json());attempts.delete(key);return leagueOk(result)} catch (e) {if(key&&e instanceof LeagueServiceError&&e.code==="INVALID_CREDENTIALS"){const current=attempts.get(key);attempts.set(key,{count:current&&current.resetAt>Date.now()?current.count+1:1,resetAt:Date.now()+15*60*1000})}return leagueError(e); } }

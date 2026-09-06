@@ -1,5 +1,6 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { COLD_START_RULES, FantasyTeamRuleError, isCutoffClosed, validateLineup, validateRoster } from "../../../../packages/domain/fantasy-team";
+import { createLeagueCode } from "../../../../packages/domain/private-league";
 import { db } from "./db";
 
 type Client = PrismaClient | Prisma.TransactionClient;
@@ -111,7 +112,7 @@ export async function putRoster(actor: TeamActor, competitionSeasonId: string, i
       let team = await tx.fantasyTeam.findFirst({ where: { userProfileId: owner, competitionSeasonId, league: { status: "ACTIVE" } }, orderBy: { updatedAt: "desc" } });
       const created = !team;
       if (!team) {
-        const league = await tx.fantasyLeague.create({ data: { ownerProfileId: owner, competitionSeasonId, name: "Liga personal", memberLimit: 20 } });
+        const league = await tx.fantasyLeague.create({ data: { ownerProfileId: owner, competitionSeasonId, name: "Liga personal", memberLimit: 20, leagueCode: createLeagueCode() } });
         await tx.leagueMembership.create({ data: { leagueId: league.id, userProfileId: owner, role: "OWNER" } });
         team = await tx.fantasyTeam.create({ data: { userProfileId: owner, competitionSeasonId, rosterRuleSetId: rules.id, leagueId: league.id } });
       }

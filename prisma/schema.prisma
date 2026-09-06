@@ -241,6 +241,8 @@ model FantasyLeague {
   competitionSeasonId String                     @map("competition_season_id") @db.Uuid
   ownerProfileId      String                     @map("owner_profile_id") @db.Uuid
   name                String
+  leagueCode          String                     @unique @map("league_code") @db.VarChar(12)
+  passwordHash        String?                    @map("password_hash") @db.VarChar(255)
   status              String                     @default("ACTIVE")
   memberLimit         Int                        @default(20) @map("member_limit")
   version             Int                        @default(1)

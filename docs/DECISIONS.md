@@ -205,3 +205,16 @@ Decisiones registradas:
 - **tests:** Cobertura pura, PostgreSQL y UI/API.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-12-private-leagues -->
+## 2026-09-06 · sprint-12-private-leagues aprobado
+
+Contexto: se aprobó el spec `sprint-12-private-leagues` (Sprint 12 - Private Leagues).
+
+Decisiones registradas:
+
+- **auth_secrets:** Actor server-side y tokens hasheados.
+- **rollback_compat:** Equipos existentes migran a ligas personales.
+- **tests:** Dominio, PostgreSQL y E2E definidos.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

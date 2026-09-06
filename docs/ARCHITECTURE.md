@@ -299,3 +299,24 @@ Objetivo no negociable:
 - **edge_cases:** Cold start, ventanas, límites, redondeo y correcciones decididos.
 - **ui_states:** Estados y responsive definidos.
 
+<!-- harness:sprint-12-private-leagues -->
+## sprint-12-private-leagues · Sprint 12 - Private Leagues
+
+
+
+### Scope aprobado
+
+  - `apps/web/**`
+  - `packages/domain/**`
+  - `prisma/**`
+  - `tests/**`
+  - `docs/**`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** Liga, membership, invitación y equipo por liga decididos.
+- **external_contracts:** Rutas, versión y expectedVersion definidos.
+- **edge_cases:** Capacidad, reingreso, owner y concurrencia definidos.
+- **ui_states:** Flujos completos y responsive definidos.
+

@@ -15,6 +15,8 @@ model UserProfile {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
   fantasyTeams FantasyTeam[]
+  ownedFantasyLeagues FantasyLeague[] @relation("FantasyLeagueOwner")
+  leagueMemberships LeagueMembership[]
 
   @@map("user_profiles")
 }
@@ -78,6 +80,7 @@ model CompetitionSeason {
   fantasyTeams          FantasyTeam[]
   playerPrices          PlayerPrice[]
   playerPriceEvents     PlayerPriceEvent[]
+  fantasyLeagues        FantasyLeague[]
   createdAt            DateTime                   @default(now()) @map("created_at")
   updatedAt            DateTime                   @updatedAt @map("updated_at")
 
@@ -210,17 +213,72 @@ model FantasyTeam {
   userProfileId         String               @map("user_profile_id") @db.Uuid
   competitionSeasonId   String               @map("competition_season_id") @db.Uuid
   rosterRuleSetId       String               @map("roster_rule_set_id") @db.Uuid
+  leagueId              String               @map("league_id") @db.Uuid
   version               Int                  @default(1)
   userProfile           UserProfile          @relation(fields: [userProfileId], references: [id], onDelete: Restrict)
   competitionSeason     CompetitionSeason    @relation(fields: [competitionSeasonId], references: [id], onDelete: Restrict)
   rosterRuleSet         FantasyRosterRuleSet @relation(fields: [rosterRuleSetId], references: [id], onDelete: Restrict)
+  league                FantasyLeague        @relation(fields: [leagueId], references: [id], onDelete: Restrict)
   rosterSlots           FantasyRosterSlot[]
   lineups               FantasyLineup[]
   createdAt             DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt             DateTime             @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  @@unique([userProfileId, competitionSeasonId])
+  @@unique([userProfileId, leagueId])
+  @@index([competitionSeasonId])
   @@map("fantasy_teams")
+}
+
+model FantasyLeague {
+  id                  String             @id @default(uuid()) @db.Uuid
+  competitionSeasonId String             @map("competition_season_id") @db.Uuid
+  ownerProfileId      String             @map("owner_profile_id") @db.Uuid
+  name                String
+  status              String             @default("ACTIVE")
+  memberLimit         Int                @default(20) @map("member_limit")
+  version             Int                @default(1)
+  legacyTeamId        String?            @unique @map("legacy_team_id") @db.Uuid
+  competitionSeason   CompetitionSeason  @relation(fields: [competitionSeasonId], references: [id], onDelete: Restrict)
+  ownerProfile        UserProfile        @relation("FantasyLeagueOwner", fields: [ownerProfileId], references: [id], onDelete: Restrict)
+  memberships         LeagueMembership[]
+  invites             LeagueInvite[]
+  fantasyTeams        FantasyTeam[]
+  createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([competitionSeasonId, status])
+  @@index([ownerProfileId])
+  @@map("fantasy_leagues")
+}
+
+model LeagueMembership {
+  id            String        @id @default(uuid()) @db.Uuid
+  leagueId      String        @map("league_id") @db.Uuid
+  userProfileId String        @map("user_profile_id") @db.Uuid
+  role          String        @default("MEMBER")
+  status        String        @default("ACTIVE")
+  league        FantasyLeague @relation(fields: [leagueId], references: [id], onDelete: Restrict)
+  userProfile   UserProfile   @relation(fields: [userProfileId], references: [id], onDelete: Restrict)
+  joinedAt      DateTime      @default(now()) @map("joined_at") @db.Timestamptz(3)
+  leftAt        DateTime?     @map("left_at") @db.Timestamptz(3)
+
+  @@unique([leagueId, userProfileId])
+  @@index([userProfileId, status])
+  @@map("league_memberships")
+}
+
+model LeagueInvite {
+  id          String        @id @default(uuid()) @db.Uuid
+  leagueId    String        @map("league_id") @db.Uuid
+  tokenHash   String        @unique @map("token_hash") @db.Char(64)
+  status      String        @default("ACTIVE")
+  expiresAt   DateTime      @map("expires_at") @db.Timestamptz(3)
+  revokedAt   DateTime?     @map("revoked_at") @db.Timestamptz(3)
+  league      FantasyLeague @relation(fields: [leagueId], references: [id], onDelete: Restrict)
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([leagueId, status])
+  @@map("league_invites")
 }
 
 model FantasyRosterSlot {

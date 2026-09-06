@@ -1,6 +1,6 @@
 # Sesión actual
 
-Feature: **sprint-11-player-pricing · Sprint 11 - Player Pricing** — estado: `review_pending`.
+Feature: **sprint-12-private-leagues · Sprint 12 - Private Leagues** — estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-11-player-pricing · Sprint 11 - Player Pricing** — estado: 
 
 ## Siguiente acción
 
-- Realizar el smoke humano de `/app/mercado` y cerrar con `node .harness/spec.mjs done sprint-11-player-pricing`.
+- Realizar el smoke humano de crear, compartir y unirse a una liga; cerrar con `node .harness/spec.mjs done sprint-12-private-leagues`.
 
 ## Último resultado
 

@@ -72,7 +72,7 @@ async function serializeTeam(client: Client, teamId: string, roundNumber?: numbe
 
 export async function getFantasyTeam(actor: TeamActor, competitionSeasonId: string, roundNumber?: number) {
   const owner = await profileId(db, actor);
-  const team = await db.fantasyTeam.findUnique({ where: { userProfileId_competitionSeasonId: { userProfileId: owner, competitionSeasonId } }, select: { id: true } });
+  const team = await db.fantasyTeam.findFirst({ where: { userProfileId: owner, competitionSeasonId, league: { status: "ACTIVE" } }, orderBy: { updatedAt: "desc" }, select: { id: true } });
   if (!team) fail("TEAM_NOT_FOUND", 404);
   if (roundNumber !== undefined) await lockExpiredLineup(team.id, roundNumber);
   return serializeTeam(db, team.id, roundNumber);
@@ -108,9 +108,13 @@ export async function putRoster(actor: TeamActor, competitionSeasonId: string, i
         starters: rules.starterCount, substitutes: rules.substituteCount, maxPerRealTeam: rules.maxPerRealTeam,
         positionLimits: rules.positionLimits as Record<string, number>, coldStartPriceCredits: asNumber(rules.coldStartPriceCredits),
       });
-      let team = await tx.fantasyTeam.findUnique({ where: { userProfileId_competitionSeasonId: { userProfileId: owner, competitionSeasonId } } });
+      let team = await tx.fantasyTeam.findFirst({ where: { userProfileId: owner, competitionSeasonId, league: { status: "ACTIVE" } }, orderBy: { updatedAt: "desc" } });
       const created = !team;
-      if (!team) team = await tx.fantasyTeam.create({ data: { userProfileId: owner, competitionSeasonId, rosterRuleSetId: rules.id } });
+      if (!team) {
+        const league = await tx.fantasyLeague.create({ data: { ownerProfileId: owner, competitionSeasonId, name: "Liga personal", memberLimit: 20 } });
+        await tx.leagueMembership.create({ data: { leagueId: league.id, userProfileId: owner, role: "OWNER" } });
+        team = await tx.fantasyTeam.create({ data: { userProfileId: owner, competitionSeasonId, rosterRuleSetId: rules.id, leagueId: league.id } });
+      }
       else {
         if (input.expectedVersion === undefined || input.expectedVersion !== team.version) fail("VERSION_CONFLICT");
         team = await tx.fantasyTeam.update({ where: { id: team.id, version: input.expectedVersion }, data: { version: { increment: 1 }, rosterRuleSetId: rules.id } });
@@ -128,7 +132,7 @@ export async function putLineup(actor: TeamActor, competitionSeasonId: string, r
   try {
     return await db.$transaction(async (tx) => {
       const owner = await profileId(tx, actor);
-      const team = await tx.fantasyTeam.findUnique({ where: { userProfileId_competitionSeasonId: { userProfileId: owner, competitionSeasonId } }, include: { rosterRuleSet: true, rosterSlots: { select: playerSelect } } });
+      const team = await tx.fantasyTeam.findFirst({ where: { userProfileId: owner, competitionSeasonId, league: { status: "ACTIVE" } }, orderBy: { updatedAt: "desc" }, include: { rosterRuleSet: true, rosterSlots: { select: playerSelect } } });
       if (!team) fail("TEAM_NOT_FOUND", 404);
       if (team.version !== input.expectedVersion) fail("VERSION_CONFLICT");
       validateLineup(input.starterPlayerRegistrationIds, input.substitutePlayerRegistrationIds, team.rosterSlots.map((x) => x.playerRegistrationId), {

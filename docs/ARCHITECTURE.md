@@ -333,3 +333,24 @@ Objetivo no negociable:
   - `docs/**`
   - `spec.json`
 
+<!-- harness:sprint-14-round-scoring-rankings -->
+## sprint-14-round-scoring-rankings · Sprint 14 - Round Scoring and Rankings
+
+
+
+### Scope aprobado
+
+  - `apps/web/**`
+  - `packages/domain/**`
+  - `prisma/**`
+  - `tests/**`
+  - `docs/**`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** Se persisten resultados por equipo, liga, jornada, revisión e inputs versionados; los totales se derivan de jornadas publicadas y conservan trazabilidad.
+- **external_contracts:** API versionada para historial, detalle de jornada y rankings global y privado, con revisión, estado, timestamps UTC y paginación estable.
+- **edge_cases:** Se cubren DNP a cero, titulares sin score calculable, jornadas aplazadas, equipos creados tarde, empates completos, reintentos y recomputaciones.
+- **ui_states:** La UI muestra jornada, acumulado, posición, variación, desglose de cinco titulares y estados vacío, provisional, recalculando, error y offline.
+

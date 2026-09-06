@@ -885,7 +885,7 @@
     {
       "id": "sprint-14-round-scoring-rankings",
       "name": "Sprint 14 - Round Scoring and Rankings",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.5.1",
       "dependencies": [
@@ -910,12 +910,23 @@
       ],
       "deliverable": "Cada jornada cerrada produce puntuaciones y rankings consistentes.",
       "acceptance": [
-        "AC1: El cálculo usa exclusivamente el snapshot de alineación congelado.",
-        "AC2: Reejecutar una jornada con los mismos inputs no duplica ni altera el resultado.",
-        "AC3: Una corrección de boxscore puede disparar recomputación versionada y auditable.",
-        "AC4: Los desempates siguen una regla publicada y determinista.",
-        "AC5: Ranking global y privado derivan de las mismas puntuaciones base.",
-        "AC6: La UI muestra puntos de jornada, acumulado y variación de puesto."
+        "Cada resultado de equipo usa exclusivamente los cinco titulares del snapshot de alineación `LOCKED` de esa liga y jornada; los dos suplentes nunca puntúan ni sustituyen automáticamente.",
+        "Un titular con score `DNP` o que no disputa el partido aporta exactamente 0; un score pendiente, no calculable o erróneo mantiene provisional el resultado de equipo y no se trata silenciosamente como cero.",
+        "El snapshot usado conserva los cinco jugadores, revisión de alineación, cutoff y versiones de scores y ruleset, de modo que el resultado es reproducible y auditable.",
+        "Una jornada solo se publica cuando todos sus partidos autoritativos han terminado y los scores necesarios de los titulares están en estado terminal calculable o DNP; aplazamientos mantienen la jornada provisional.",
+        "Ejecutar de nuevo el cálculo con el mismo conjunto de inputs y versión es idempotente: no crea duplicados, no cambia puntos ni altera posiciones.",
+        "Una corrección de boxscore o una nueva versión del ruleset crea una recomputación con revisión incremental, conserva el resultado anterior para auditoría y publica atómicamente la nueva revisión.",
+        "Los totales acumulados se derivan únicamente de la última revisión publicada de cada jornada y nunca cuentan dos revisiones de una misma jornada.",
+        "El ranking global incluye equipos fantasy elegibles de la `competitionSeason`; el ranking privado incluye solo membresías activas de la liga y ambos derivan de los mismos resultados base publicados.",
+        "Los equipos creados después de una jornada no reciben snapshot ni puntuación retroactiva para esa jornada y comienzan con cero acumulado hasta su primera jornada elegible.",
+        "El orden se determina por puntos acumulados descendentes, puntos de la última jornada computada descendentes, mejor puntuación individual de jornada descendente, fecha de creación del equipo ascendente e identificador estable ascendente.",
+        "La posición y su variación se calculan contra la jornada publicada anterior dentro del mismo ámbito; cuando no existe comparación, la variación es `null`.",
+        "La API `fantasy-round-ranking-api.v1` expone historial, detalle de jornada, total, posición, variación, revisión y desglose de los cinco titulares; usa enteros o decimales serializados de forma canónica, timestamps UTC y paginación determinista.",
+        "Los rankings privados requieren membresía activa y responden igual para liga inexistente y acceso no autorizado; la clasificación global no expone email ni otros datos privados.",
+        "El cálculo y la publicación son transaccionales y seguros frente a workers concurrentes; un fallo no deja mezcladas revisiones, totales o posiciones.",
+        "Un feature flag server-side impide nuevas recomputaciones con `FEATURE_DISABLED` y mantiene disponibles en solo lectura los resultados publicados.",
+        "La UI muestra puntos de jornada, acumulado, posición, variación y desglose de titulares, y cubre carga, vacío, provisional, recalculando, error y offline sin scroll horizontal desde 320 px.",
+        "Tests unitarios, de integración PostgreSQL y E2E verifican cinco titulares, suplentes excluidos, DNP a cero, pendientes, aplazamientos, idempotencia, recomputación, acumulados, permisos, concurrencia y todos los desempates."
       ],
       "scope": [
         "apps/web/**",
@@ -925,7 +936,13 @@
         "docs/**",
         "spec.json"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-09-06T21:00:05.817Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:9a85d7beabea321aae2d0a2530cfc8ab996e62bef3db7b15e13bb7d4743de23d",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-06T21:00:05.931Z"
     },
     {
       "id": "sprint-15-home-dashboard",

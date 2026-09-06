@@ -227,3 +227,16 @@ Contexto: se aprobó el spec `sprint-13-market-transactions` (Sprint 13 - Market
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-14-round-scoring-rankings -->
+## 2026-09-06 · sprint-14-round-scoring-rankings aprobado
+
+Contexto: se aprobó el spec `sprint-14-round-scoring-rankings` (Sprint 14 - Round Scoring and Rankings).
+
+Decisiones registradas:
+
+- **auth_secrets:** La identidad y pertenencia a liga se resuelven server-side; los rankings privados solo son visibles para miembros y no aceptan userId como actor.
+- **rollback_compat:** Migración aditiva y feature flag server-side; desactivar mutaciones conserva lecturas de resultados ya publicados.
+- **tests:** Dominio, PostgreSQL, contratos API y E2E cubren cálculo, idempotencia, recomputación, permisos, desempates y estados de UI.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

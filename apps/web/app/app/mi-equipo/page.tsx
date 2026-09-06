@@ -33,6 +33,27 @@ export default async function MyTeamPage() {
     if (!(error instanceof FantasyTeamServiceError) || error.code !== "TEAM_NOT_FOUND") throw error;
   }
 
+  const playerMetrics: Record<string, { roundPoints: number | null; recentPoints: number[] }> = {};
+  if (initialTeam) {
+    const scores = await db.fantasyPlayerGameScore.findMany({
+      where: {
+        playerId: { in: initialTeam.roster.map((player) => player.playerId) },
+        game: { competitionSeasonId: seasonId },
+        normalizedFantasyPoints: { not: null },
+      },
+      orderBy: { game: { scheduledAt: "desc" } },
+      select: { playerId: true, normalizedFantasyPoints: true, game: { select: { roundNumber: true } } },
+    });
+    for (const player of initialTeam.roster) {
+      const playerScores = scores.filter((score) => score.playerId === player.playerId);
+      const roundScores = playerScores.filter((score) => score.game.roundNumber === roundNumber);
+      playerMetrics[player.playerRegistrationId] = {
+        roundPoints: roundScores.length ? roundScores.reduce((sum, score) => sum + Number(score.normalizedFantasyPoints), 0) : null,
+        recentPoints: playerScores.slice(0, 5).map((score) => Number(score.normalizedFantasyPoints)),
+      };
+    }
+  }
+
   const eligiblePlayers = initialTeam ? [] : await db.playerRegistration.findMany({
     where: { competitionSeasonId: seasonId }, take: 80,
     orderBy: { player: { displayName: "asc" } },
@@ -43,6 +64,7 @@ export default async function MyTeamPage() {
     competitionSeasonId={seasonId}
     roundNumber={roundNumber}
     initialTeam={initialTeam}
+    playerMetrics={playerMetrics}
     eligiblePlayers={eligiblePlayers.map((item) => ({
       playerRegistrationId: item.id,
       displayName: item.player.displayName,

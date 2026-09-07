@@ -393,3 +393,23 @@ Objetivo no negociable:
 - **edge_cases:** Cubre usuario sin equipo o liga, plantilla incompleta, cutoff vencido, jornada en directo, resultado pendiente, partido aplazado, ausencia de movimientos y ausencia de actividad.
 - **ui_states:** Especifica jerarquía, navegación directa, estados temporales, responsive y accesibilidad conforme a la referencia.
 
+<!-- harness:sprint-14c-user-profile-account -->
+## sprint-14c-user-profile-account · Sprint 14c - User Profile and Account
+
+
+
+### Scope aprobado
+
+  - `apps/web/**`
+  - `prisma/**`
+  - `tests/**`
+  - `docs/**`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** Amplía `UserProfile` con username normalizado y avatar opcional; conserva `displayName`, la identidad externa de Supabase y todas las relaciones fantasy existentes.
+- **external_contracts:** Usa Supabase Auth para correo/sesión, Supabase Storage para avatar y servicios internos autorizados para perfil, métricas y ligas.
+- **edge_cases:** Define fallback de avatar, registro atómico, alta retrocompatible para usuarios existentes, concurrencia de username, métricas pendientes y separación entre múltiples identidades de equipo.
+- **ui_states:** Define avatar persistente, perfil, edición, cuenta básica, listado de ligas, confirmación de logout, responsive, teclado y estados vacíos/error.
+

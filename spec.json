@@ -997,6 +997,74 @@
       "approved_at": "2026-09-07T02:15:39.328Z"
     },
     {
+      "id": "sprint-14c-user-profile-account",
+      "name": "Sprint 14c - User Profile and Account",
+      "title": "Sprint 14c - User Profile and Account",
+      "status": "review_pending",
+      "sdd": true,
+      "milestone": "0.5.3",
+      "dependencies": [
+        "sprint-12-private-leagues",
+        "sprint-14-round-scoring-rankings"
+      ],
+      "objective": "Dar al usuario una identidad global y un espacio de cuenta claro sin convertir el perfil en una sexta sección principal del juego.",
+      "user_stories": [
+        {
+          "id": "HU14C.1",
+          "story": "Como usuario quiero reconocer y editar mi identidad de Canastio desde un perfil accesible en cualquier pantalla autenticada."
+        },
+        {
+          "id": "HU14C.2",
+          "story": "Como usuario quiero consultar un resumen real de mi actividad y acceder a mis ligas sin confundir mi cuenta global con la identidad de cada equipo fantasy."
+        },
+        {
+          "id": "HU14C.3",
+          "story": "Como usuario quiero cerrar sesión de forma deliberada y recibir una explicación antes de abandonar mi cuenta."
+        }
+      ],
+      "tasks": [
+        "Añadir un avatar de cuenta persistente en la cabecera autenticada con enlace accesible a /app/perfil.",
+        "Ampliar UserProfile con username único, nombre visible y avatar opcional, manteniendo el correo en Supabase Auth.",
+        "Añadir username obligatorio al formulario y a la operación server-side de registro.",
+        "Crear la vista de perfil con identidad, resumen fantasy derivado y lista de ligas autorizadas.",
+        "Crear edición de perfil con validación, normalización, conflictos de username y subida segura de avatar.",
+        "Separar explícitamente la identidad global del usuario del nombre y escudo del equipo dentro de cada liga.",
+        "Añadir una sección compacta de cuenta con correo, estado de verificación y acceso a recuperación/cambio de contraseña.",
+        "Confirmar el cierre de sesión en un diálogo accesible y devolver al login tras invalidar la sesión.",
+        "Cubrir estados sin perfil, sin ligas, sin avatar, carga, error, conflicto y sesión caducada."
+      ],
+      "deliverable": "Cada usuario dispone de un perfil global editable y accesible desde el avatar, con resumen real, acceso a sus ligas y controles básicos de cuenta.",
+      "acceptance": [
+        "La navegación móvil conserva exactamente los cinco destinos principales Inicio, Mercado, Mi equipo, Jornada y Liga; Perfil no se añade como sexta pestaña y se abre desde un avatar accesible situado en la cabecera autenticada.",
+        "La ruta /app/perfil resuelve la identidad exclusivamente desde la sesión de Supabase y nunca acepta un user_id del cliente para leer o modificar otro perfil.",
+        "El perfil distingue tres conceptos: username global único y estable para encontrar o invitar al usuario, nombre visible global opcional y nombre/escudo de equipo propios de cada liga; editar el perfil no renombra equipos ni ligas.",
+        "El username se normaliza a minúsculas, admite entre 3 y 24 caracteres alfanuméricos o guion bajo, se almacena sin @, se compara sin distinguir mayúsculas y muestra un error específico si ya está ocupado.",
+        "Crear cuenta exige correo, username y contraseña. El registro valida el username en servidor con las mismas reglas del perfil y su reserva es atómica con la creación de Auth y UserProfile: dos altas concurrentes no pueden compartirlo y un conflicto no deja una cuenta Auth huérfana; el formulario conserva correo y username y muestra un error accionable sin conservar la contraseña.",
+        "El avatar es opcional; cuando no existe se muestra un fallback determinista y accesible. Las imágenes aceptadas se validan por tipo y tamaño tanto en cliente como en servidor, se guardan en almacenamiento deliberadamente configurado y al reemplazarlas no quedan objetos huérfanos.",
+        "La cabecera del perfil muestra avatar, @username, nombre visible cuando exista y una acción Editar perfil; nunca utiliza el correo como nombre público ni expone el correo en superficies de liga.",
+        "El resumen fantasy solo muestra métricas calculables con datos persistidos y define su alcance: número de ligas activas, puntos totales publicados agregados por equipos del usuario y posiciones o victorias únicamente cuando exista una regla inequívoca; valores ausentes se muestran como pendientes o se omiten, nunca como cero inventado.",
+        "Mis ligas lista únicamente membresías activas del usuario con nombre de liga, nombre de su equipo y número real de miembros; cada fila abre la liga correspondiente y las acciones crear/unirse reutilizan los flujos existentes.",
+        "La sección Cuenta muestra el correo de la sesión y su estado real de verificación, ofrece acceso al flujo seguro de cambio o recuperación de contraseña y no renderiza contraseñas simuladas ni secretos en HTML, logs o respuestas.",
+        "Cerrar sesión aparece como una acción aislada y no destructiva; antes de ejecutarse muestra un diálogo con Cancelar y Cerrar sesión, gestiona foco y Escape, invalida la sesión y redirige a /login.",
+        "Notificaciones detalladas, sesiones activas, autenticación en dos pasos, preferencias de privacidad, exportación y eliminación de cuenta se presentan solo como destinos futuros cuando exista funcionalidad real; no se crean interruptores o estados ficticios en 14C.",
+        "La pantalla usa secciones y separadores con jerarquía clara, no una cuadrícula de tarjetas equivalentes; funciona sin scroll horizontal desde 320 px, respeta safe areas, objetivos táctiles de 44 px, teclado y prefers-reduced-motion.",
+        "Las mutaciones validan sesión, longitud y formato, devuelven estados accionables para conflicto, archivo inválido, error de almacenamiento y sesión caducada, y no pierden los valores válidos del formulario tras un error recuperable.",
+        "La migración de perfiles es retrocompatible: no fabrica usernames públicos a partir del correo; los usuarios existentes sin username deben completar uno antes de usar flujos sociales o mutaciones fantasy, sin perder acceso a su cuenta ni relaciones existentes, y el rollback no elimina identidades o avatares de otros usuarios.",
+        "Tests de esquema, servicio, componentes y E2E cubren registro con username, autorización, unicidad concurrente, cuenta Auth no huérfana, edición, fallback y reemplazo de avatar, perfil heredado incompleto, métricas sin datos, listado de ligas, cierre de sesión, navegación de cinco pestañas y viewport de 320 px."
+      ],
+      "scope": [
+        "apps/web/**",
+        "prisma/**",
+        "tests/**",
+        "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": true,
+      "answers_hash": "sha256:edd3fd63aaf2cf3a469745dd02ffd23e53cb59dd1e4fee0706f9e59e93093e80",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-07T15:05:42.963Z"
+    },
+    {
       "id": "sprint-15-home-dashboard",
       "name": "Sprint 15 - Home Dashboard",
       "status": "spec_ready",
@@ -1004,7 +1072,8 @@
       "milestone": "0.6.0",
       "dependencies": [
         "sprint-13-market-transactions",
-        "sprint-14b-live-round-experience"
+        "sprint-14b-live-round-experience",
+        "sprint-14c-user-profile-account"
       ],
       "objective": "Unificar próxima jornada, equipo, mercado, puntos y ligas en una portada útil.",
       "user_stories": [
@@ -1061,7 +1130,8 @@
       "milestone": "0.6.1",
       "dependencies": [
         "sprint-7-pwa-auth-shell",
-        "sprint-15-home-dashboard"
+        "sprint-15-home-dashboard",
+        "sprint-14c-user-profile-account"
       ],
       "objective": "Hacer que FABntasy se comporte como una aplicación instalable y pueda avisar de eventos importantes.",
       "user_stories": [
@@ -1077,7 +1147,7 @@
       "tasks": [
         "Completar installability y assets PWA.",
         "Implementar Web Push opt-in.",
-        "Crear preferencias de notificación.",
+        "Crear preferencias de notificación separadas por intención: mercado, mi equipo, liga y jornada.",
         "Notificar cutoff próximo y jornada calculada.",
         "Añadir gestión de subscriptions y expiración.",
         "Probar iOS, Android y desktop compatibles."
@@ -1089,7 +1159,11 @@
         "AC3: Las subscriptions se asocian al usuario y pueden revocarse.",
         "AC4: Una jornada recalculada no genera spam duplicado.",
         "AC5: La app sigue funcionando completa cuando Push no está soportado.",
-        "AC6: El service worker no cachea respuestas privadas de mutación."
+        "AC6: El service worker no cachea respuestas privadas de mutación.",
+        "AC7: Las preferencias se organizan por Mercado (cambios importantes de precio, ofertas recibidas, pujas superadas y jugador vendido), Mi equipo (lesión, proximidad del bloqueo y recordatorio de alineación), Liga (clausulazos, actividad importante y mensajes) y Jornada (inicio de partidos y resultados).",
+        "AC8: Cada tipo puede activarse o desactivarse de forma independiente y el estado visible refleja la preferencia persistida, no solo el permiso global del navegador.",
+        "AC9: Los avisos de proximidad al bloqueo y recordatorio de alineación respetan Europe/Madrid, no se envían tras el cutoff y se deduplican por usuario, liga, jornada y tipo.",
+        "AC10: Si el navegador deniega o revoca Push, la pantalla explica el estado y cómo recuperarlo sin mostrar controles que aparenten estar activos."
       ],
       "scope": [
         "apps/web/**",
@@ -1219,6 +1293,8 @@
         "Revisar autorización de todas las mutaciones.",
         "Añadir rate limits por IP/usuario.",
         "Aplicar CSP, cookies seguras, CSRF y headers.",
+        "Añadir cambio de correo con confirmación, reautenticación para operaciones sensibles y gestión de sesiones activas.",
+        "Definir controles de descubrimiento del perfil y consentimientos de comunicaciones.",
         "Crear exportación y borrado de cuenta.",
         "Minimizar PII y definir retención.",
         "Ejecutar revisión de secretos y dependencias."
@@ -1230,7 +1306,13 @@
         "AC3: Rate limiting distingue autenticación de lecturas normales.",
         "AC4: Exportar/borrar cuenta no elimina datos deportivos globales importados de FAB.",
         "AC5: Logs no contienen cookies, tokens, key FAB ni payloads de contraseña.",
-        "AC6: Dependencias críticas conocidas con vulnerabilidad alta bloquean release hasta evaluación."
+        "AC6: Dependencias críticas conocidas con vulnerabilidad alta bloquean release hasta evaluación.",
+        "AC7: Cambiar correo o contraseña exige sesión reciente o reautenticación; el nuevo correo no sustituye al anterior hasta completar la confirmación enviada por Supabase Auth.",
+        "AC8: La vista de sesiones activas muestra dispositivos de forma minimizada, permite revocar otras sesiones y nunca expone refresh tokens, direcciones completas o huellas invasivas.",
+        "AC9: La preferencia Permitir que me encuentren por username controla el descubrimiento y las invitaciones, pero no rompe membresías existentes ni revela correo o nombre real.",
+        "AC10: El borrado de cuenta requiere confirmación reforzada, explica qué datos se eliminan o conservan por integridad histórica, revoca sesiones y elimina o anonimiza perfil, avatares y PII sin afectar datos deportivos globales.",
+        "AC11: Cerrar sesión no se presenta como acción destructiva roja; eliminar cuenta queda aislado en una zona de peligro con lenguaje inequívoco y confirmación separada.",
+        "AC12: La autenticación en dos pasos solo aparece como disponible cuando exista un flujo completo de alta, verificación, recuperación y desactivación; hasta entonces se muestra como Próximamente sin simular protección."
       ],
       "scope": [
         "apps/web/**",
@@ -1306,6 +1388,8 @@
       "tasks": [
         "Auditar teclado, foco, labels y regiones live.",
         "Revisar contraste y escalado de texto.",
+        "Añadir preferencia de tema Sistema, Claro u Oscuro y persistirla sin destellos de hidratación.",
+        "Definir idioma y formato numérico como ajustes explícitos sin duplicar la configuración regional del navegador.",
         "Pulir breakpoints de Mi equipo, Mercado y Rankings.",
         "Añadir skeletons/empty/error states coherentes.",
         "Optimizar touch targets.",
@@ -1318,7 +1402,10 @@
         "AC3: Estados loading, empty, offline y error son distinguibles por texto, no solo color.",
         "AC4: El orden de foco de diálogos de compra, venta, invitación y lineup es determinista.",
         "AC5: Las páginas principales superan la suite de accesibilidad automática aprobada.",
-        "AC6: No aparecen scrolls horizontales involuntarios en anchos móviles objetivo."
+        "AC6: No aparecen scrolls horizontales involuntarios en anchos móviles objetivo.",
+        "AC7: El usuario puede elegir tema Sistema, Claro u Oscuro; Sistema reacciona a prefers-color-scheme y todos los temas mantienen contraste y estados de foco equivalentes.",
+        "AC8: La preferencia de tema se aplica antes de pintar la interfaz para evitar destellos y se conserva entre sesiones sin impedir el renderizado cuando el almacenamiento local no está disponible.",
+        "AC9: Mientras solo exista contenido completo en español, el selector de idioma no ofrece idiomas parcialmente traducidos; el formato numérico muestra precios y puntos según la configuración efectiva documentada."
       ],
       "scope": [
         "apps/web/**",

@@ -266,3 +266,16 @@ Decisiones registradas:
 - **tests:** Se cubren agregación, autorización, prioridades, estados, navegación y responsive sin depender de FAB real.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-14c-user-profile-account -->
+## 2026-09-07 · sprint-14c-user-profile-account aprobado
+
+Contexto: se aprobó el spec `sprint-14c-user-profile-account` (Sprint 14c - User Profile and Account).
+
+Decisiones registradas:
+
+- **auth_secrets:** La sesión determina siempre el perfil; el correo procede de Supabase Auth y no se publica en ligas; ninguna contraseña, token o identificador arbitrario del cliente se persiste o registra.
+- **rollback_compat:** La migración es aditiva, mantiene perfiles y equipos existentes y permite retirar la UI sin romper autenticación ni relaciones fantasy.
+- **tests:** Incluye esquema, autorización, colisiones concurrentes, avatar, resumen, ligas, logout, navegación y viewport móvil.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

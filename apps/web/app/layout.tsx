@@ -7,6 +7,11 @@ export const metadata: Metadata = {
   title: { default: "Canastio", template: "%s · Canastio" },
   description: "El fantasy del baloncesto federado andaluz.",
   manifest: "/manifest.webmanifest",
+  icons: {
+    icon: "/canastio-logo.png",
+    shortcut: "/canastio-logo.png",
+    apple: "/canastio-logo.png",
+  },
   appleWebApp: { capable: true, title: "Canastio", statusBarStyle: "black-translucent" },
 };
 export const viewport: Viewport = { themeColor: "#07130f", colorScheme: "dark", viewportFit: "cover" };

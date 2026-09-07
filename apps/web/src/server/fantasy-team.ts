@@ -24,9 +24,10 @@ const asNumber = (value: bigint) => {
   return result;
 };
 
-async function profileId(client: Client, actor: TeamActor): Promise<string> {
-  const profile = await client.userProfile.findUnique({ where: { authUserId: actor.authUserId }, select: { id: true } });
+async function profileId(client: Client, actor: TeamActor, requireComplete = false): Promise<string> {
+  const profile = await client.userProfile.findUnique({ where: { authUserId: actor.authUserId }, select: { id: true, username: true } });
   if (!profile) fail("TEAM_NOT_FOUND", 404);
+  if (requireComplete && !profile.username) fail("INVALID_INPUT", 422);
   return profile.id;
 }
 
@@ -93,7 +94,7 @@ export async function putRoster(actor: TeamActor, competitionSeasonId: string, i
   if (!Array.isArray(input.playerRegistrationIds) || input.playerRegistrationIds.some((x) => typeof x !== "string")) fail("INVALID_INPUT", 422);
   try {
     return await db.$transaction(async (tx) => {
-      const owner = await profileId(tx, actor);
+      const owner = await profileId(tx, actor, true);
       const rules = await activeRules(tx, competitionSeasonId);
       const registrations = await tx.playerRegistration.findMany({ where: { id: { in: [...input.playerRegistrationIds] }, competitionSeasonId }, include: {
         teamRegistration: { select: { teamId: true } }, prices: { orderBy: { updatedAt: "desc" }, take: 1, select: { currentPrice: true } },
@@ -132,7 +133,7 @@ export async function putLineup(actor: TeamActor, competitionSeasonId: string, r
   if (!Number.isInteger(roundNumber) || roundNumber < 1 || !Array.isArray(input.starterPlayerRegistrationIds) || !Array.isArray(input.substitutePlayerRegistrationIds) || !Number.isInteger(input.expectedVersion)) fail("INVALID_INPUT", 422);
   try {
     return await db.$transaction(async (tx) => {
-      const owner = await profileId(tx, actor);
+      const owner = await profileId(tx, actor, true);
       const team = await tx.fantasyTeam.findFirst({ where: { userProfileId: owner, competitionSeasonId, league: { status: "ACTIVE" } }, orderBy: { updatedAt: "desc" }, include: { rosterRuleSet: true, rosterSlots: { select: playerSelect } } });
       if (!team) fail("TEAM_NOT_FOUND", 404);
       if (team.version !== input.expectedVersion) fail("VERSION_CONFLICT");

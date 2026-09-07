@@ -24,7 +24,8 @@ export function AuthForm({ mode, action, initialMessage }: Props) {
     <section className="auth-panel">
       <p className="eyebrow">Cuenta Canastio</p><h1>{title}</h1><p>{detail}</p>
       <form action={formAction}>
-        {needsEmail && <label>Correo electrónico<input name="email" type="email" autoComplete="email" required /></label>}
+        {needsEmail && <label>Correo electrónico<input name="email" type="email" autoComplete="email" defaultValue={state.values?.email} required /></label>}
+        {mode === "register" && <label>Nombre de usuario<span className="field-hint">Entre 3 y 24 caracteres: letras, números o _</span><div className="username-field"><span aria-hidden="true">@</span><input name="username" type="text" autoComplete="username" defaultValue={state.values?.username} minLength={3} maxLength={24} pattern="[a-zA-Z0-9_]+" required /></div></label>}
         {needsPassword && <label>Contraseña<input name="password" type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} minLength={8} required /></label>}
         {mode === "update" && <label>Repite la contraseña<input name="passwordConfirm" type="password" autoComplete="new-password" minLength={8} required /></label>}
         <button className="primary-action" disabled={pending}>{pending ? "Un momento…" : button}<span aria-hidden="true">→</span></button>

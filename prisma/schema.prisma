@@ -11,7 +11,9 @@ datasource db {
 model UserProfile {
   id                  String             @id @default(uuid()) @db.Uuid
   authUserId          String             @unique @map("auth_user_id") @db.Uuid
+  username            String?            @unique @db.VarChar(24)
   displayName         String?            @map("display_name")
+  avatarPath          String?            @map("avatar_path")
   createdAt           DateTime           @default(now()) @map("created_at")
   updatedAt           DateTime           @updatedAt @map("updated_at")
   fantasyTeams        FantasyTeam[]
@@ -214,6 +216,7 @@ model FantasyRosterRuleSet {
 
 model FantasyTeam {
   id                  String                     @id @default(uuid()) @db.Uuid
+  name                String                     @default("Mi equipo") @db.VarChar(60)
   userProfileId       String                     @map("user_profile_id") @db.Uuid
   competitionSeasonId String                     @map("competition_season_id") @db.Uuid
   rosterRuleSetId     String                     @map("roster_rule_set_id") @db.Uuid

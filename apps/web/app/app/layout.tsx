@@ -5,6 +5,7 @@ import { createClient } from "../../src/lib/supabase/server";
 import { db } from "../../src/server/db";
 import { avatarUrl, profileInitial } from "../../src/lib/avatar";
 import { AccountAvatar, LogoutControl } from "./account-controls";
+import { LeagueOnboarding } from "../../src/components/league-onboarding";
 
 const nav = [
   ["/app", "Inicio", "⌂"],
@@ -17,7 +18,11 @@ const nav = [
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const { data: { user } } = await (await createClient()).auth.getUser();
   if (!user) redirect("/login");
-  const profile = await db.userProfile.findUnique({ where: { authUserId: user.id }, select: { username: true, displayName: true, avatarPath: true } });
+  const profile = await db.userProfile.findUnique({ where: { authUserId: user.id }, select: { username: true, displayName: true, avatarPath: true, leagueMemberships: { where: { status: "ACTIVE", league: { status: "ACTIVE", legacyTeamId: null } }, take: 1, select: { id: true } } } });
+  if (!profile?.leagueMemberships.length) {
+    const seasons = await db.competitionSeason.findMany({ where: { fantasyEnabled: true }, include: { competition: true }, orderBy: { createdAt: "desc" } });
+    return <div className="league-gate"><LeagueOnboarding seasons={seasons.map((season) => ({ id: season.id, label: `${season.competition.name}${season.name ? ` · ${season.name}` : ""}` }))} /></div>;
+  }
   return <div className="app-frame">
     <aside className="side-nav">
       <Link className="wordmark" href="/app">Canastio</Link>

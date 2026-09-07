@@ -1031,6 +1031,7 @@
         "Separar explícitamente la identidad global del usuario del nombre y escudo del equipo dentro de cada liga.",
         "Añadir una sección compacta de cuenta con correo, estado de verificación y acceso a recuperación/cambio de contraseña.",
         "Confirmar el cierre de sesión en un diálogo accesible y devolver al login tras invalidar la sesión.",
+        "Crear un onboarding bloqueante para usuarios sin membresía activa, limitado a crear liga, unirse y cerrar sesión.",
         "Cubrir estados sin perfil, sin ligas, sin avatar, carga, error, conflicto y sesión caducada."
       ],
       "deliverable": "Cada usuario dispone de un perfil global editable y accesible desde el avatar, con resumen real, acceso a sus ligas y controles básicos de cuenta.",
@@ -1050,7 +1051,8 @@
         "La pantalla usa secciones y separadores con jerarquía clara, no una cuadrícula de tarjetas equivalentes; funciona sin scroll horizontal desde 320 px, respeta safe areas, objetivos táctiles de 44 px, teclado y prefers-reduced-motion.",
         "Las mutaciones validan sesión, longitud y formato, devuelven estados accionables para conflicto, archivo inválido, error de almacenamiento y sesión caducada, y no pierden los valores válidos del formulario tras un error recuperable.",
         "La migración de perfiles es retrocompatible: no fabrica usernames públicos a partir del correo; los usuarios existentes sin username deben completar uno antes de usar flujos sociales o mutaciones fantasy, sin perder acceso a su cuenta ni relaciones existentes, y el rollback no elimina identidades o avatares de otros usuarios.",
-        "Tests de esquema, servicio, componentes y E2E cubren registro con username, autorización, unicidad concurrente, cuenta Auth no huérfana, edición, fallback y reemplazo de avatar, perfil heredado incompleto, métricas sin datos, listado de ligas, cierre de sesión, navegación de cinco pestañas y viewport de 320 px."
+        "Tests de esquema, servicio, componentes y E2E cubren registro con username, autorización, unicidad concurrente, cuenta Auth no huérfana, edición fallback y reemplazo de avatar, perfil heredado incompleto, métricas sin datos, listado de ligas, cierre de sesión, navegación de cinco pestañas y viewport de 320 px.",
+        "Tras autenticarse, un usuario sin ninguna membresía activa ve únicamente el onboarding para crear una liga o unirse mediante código y contraseña, además de cerrar sesión; el shell y cualquier otra pantalla solicitada quedan sustituidos por este bloqueo hasta que una operación server-side confirme la membresía, momento en que se redirige a /app."
       ],
       "scope": [
         "apps/web/**",

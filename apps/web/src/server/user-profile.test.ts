@@ -37,4 +37,15 @@ describe("user profile contracts", () => {
     expect(navBlock.match(/\["\/app/g)).toHaveLength(5);
     expect(navBlock).not.toContain("perfil");
   });
+
+  it("replaces the application shell with league onboarding until membership exists", () => {
+    const layout = readFileSync(new URL("../../app/app/layout.tsx", import.meta.url), "utf8");
+    const onboarding = readFileSync(new URL("../components/league-onboarding.tsx", import.meta.url), "utf8");
+    expect(layout).toContain("!profile?.leagueMemberships.length");
+    expect(layout.indexOf("<LeagueOnboarding")).toBeLessThan(layout.indexOf('className="app-frame"'));
+    expect(onboarding).toContain("Crear una liga");
+    expect(onboarding).toContain("Unirme a una liga");
+    expect(onboarding).toContain("<LogoutControl />");
+    expect(onboarding).toContain('location.assign("/app")');
+  });
 });

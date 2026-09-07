@@ -25,6 +25,7 @@ R13. La pantalla usa secciones y separadores con jerarquía clara, no una cuadr�
 R14. Las mutaciones validan sesión, longitud y formato, devuelven estados accionables para conflicto, archivo inválido, error de almacenamiento y sesión caducada, y no pierden los valores válidos del formulario tras un error recuperable.
 R15. La migración de perfiles es retrocompatible: no fabrica usernames públicos a partir del correo; los usuarios existentes sin username deben completar uno antes de usar flujos sociales o mutaciones fantasy, sin perder acceso a su cuenta ni relaciones existentes, y el rollback no elimina identidades o avatares de otros usuarios.
 R16. Tests de esquema, servicio, componentes y E2E cubren registro con username, autorización, unicidad concurrente, cuenta Auth no huérfana, edición, fallback y reemplazo de avatar, perfil heredado incompleto, métricas sin datos, listado de ligas, cierre de sesión, navegación de cinco pestañas y viewport de 320 px.
+R17. Tras autenticarse, un usuario sin ninguna membresía activa ve únicamente el onboarding para crear una liga o unirse mediante código y contraseña, además de cerrar sesión; el shell y cualquier otra pantalla solicitada quedan sustituidos por este bloqueo hasta que una operación server-side confirme la membresía, momento en que se redirige a /app.
 
 ## Restricciones
 

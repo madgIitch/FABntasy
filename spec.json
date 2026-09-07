@@ -121,7 +121,7 @@
     {
       "id": "sprint-0-project-foundation",
       "name": "Sprint 0 - Project Foundation",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.0.1",
       "dependencies": [],
@@ -885,7 +885,7 @@
     {
       "id": "sprint-14-round-scoring-rankings",
       "name": "Sprint 14 - Round Scoring and Rankings",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.5.1",
       "dependencies": [
@@ -945,6 +945,52 @@
       "approved_at": "2026-09-06T21:00:05.931Z"
     },
     {
+      "id": "sprint-14b-live-round-experience",
+      "name": "Sprint 14b - Live Round Experience",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "0.5.2",
+      "dependencies": [
+        "sprint-14-round-scoring-rankings"
+      ],
+      "objective": "Convertir la pestaña Jornada en una experiencia de seguimiento en directo centrada en los puntos del quinteto titular.",
+      "user_stories": [
+        {
+          "id": "HU14B.1",
+          "story": "Como usuario quiero seguir la evolución de mis puntos y de cada titular durante la jornada sin navegar por pantallas administrativas."
+        }
+      ],
+      "tasks": [
+        "Crear una ruta dedicada para /app/jornada conectada a datos reales.",
+        "Mostrar estado de jornada, puntos totales y progreso del quinteto.",
+        "Mostrar los cinco titulares con puntos fantasy, estadísticas clave y estado del partido.",
+        "Crear una curva compacta de evolución acumulada de puntos.",
+        "Añadir selección de jornada e historial reciente.",
+        "Cubrir estados previo, en directo, provisional, finalizado, vacío, error y offline.",
+        "Optimizar la experiencia para 320-430 px y desktop."
+      ],
+      "deliverable": "La pestaña Jornada permite seguir de forma clara y entretenida el rendimiento del quinteto y la evolución de puntos.",
+      "acceptance": [
+        "AC1: La vista usa únicamente datos reales del usuario, su alineación congelada y los resultados versionados del Sprint 14; no muestra ejemplos como si fueran datos reales.",
+        "AC2: El total de jornada y el desglose contienen exclusivamente los cinco titulares; los suplentes no aparecen como contribuciones puntuables.",
+        "AC3: Cada titular muestra nombre, puntos fantasy, estadísticas disponibles y un estado inequívoco: por jugar, jugando, finalizado, DNP o pendiente de cálculo.",
+        "AC4: La cabecera distingue visual y textualmente jornada próxima, en directo, provisional y finalizada sin depender solo del color.",
+        "AC5: La evolución acumulada se representa con un gráfico pequeño y accesible que conserva una alternativa textual.",
+        "AC6: El usuario puede consultar jornadas recientes sin perder el contexto de liga y competición.",
+        "AC7: Los estados loading, vacío, error y offline son accionables y nunca sustituyen datos ausentes por ceros engañosos.",
+        "AC8: La interfaz funciona sin scroll horizontal desde 320 px, mantiene la navegación inferior visible y ofrece objetivos táctiles de al menos 44 px.",
+        "AC9: Los datos en directo se refrescan de forma acotada, se detienen cuando la pestaña no está visible y no duplican peticiones concurrentes.",
+        "AC10: Tests de componentes, contratos y E2E cubren los estados de jornada, el quinteto, el gráfico, navegación entre jornadas y responsive móvil."
+      ],
+      "scope": [
+        "apps/web/**",
+        "tests/**",
+        "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": false
+    },
+    {
       "id": "sprint-15-home-dashboard",
       "name": "Sprint 15 - Home Dashboard",
       "status": "pending",
@@ -952,7 +998,7 @@
       "milestone": "0.6.0",
       "dependencies": [
         "sprint-13-market-transactions",
-        "sprint-14-round-scoring-rankings"
+        "sprint-14b-live-round-experience"
       ],
       "objective": "Unificar próxima jornada, equipo, mercado, puntos y ligas en una portada útil.",
       "user_stories": [

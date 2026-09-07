@@ -947,7 +947,7 @@
     {
       "id": "sprint-14b-live-round-experience",
       "name": "Sprint 14b - Live Round Experience",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.5.2",
       "dependencies": [

@@ -253,3 +253,16 @@ Decisiones registradas:
 - **tests:** Contrato, transformación de datos, estados y responsive quedan cubiertos sin FAB real.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-15-home-dashboard -->
+## 2026-09-07 · sprint-15-home-dashboard aprobado
+
+Contexto: se aprobó el spec `sprint-15-home-dashboard` (Sprint 15 - Home Dashboard).
+
+Decisiones registradas:
+
+- **auth_secrets:** La identidad se obtiene de la sesión y cada bloque respeta pertenencia y visibilidad de liga; no acepta un `userId` arbitrario del cliente.
+- **rollback_compat:** La portada es una composición aditiva sobre fuentes existentes; puede volver al inicio anterior sin migraciones destructivas.
+- **tests:** Se cubren agregación, autorización, prioridades, estados, navegación y responsive sin depender de FAB real.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

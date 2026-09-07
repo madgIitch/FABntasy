@@ -999,7 +999,7 @@
     {
       "id": "sprint-15-home-dashboard",
       "name": "Sprint 15 - Home Dashboard",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.6.0",
       "dependencies": [
@@ -1023,20 +1023,35 @@
       ],
       "deliverable": "La PWA tiene una home funcional que concentra el loop principal del fantasy.",
       "acceptance": [
-        "AC1: La home no hace más de una carga agregada principal por sesión/navegación salvo refresh explícito.",
-        "AC2: Un usuario sin equipo recibe onboarding en lugar de tarjetas vacías.",
-        "AC3: Un usuario con alineación inválida ve una advertencia accionable antes del cutoff.",
-        "AC4: Datos de ranking y presupuesto coinciden con las fuentes server-side.",
-        "AC5: La vista funciona correctamente en móvil estrecho y desktop.",
-        "AC6: No se muestran datos simulados cuando falta información real."
+        "La ruta de inicio autenticada resuelve el usuario desde la sesión y obtiene su portada mediante una sola carga agregada principal por navegación; no acepta un identificador de usuario suministrado por el cliente ni dispara consultas N+1 desde los módulos visuales.",
+        "El primer viewport móvil muestra la próxima jornada, su fecha y hora de cierre en `Europe/Madrid`, y un estado textual de la alineación: lista, incompleta, sin guardar, bloqueada o sin calendario disponible.",
+        "Cuando la alineación requiere una acción antes del cutoff, la portada muestra una alerta prioritaria y un único CTA que abre directamente la edición del equipo; después del cutoff no ofrece una acción que ya no pueda completarse.",
+        "El resumen de rendimiento muestra la última jornada publicada con puntos, posición en la clasificación aplicable y variación respecto a la jornada publicada anterior; cualquier valor todavía no calculado se presenta como pendiente, nunca como cero.",
+        "El módulo de mercado muestra como máximo cinco movimientos reales y recientes con jugador, precio vigente, variación absoluta y porcentual, periodo comparado y enlace a su ficha; el orden es determinista por variación porcentual, variación absoluta y nombre.",
+        "Una variación de mercado solo se muestra cuando existen precios comparables para los dos extremos del periodo; si no existen movimientos válidos, aparece un estado vacío neutral sin jugadores de ejemplo.",
+        "El módulo de próximos partidos muestra los siguientes encuentros relevantes para los jugadores de la plantilla, con equipos, fecha/hora local y estado oficial, elimina duplicados y enlaza al detalle disponible.",
+        "El módulo de actividad muestra eventos reales y autorizados de las ligas del usuario —fichajes, pujas, cláusulas o cambios relevantes ya persistidos— ordenados del más reciente al más antiguo, sin revelar importes o participantes de ligas ajenas.",
+        "Si el usuario pertenece a varias ligas, la portada identifica el contexto activo y permite cambiarlo sin mezclar clasificación, actividad ni reglas; la próxima jornada deportiva y los partidos conservan el contexto de competición correspondiente.",
+        "Los usuarios sin equipo, sin liga, con plantilla incompleta o sin alineación reciben un estado de onboarding específico con un único siguiente paso válido, en lugar de módulos vacíos o datos simulados.",
+        "La prioridad visual es: acción con vencimiento, jornada en directo o resultado reciente, mercado, próximos partidos y actividad; la pantalla utiliza secciones compactas y separadores, no una cuadrícula de tarjetas equivalentes.",
+        "Cada sección incluye su estado y momento de actualización. Un fallo de identidad, autorización o equipo bloquea la portada con reintento; un fallo en mercado, calendario o actividad degrada solo esa sección y mantiene utilizables las demás.",
+        "En estado en directo la actualización es acotada, evita peticiones concurrentes y se detiene cuando la pestaña queda oculta; fuera del directo no mantiene sondeo continuo y ofrece actualización manual.",
+        "Los iconos de notificaciones, perfil y accesos directos tienen nombre accesible y destino real; no se muestran badges, alertas ni contadores inventados cuando esa información no existe.",
+        "La portada funciona sin scroll horizontal entre 320 y 430 px, respeta áreas seguras, conserva visible la navegación inferior y ofrece objetivos táctiles de al menos 44 px; en desktop mantiene una columna de lectura controlada sin estirar los módulos a todo el ancho.",
+        "El contenido mantiene jerarquía semántica, foco visible, estados que no dependen solo del color y compatibilidad con `prefers-reduced-motion`.",
+        "Tests de servicio/contrato verifican agregación, autorización, ordenación y degradación parcial; tests de componentes y E2E cubren usuario operativo, onboarding, alerta previa al cutoff, datos pendientes, navegación directa y viewport de 320 px."
       ],
       "scope": [
         "apps/web/**",
+        "packages/domain/**",
         "tests/**",
         "docs/**",
         "spec.json"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "answers_hash": "sha256:c2599bc18fdaa1b837d354cd1af56987b28ee32bbc88d57aa0213f6eb5be0584",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-07T02:48:53.250Z"
     },
     {
       "id": "sprint-16-pwa-install-and-notifications",

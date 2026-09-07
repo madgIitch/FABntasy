@@ -373,3 +373,23 @@ Objetivo no negociable:
 - **edge_cases:** Cubre falta de equipo, alineación sin congelar, partidos aplazados, DNP, scores pendientes y jornadas históricas.
 - **ui_states:** Marcador, timeline de titulares, gráfico accesible, selector de jornada y responsive 320–430 px.
 
+<!-- harness:sprint-15-home-dashboard -->
+## sprint-15-home-dashboard · Sprint 15 - Home Dashboard
+
+
+
+### Scope aprobado
+
+  - `apps/web/**`
+  - `packages/domain/**`
+  - `tests/**`
+  - `docs/**`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** No añade persistencia de negocio; compone alineaciones, jornadas, rankings, precios, partidos, transacciones y ligas ya existentes en una proyección de lectura.
+- **external_contracts:** Define un único DTO agregado y versionado con procedencia, estado y fecha de actualización por sección.
+- **edge_cases:** Cubre usuario sin equipo o liga, plantilla incompleta, cutoff vencido, jornada en directo, resultado pendiente, partido aplazado, ausencia de movimientos y ausencia de actividad.
+- **ui_states:** Especifica jerarquía, navegación directa, estados temporales, responsive y accesibilidad conforme a la referencia.
+

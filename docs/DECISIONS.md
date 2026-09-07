@@ -240,3 +240,16 @@ Decisiones registradas:
 - **tests:** Dominio, PostgreSQL, contratos API y E2E cubren cálculo, idempotencia, recomputación, permisos, desempates y estados de UI.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-14b-live-round-experience -->
+## 2026-09-07 · sprint-14b-live-round-experience aprobado
+
+Contexto: se aprobó el spec `sprint-14b-live-round-experience` (Sprint 14b - Live Round Experience).
+
+Decisiones registradas:
+
+- **auth_secrets:** La identidad procede de sesión y solo consulta el equipo del usuario y ligas autorizadas.
+- **rollback_compat:** Ruta y componentes aditivos; la pestaña conserva un estado vacío si se desactiva el cálculo.
+- **tests:** Contrato, transformación de datos, estados y responsive quedan cubiertos sin FAB real.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

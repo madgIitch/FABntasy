@@ -947,7 +947,7 @@
     {
       "id": "sprint-14b-live-round-experience",
       "name": "Sprint 14b - Live Round Experience",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.5.2",
       "dependencies": [
@@ -971,16 +971,16 @@
       ],
       "deliverable": "La pestaña Jornada permite seguir de forma clara y entretenida el rendimiento del quinteto y la evolución de puntos.",
       "acceptance": [
-        "AC1: La vista usa únicamente datos reales del usuario, su alineación congelada y los resultados versionados del Sprint 14; no muestra ejemplos como si fueran datos reales.",
-        "AC2: El total de jornada y el desglose contienen exclusivamente los cinco titulares; los suplentes no aparecen como contribuciones puntuables.",
-        "AC3: Cada titular muestra nombre, puntos fantasy, estadísticas disponibles y un estado inequívoco: por jugar, jugando, finalizado, DNP o pendiente de cálculo.",
-        "AC4: La cabecera distingue visual y textualmente jornada próxima, en directo, provisional y finalizada sin depender solo del color.",
-        "AC5: La evolución acumulada se representa con un gráfico pequeño y accesible que conserva una alternativa textual.",
-        "AC6: El usuario puede consultar jornadas recientes sin perder el contexto de liga y competición.",
-        "AC7: Los estados loading, vacío, error y offline son accionables y nunca sustituyen datos ausentes por ceros engañosos.",
-        "AC8: La interfaz funciona sin scroll horizontal desde 320 px, mantiene la navegación inferior visible y ofrece objetivos táctiles de al menos 44 px.",
-        "AC9: Los datos en directo se refrescan de forma acotada, se detienen cuando la pestaña no está visible y no duplican peticiones concurrentes.",
-        "AC10: Tests de componentes, contratos y E2E cubren los estados de jornada, el quinteto, el gráfico, navegación entre jornadas y responsive móvil."
+        "La vista usa únicamente datos reales del usuario, su alineación congelada y los resultados versionados del Sprint 14; no muestra ejemplos como si fueran datos reales.",
+        "El total de jornada y el desglose contienen exclusivamente los cinco titulares; los suplentes no aparecen como contribuciones puntuables.",
+        "Cada titular muestra nombre, puntos fantasy, estadísticas disponibles y un estado inequívoco: por jugar, jugando, finalizado, DNP o pendiente de cálculo.",
+        "La cabecera distingue visual y textualmente jornada próxima, en directo, provisional y finalizada sin depender solo del color.",
+        "La evolución acumulada se representa con un gráfico pequeño y accesible que conserva una alternativa textual.",
+        "El usuario puede consultar jornadas recientes sin perder el contexto de liga y competición.",
+        "Los estados loading, vacío, error y offline son accionables y nunca sustituyen datos ausentes por ceros engañosos.",
+        "La interfaz funciona sin scroll horizontal desde 320 px, mantiene la navegación inferior visible y ofrece objetivos táctiles de al menos 44 px.",
+        "Los datos en directo se refrescan de forma acotada, se detienen cuando la pestaña no está visible y no duplican peticiones concurrentes.",
+        "Tests de componentes, contratos y E2E cubren los estados de jornada, el quinteto, el gráfico, navegación entre jornadas y responsive móvil."
       ],
       "scope": [
         "apps/web/**",
@@ -988,7 +988,13 @@
         "docs/**",
         "spec.json"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-09-07T02:15:39.179Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:c23cfc30d7ebf1c584be988d3b7c003eeb6fdb9719a4d863b2250a07c6106c57",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-07T02:15:39.328Z"
     },
     {
       "id": "sprint-15-home-dashboard",

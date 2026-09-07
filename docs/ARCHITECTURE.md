@@ -354,3 +354,22 @@ Objetivo no negociable:
 - **edge_cases:** Se cubren DNP a cero, titulares sin score calculable, jornadas aplazadas, equipos creados tarde, empates completos, reintentos y recomputaciones.
 - **ui_states:** La UI muestra jornada, acumulado, posición, variación, desglose de cinco titulares y estados vacío, provisional, recalculando, error y offline.
 
+<!-- harness:sprint-14b-live-round-experience -->
+## sprint-14b-live-round-experience · Sprint 14b - Live Round Experience
+
+
+
+### Scope aprobado
+
+  - `apps/web/**`
+  - `tests/**`
+  - `docs/**`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** Reutiliza alineaciones, resultados por jornada y boxscores ya versionados; no añade persistencia duplicada.
+- **external_contracts:** Se añade un DTO agregado de jornada con estado, quinteto, estadísticas, evolución y navegación.
+- **edge_cases:** Cubre falta de equipo, alineación sin congelar, partidos aplazados, DNP, scores pendientes y jornadas históricas.
+- **ui_states:** Marcador, timeline de titulares, gráfico accesible, selector de jornada y responsive 320–430 px.
+

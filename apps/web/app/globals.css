@@ -205,6 +205,12 @@ img{max-width:100%}
  .profile-form-actions{flex-direction:column-reverse;align-items:stretch}.profile-form-actions .primary-action{width:100%}
  .confirm-dialog-body>div{flex-wrap:wrap}
 }
+@media(max-width:480px){
+ .confirm-dialog{width:100%;max-width:none;max-height:calc(100svh - 48px);margin:auto 0 0;overflow-y:auto;border-radius:24px 24px 0 0;border-bottom:0}
+ .confirm-dialog[open]{animation:sheet-rise var(--motion-dialog) ease-out}
+ .confirm-dialog-body::before{content:"";display:block;width:40px;height:4px;margin:0 auto 18px;border-radius:999px;background:var(--color-border)}
+}
+@keyframes sheet-rise{from{transform:translateY(20px)}}
 @media(max-width:360px){.auth-panel{padding:24px 16px}.court-hero{padding-top:150px}.hero-logo{width:180px;top:90px}.bottom-nav a{font-size:10px}.profile-identity{align-items:start}.profile-person h2{font-size:18px}}
 @media(max-height:720px){.auth-page{justify-content:flex-start}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}

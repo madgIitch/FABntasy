@@ -1133,7 +1133,7 @@
       "id": "sprint-14e-forest-lime-global-reskin",
       "name": "Sprint 14e - Forest and Lime Global Reskin",
       "title": "Sprint 14E - Reskin global bosque y lima",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.5.5",
       "dependencies": [

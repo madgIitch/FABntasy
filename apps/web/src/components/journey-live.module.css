@@ -94,7 +94,7 @@
   padding: 24px;
   box-shadow: var(--shadow-panel);
   border: none;
-  min-height: 240px
+  min-height: 190px
 }
 .scoreCopy {
   position: relative;
@@ -299,6 +299,34 @@
 .noLineup p {
   color: var(--color-text-muted)
 }
+.chartEmpty {
+  display: grid;
+  min-height: 12rem;
+  align-content: start;
+  margin-top: 24px;
+  padding: 24px;
+  border-radius: var(--radius-panel);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-panel)
+}
+.chartEmpty p {
+  margin: 0 0 .5rem;
+  color: var(--color-brand-text);
+  font-size: .75rem;
+  font-weight: 800
+}
+.chartEmpty strong {
+  font: 600 var(--section-title)/1.25 var(--font-ui)
+}
+.chartEmpty span {
+  margin: 2rem 0 1rem;
+  color: var(--color-border);
+  letter-spacing: .15em
+}
+.chartEmpty small {
+  color: var(--color-text-muted);
+  font-size: .75rem
+}
 .noLineup a,.empty a {
   display: flex;
   justify-content: space-between;
@@ -345,7 +373,7 @@
   padding-top: .35rem
 }
 .scoreboard {
-  min-height: 200px
+  min-height: 170px
 }
 .watermark {
   right: -.16em;
@@ -401,7 +429,7 @@
 .header h1 {
   font-size: var(--page-title)
 }
-.section, .scoreboard, .lineup, .chart {
+.section, .scoreboard, .lineup, .chart, .chartEmpty {
   padding: 20px 16px
 }
 }

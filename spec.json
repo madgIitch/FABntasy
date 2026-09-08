@@ -1130,6 +1130,57 @@
       "approved_at": "2026-09-07T18:07:57.871Z"
     },
     {
+      "id": "sprint-14e-forest-lime-global-reskin",
+      "name": "Sprint 14e - Forest and Lime Global Reskin",
+      "title": "Sprint 14E - Reskin global bosque y lima",
+      "status": "spec_ready",
+      "sdd": true,
+      "milestone": "0.5.5",
+      "dependencies": [
+        "sprint-14d-green-white-design-system"
+      ],
+      "objective": "Aplicar a toda la interfaz 14D una identidad cromática verde bosque, blanco roto y lima ácido sin modificar su diseño, estructura o funcionalidad.",
+      "description": "Spec detallada: docs/design/SPRINT_14E_SPEC.md. Sustituye únicamente la dirección cromática clara de 14D; conserva composición, tipografía, densidad, componentes, responsive y contratos funcionales.",
+      "user_stories": [
+        {
+          "id": "HU14E.1",
+          "story": "Como usuario quiero que toda la aplicación tenga una identidad nocturna, deportiva y premium coherente con la antigua landing de Canastio."
+        },
+        {
+          "id": "HU14E.2",
+          "story": "Como usuario quiero conservar exactamente la usabilidad y organización de la interfaz 14D mientras cambia su apariencia cromática."
+        }
+      ],
+      "tasks": [
+        "Auditar tokens y colores hardcodeados y capturar la línea base 14D.",
+        "Definir el mapa semántico bosque-lima y verificar contraste.",
+        "Actualizar tokens globales, shaders, superficies, bordes, sombras y estados cromáticos.",
+        "Migrar hardcodes residuales sin modificar geometría, contenido ni comportamiento.",
+        "Revisar todas las rutas, estados y diálogos en los anchos objetivo y zoom 200 %.",
+        "Ejecutar checks funcionales y documentar evidencia comparativa y excepciones."
+      ],
+      "deliverable": "La misma interfaz 14D, sin cambios estructurales o funcionales, completamente tematizada en verde bosque oscuro, blanco roto y lima ácido.",
+      "acceptance": [
+        "Todas las rutas y estados adoptan el sistema bosque oscuro, blanco roto y lima sin superficies claras residuales accidentales.",
+        "Layout, dimensiones, espaciado, radios, tipografía, iconografía, contenido, responsive y comportamiento permanecen iguales a 14D.",
+        "Los colores compartidos proceden de tokens semánticos y los hardcodes residuales quedan migrados o justificados.",
+        "Canvas, superficies y shaders aportan profundidad verde sutil sin neón, glassmorphism, gradientes multicolor ni fondos lima.",
+        "Texto y controles cumplen contraste WCAG; foco y estados no dependen exclusivamente del color.",
+        "Mercado, cancha, navegación, tabs, formularios, diálogos y estados globales mantienen su semántica y adoptan el nuevo tema.",
+        "Se revisan landing, auth, onboarding y todas las rutas privadas a 320, 375, 430, 768 y 1440 px y zoom 200 %.",
+        "No se añaden funcionalidades, selector de tema, persistencia, microcopy, APIs, schema, migraciones ni reglas de negocio.",
+        "Typecheck, lint, tests, build y smoke tests críticos pasan sin regresión funcional.",
+        "El diff de producción se limita a color, fondos, degradados, sombras, bordes y assets cromáticos, salvo excepciones documentadas."
+      ],
+      "scope": [
+        "apps/web/**",
+        "tests/**",
+        "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": false
+    },
+    {
       "id": "sprint-15-home-dashboard",
       "name": "Sprint 15 - Home Dashboard",
       "status": "spec_ready",

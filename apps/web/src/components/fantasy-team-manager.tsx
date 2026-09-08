@@ -73,7 +73,7 @@ export function FantasyTeamManager({ competitionSeasonId, roundNumber, initialTe
     <section className={styles.summary} aria-label="Resumen de plantilla"><span><strong>{credits.format(team.budgetUsed)}</strong><small>Coste plantilla</small></span><span><strong>{credits.format(team.budgetRemaining)}</strong><small>Disponible</small></span><span><strong>{team.roster.length}/7</strong><small>Jugadores</small></span></section>
     <nav className={styles.views} aria-label="Vista del equipo">{views.map((item) => <button key={item.id} aria-pressed={view === item.id} className={view === item.id ? styles.active : ""} onClick={() => setView(item.id)}>{item.label}</button>)}</nav>
     {locked && <p className={styles.locked}>Alineación cerrada · snapshot de la jornada {roundNumber}</p>}
-    <div className={styles.stage} key={view}>{view === "court" ? <LineupSurface players={startersList} substitutes={substitutes} rosterSize={team.roster.length} selectedId={selectedId} locked={locked} onSelect={selectForSwap} /> : <DataView view={view} players={team.roster} starters={starters} metrics={playerMetrics} />}</div>
+    <div className={styles.stage} key={view}>{view === "court" ? <LineupSurface players={startersList} substitutes={substitutes} rosterSize={team.roster.length} selectedId={selectedId} locked={locked} onSelect={selectForSwap} /> : view === "points" ? <PointsView players={team.roster} starters={starters} metrics={playerMetrics} /> : <DataView view={view} players={team.roster} starters={starters} metrics={playerMetrics} />}</div>
     {!dirty && status === "saved" && <p className={styles.saved} role="status">✓ Alineación guardada</p>}
     <Feedback status={status === "saved" ? "ready" : status} />
     {dirty && !locked && <aside className={styles.saveDock} aria-live="polite"><span><strong>{team.lineup ? `${changedPlayers || 1} cambio${(changedPlayers || 1) === 1 ? "" : "s"}` : "Primera alineación"}</strong><small> sin guardar</small></span><button disabled={team.roster.length !== 7 || starters.length !== 5 || status === "saving"} onClick={() => void saveLineup()}>{status === "saving" ? "Guardando…" : "Guardar"}</button></aside>}
@@ -97,12 +97,26 @@ function shortName(name: string) { const parts = name.trim().split(/\s+/); retur
 function initials(name: string) { return name.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase(); }
 function PlayerButton({ player, selected, locked, onClick }: { player: Player; selected: boolean; locked: boolean; onClick: () => void }) { return <button className={styles.player} data-selected={selected} disabled={locked} onClick={onClick} aria-label={`${player.displayName}, ${player.realTeamName}${selected ? ", seleccionado" : ""}`}><span>{initials(player.displayName)}</span><strong>{shortName(player.displayName)}</strong><small>{player.realTeamName}</small></button>; }
 
-function DataView({ view, players, starters, metrics }: { view: Exclude<View, "court">; players: Player[]; starters: string[]; metrics: PlayerMetrics }) {
-  const label = view === "points" ? "Puntos de jornada" : view === "value" ? "Valor de mercado" : "Últimos cinco partidos";
-  const title = view === "points" ? "Rendimiento de la jornada" : view === "value" ? "Valor de tu plantilla" : "Momento de cada jugador";
-  return <section className={styles.dataView}><header><p className="eyebrow">{label}</p><h2>{title}</h2><p>{view === "points" ? "Solo los titulares suman al total de esta jornada." : view === "form" ? "La secuencia va del partido más reciente al más antiguo." : "El precio de compra permanece congelado."}</p></header><ol>{players.map((player) => { const metric = metrics[player.playerRegistrationId]; const recent = metric?.recentPoints ?? []; const average = recent.length ? recent.reduce((sum, value) => sum + value, 0) / recent.length : null; return <li key={player.playerRegistrationId}><span><i>{starters.includes(player.playerRegistrationId) ? "T" : "S"}</i><strong>{player.displayName}</strong><small>{player.realTeamName}</small></span>
+function PointsView({ players, starters, metrics }: { players: Player[]; starters: string[]; metrics: PlayerMetrics }) {
+  const starterPlayers = starters.map((id) => players.find((player) => player.playerRegistrationId === id)).filter((player): player is Player => Boolean(player));
+  const substitutePlayers = players.filter((player) => !starters.includes(player.playerRegistrationId));
+  const scoredStarters = starterPlayers.filter((player) => metrics[player.playerRegistrationId]?.roundPoints != null);
+  const total = scoredStarters.reduce((sum, player) => sum + (metrics[player.playerRegistrationId]?.roundPoints ?? 0), 0);
+  const hasPoints = scoredStarters.length > 0;
+  return <section className={styles.pointsView}>
+    <header className={styles.pointsHero}><p className="eyebrow">Puntos de jornada</p><div><strong>{hasPoints ? total.toFixed(1) : "—"}</strong><span>pts Fantasy</span></div><p>{hasPoints ? `${scoredStarters.length}/${starterPlayers.length} titulares con puntuación` : "Los puntos aparecerán cuando empiecen a registrarse los partidos."}</p></header>
+    <PointGroup title="Titulares" note={`${starterPlayers.length} jugadores · suman al total`} players={starterPlayers} metrics={metrics} />
+    {substitutePlayers.length > 0 && <PointGroup title="Banquillo" note="No suma al total" players={substitutePlayers} metrics={metrics} />}
+  </section>;
+}
+
+function PointGroup({ title, note, players, metrics }: { title: string; note: string; players: Player[]; metrics: PlayerMetrics }) { return <section className={styles.pointGroup}><header><span><b>{title}</b><small>{note}</small></span><em>Pts.</em></header><ol>{players.map((player) => { const value = metrics[player.playerRegistrationId]?.roundPoints; return <li key={player.playerRegistrationId}><span><strong>{player.displayName}</strong><small>{player.realTeamName}</small></span><b className={value == null ? styles.noData : styles.score}>{value == null ? "—" : value.toFixed(1)}</b></li>; })}</ol></section>; }
+
+function DataView({ view, players, starters, metrics }: { view: Exclude<View, "court" | "points">; players: Player[]; starters: string[]; metrics: PlayerMetrics }) {
+  const label = view === "value" ? "Valor de mercado" : "Últimos cinco partidos";
+  const title = view === "value" ? "Valor de tu plantilla" : "Momento de cada jugador";
+  return <section className={styles.dataView}><header><p className="eyebrow">{label}</p><h2>{title}</h2><p>{view === "form" ? "La secuencia va del partido más reciente al más antiguo." : "El precio de compra permanece congelado."}</p></header><ol>{players.map((player) => { const metric = metrics[player.playerRegistrationId]; const recent = metric?.recentPoints ?? []; const average = recent.length ? recent.reduce((sum, value) => sum + value, 0) / recent.length : null; return <li key={player.playerRegistrationId}><span><i>{starters.includes(player.playerRegistrationId) ? "T" : "S"}</i><strong>{player.displayName}</strong><small>{player.realTeamName}</small></span>
     {view === "value" && <span className={styles.marketValue}><b>{credits.format(player.currentMarketPrice ?? player.acquisitionPrice)}</b><small>{player.currentMarketPrice == null ? "Precio pagado" : `${player.currentMarketPrice - player.acquisitionPrice >= 0 ? "+" : ""}${credits.format(player.currentMarketPrice - player.acquisitionPrice)} plusvalía`}</small></span>}
-    {view === "points" && <b className={metric?.roundPoints == null ? styles.noData : styles.score}>{metric?.roundPoints == null ? "Sin datos" : metric.roundPoints.toFixed(1)}</b>}
     {view === "form" && <div className={styles.formLine}>{recent.length ? <><span>{recent.map((value, index) => <em key={index} style={{ "--level": `${Math.max(12, Math.min(100, value * 2))}%` } as CSSProperties} title={`${value.toFixed(1)} puntos`} />)}</span><b>{average!.toFixed(1)} <small>media</small></b></> : <b className={styles.noData}>Sin partidos</b>}</div>}
   </li>; })}</ol></section>;
 }

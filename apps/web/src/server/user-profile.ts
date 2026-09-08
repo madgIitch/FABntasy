@@ -42,7 +42,7 @@ export async function getUserProfileOverview(authUserId: string) {
       leagueMemberships: {
         where: { status: "ACTIVE", league: { status: "ACTIVE", legacyTeamId: null } },
         orderBy: { joinedAt: "desc" },
-        include: { league: { include: { memberships: { where: { status: "ACTIVE" }, select: { id: true } } } } },
+        include: { league: { include: { competitionSeason: { include: { competition: true } }, memberships: { where: { status: "ACTIVE" }, select: { id: true } } } } },
       },
       fantasyTeams: { include: { total: true } },
     },
@@ -55,11 +55,13 @@ export async function getUserProfileOverview(authUserId: string) {
     username: profile.username,
     displayName: profile.displayName,
     avatarPath: profile.avatarPath,
+    createdAt: profile.createdAt,
     leagueCount: profile.leagueMemberships.length,
     totalPoints: publishedTotals.length ? publishedTotals.reduce((sum, total) => sum + Number(total.totalPoints), 0) : null,
     leagues: profile.leagueMemberships.map(({ league }) => ({
       id: league.id,
       name: league.name,
+      competitionName: league.competitionSeason.competition.name,
       memberCount: league.memberships.length,
       hasTeam: teamsByLeague.has(league.id),
       teamName: teamsByLeague.get(league.id)?.name ?? null,

@@ -1,6 +1,6 @@
 import type { SVGProps } from "react";
 
-export type IconName = "home" | "market" | "team" | "calendar" | "league" | "arrow" | "user";
+export type IconName = "home" | "market" | "team" | "calendar" | "league" | "arrow" | "user" | "mail" | "lock" | "logout" | "chevron";
 const paths: Record<IconName, string> = {
   home: "m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z",
   market: "M5 4v16m0 0-3-3m3 3 3-3M19 20V4m0 0-3 3m3-3 3 3M10 8h4M10 16h4",
@@ -9,6 +9,10 @@ const paths: Record<IconName, string> = {
   league: "M8 3h8v6a4 4 0 0 1-8 0ZM8 5H4v2a4 4 0 0 0 4 4M16 5h4v2a4 4 0 0 1-4 4M12 13v5M8 21h8M9 18h6v3",
   arrow: "M4 12h16m-6-6 6 6-6 6",
   user: "M20 21v-2a6 6 0 0 0-6-6h-4a6 6 0 0 0-6 6v2M16 6a4 4 0 1 1-8 0 4 4 0 0 1 8 0",
+  mail: "M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Zm-1 2 9 6 9-6",
+  lock: "M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4",
+  logout: "M10 17l5-5-5-5m5 5H3m12-8h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4",
+  chevron: "m9 18 6-6-6-6",
 };
 export function Icon({ name, ...props }: SVGProps<SVGSVGElement> & { name: IconName }) {
   return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}><path d={paths[name]} /></svg>;

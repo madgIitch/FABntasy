@@ -6,7 +6,7 @@ import { chromium } from '@playwright/test';
 const req=createRequire(import.meta.url);
 const esbuild=createRequire(req.resolve('vitest/package.json'))('esbuild');
 const out=path.resolve('../../.local/14d-qa');fs.mkdirSync(out,{recursive:true});
-const capture=path.resolve('../../docs/design/14d-qa/components');fs.mkdirSync(capture,{recursive:true});
+const capture=path.join(out,'captures');fs.mkdirSync(capture,{recursive:true});
 const style=[];
 await esbuild.build({entryPoints:['e2e/visual-fixtures.tsx'],bundle:true,write:true,outfile:path.join(out,'app.js'),jsx:'automatic',platform:'browser',define:{'process.env.NODE_ENV':'"development"'},plugins:[{name:'fixtures',setup(build){
  build.onResolve({filter:/\.css$/},a=>({path:path.resolve(a.resolveDir,a.path),namespace:'styles'}));

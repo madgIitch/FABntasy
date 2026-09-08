@@ -301,7 +301,7 @@
   gap: 24px;
   padding: 24px 0
 }
-.actions>div {
+.actions>div,.actions>form {
   display: grid;
   background: var(--color-surface);
   border-radius: var(--radius-panel);

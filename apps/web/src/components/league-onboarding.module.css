@@ -16,8 +16,8 @@
 .choice label:has(input:focus-visible){outline:3px solid color-mix(in srgb,var(--color-brand) 35%,transparent);outline-offset:2px}
 .choice svg{width:20px;height:20px;padding:9px;box-sizing:content-box;border-radius:12px;background:var(--color-surface);color:var(--color-brand-text)}
 .choice span{display:grid;gap:3px}.choice strong{font-size:14px}.choice small{color:var(--color-text-muted);font-size:11px;line-height:1.25}
-.singleAction{grid-template-columns:minmax(0,1fr);padding:16px 0 8px}.singleAction>div{padding:24px}
+.singleAction{grid-template-columns:minmax(0,1fr);padding:16px 0 8px}.singleAction>form{padding:24px}
 .formLabel{margin:0;color:var(--color-brand-text);font-size:11px;font-weight:700;letter-spacing:.1em}
 .singleAction button:disabled{background:#dce5de;color:#6b786f;opacity:1;cursor:not-allowed}
 .note{margin:8px 0 0;color:var(--color-text-muted);font-size:12px;text-align:center}
-@media(max-width:700px){.gated{padding-top:12px;padding-bottom:32px}.intro{grid-template-columns:minmax(0,1fr) 64px;gap:12px;padding:16px 0}.courtMark{width:64px}.courtMark::after{inset:13px}.choice{grid-template-columns:1fr 1fr}.choice label{grid-template-columns:32px minmax(0,1fr);gap:8px;min-height:64px;padding:8px}.choice svg{width:18px;height:18px;padding:7px}.choice small{display:none}.singleAction{padding-top:12px}.singleAction>div{padding:20px 16px}}
+@media(max-width:700px){.gated{padding-top:12px;padding-bottom:32px}.intro{grid-template-columns:minmax(0,1fr) 64px;gap:12px;padding:16px 0}.courtMark{width:64px}.courtMark::after{inset:13px}.choice{grid-template-columns:1fr 1fr}.choice label{grid-template-columns:32px minmax(0,1fr);gap:8px;min-height:64px;padding:8px}.choice svg{width:18px;height:18px;padding:7px}.choice small{display:none}.singleAction{padding-top:12px}.singleAction>form{padding:20px 16px}}

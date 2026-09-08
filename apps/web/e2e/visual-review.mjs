@@ -53,7 +53,7 @@ try{
  if(await page.getByLabel('Código de liga').count())throw Error('Onboarding shows both alternatives at once');
  await page.getByRole('button',{name:/Crear liga/}).click();
  if(!await page.getByRole('alert').isVisible())throw Error('Create league validation feedback missing');
- await page.getByRole('radio',{name:/Tengo un código/}).check();
+ await page.getByText('Tengo un código',{exact:true}).click();
  if(!await page.getByLabel('Código de liga').isVisible()||await page.getByLabel('Nombre de la liga').count())throw Error('Onboarding mode switch failed');
  await page.goto('http://127.0.0.1:4178/?case=market');
  if(await page.locator('.bottom-nav a').count()!==5)throw Error('Navigation must have five destinations');

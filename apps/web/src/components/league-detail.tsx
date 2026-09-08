@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import styles from "./league-detail.module.css";
+import { Dialog } from "./ui/dialog";
 
 type ActionState = "idle" | "copying" | "saving" | "leaving";
 
@@ -9,6 +10,7 @@ export function LeagueDetailActions({ leagueId, leagueCode, isOwner }: { leagueI
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [action, setAction] = useState<ActionState>("idle");
+  const [confirmLeave, setConfirmLeave] = useState(false);
 
   async function copyCode() {
     setAction("copying");
@@ -51,7 +53,9 @@ export function LeagueDetailActions({ leagueId, leagueCode, isOwner }: { leagueI
       else setMessage((await response.json()).error?.code ?? "No se pudo abandonar la liga.");
     } catch {
       setMessage("Sin conexión. Sigues dentro de la liga.");
+    } finally {
       setAction("idle");
+      setConfirmLeave(false);
     }
   }
 
@@ -89,7 +93,9 @@ export function LeagueDetailActions({ leagueId, leagueCode, isOwner }: { leagueI
           <span className={styles.buttonIcon} aria-hidden="true">→</span>
         </button>
       </div>
-    </div> : <button className={styles.leaveButton} disabled={action !== "idle"} onClick={() => void leave()}>{action === "leaving" ? "Saliendo…" : "Abandonar liga"}</button>}
+    </div> : <button className={styles.leaveButton} disabled={action !== "idle"} onClick={() => setConfirmLeave(true)}>{action === "leaving" ? "Saliendo…" : "Abandonar liga"}</button>}
+
+    <Dialog open={confirmLeave} title="¿Abandonar esta liga?" onClose={() => setConfirmLeave(false)}><p>Dejarás de participar en esta liga. La operación se comprobará antes de confirmar la salida.</p><div><button disabled={action === "leaving"} onClick={() => setConfirmLeave(false)}>Cancelar</button><button className="primary-action" disabled={action === "leaving"} onClick={() => void leave()}>{action === "leaving" ? "Saliendo…" : "Abandonar liga"}</button></div></Dialog>
 
     {message && <p className={styles.feedback} role="status" aria-live="polite">{message}</p>}
   </section>;

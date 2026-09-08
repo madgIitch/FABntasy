@@ -1,5 +1,8 @@
 # docs/ — Memoria durable del proyecto
 
+- [Dirección visual 14D](design/CANASTIO_14D_VISUAL_DIRECTION.md) — análisis del vídeo, componentes y adaptación verde/blanco para Canastio (propuesta).
+- [Spec 14D](design/SPRINT_14D_SPEC.md) — alcance, requisitos y QA del rediseño integral, pendiente de aprobación.
+
 - `ARCHITECTURE.md` — visión general, componentes, flujo de datos.
 - `DECISIONS.md` — registro de decisiones (ADR). El harness añade entradas al tomar decisiones relevantes.
 - `PLAYER_PRICING.md` — contrato del precio global, evolución, DNP, histórico y cláusula base.

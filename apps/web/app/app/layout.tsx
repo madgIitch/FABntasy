@@ -6,13 +6,14 @@ import { db } from "../../src/server/db";
 import { avatarUrl, profileInitial } from "../../src/lib/avatar";
 import { AccountAvatar, LogoutControl } from "./account-controls";
 import { LeagueOnboarding } from "../../src/components/league-onboarding";
+import { Navigation } from "../../src/components/ui/navigation";
 
 const nav = [
-  ["/app", "Inicio", "⌂"],
-  ["/app/mercado", "Mercado", "⇅"],
-  ["/app/mi-equipo", "Mi equipo", "◉"],
-  ["/app/jornada", "Jornada", "●"],
-  ["/app/ligas", "Liga", "◆"],
+  ["/app", "Inicio", "home"],
+  ["/app/mercado", "Mercado", "market"],
+  ["/app/mi-equipo", "Mi equipo", "team"],
+  ["/app/jornada", "Jornada", "calendar"],
+  ["/app/ligas", "Liga", "league"],
 ];
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
@@ -26,11 +27,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   return <div className="app-frame">
     <aside className="side-nav">
       <Link className="wordmark" href="/app">Canastio</Link>
-      <nav aria-label="Secciones de la aplicación">{nav.map(([href, label, icon]) => <Link href={href} key={href}><i aria-hidden="true">{icon}</i>{label}</Link>)}</nav>
+      <Navigation items={nav} />
       <div className="side-account"><AccountAvatar imageUrl={avatarUrl(profile?.avatarPath)} initial={profileInitial(profile?.username, profile?.displayName)} /><span>{profile?.username ? `@${profile.username}` : "Completa tu perfil"}</span></div>
       <LogoutControl />
     </aside>
-    <div className="workspace"><div className="mobile-account"><AccountAvatar imageUrl={avatarUrl(profile?.avatarPath)} initial={profileInitial(profile?.username, profile?.displayName)} /></div>{children}</div>
-    <nav className="bottom-nav" aria-label="Navegación móvil">{nav.map(([href, label, icon]) => <Link href={href} key={href}><i aria-hidden="true">{icon}</i><span>{label}</span></Link>)}</nav>
+    <div className="workspace"><div className="mobile-account"><Link className="wordmark" href="/app">Canastio</Link><AccountAvatar imageUrl={avatarUrl(profile?.avatarPath)} initial={profileInitial(profile?.username, profile?.displayName)} /></div>{children}</div>
+    <Navigation items={nav} mobile />
   </div>;
 }

@@ -1,0 +1,31 @@
+@font-face{font-family:Inter;src:url('/fonts/inter-regular.woff2') format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:Inter;src:url('/fonts/inter-medium.woff2') format('woff2');font-weight:500;font-display:swap}
+@font-face{font-family:Inter;src:url('/fonts/inter-semibold.woff2') format('woff2');font-weight:600;font-display:swap}
+@font-face{font-family:Inter;src:url('/fonts/inter-bold.woff2') format('woff2');font-weight:700;font-display:swap}
+:root{
+  color-scheme:light;
+  --color-canvas:#f6f8f6;
+  --color-surface:#fff;
+  --color-brand:#00843d;
+  --color-brand-hover:#006b32;
+  --color-brand-text:#006b32;
+  --color-brand-soft:#e8f4ec;
+  --color-brand-deep:#073b24;
+  --color-on-brand:#fff;
+  --color-text:#15241b;
+  --color-text-muted:#59675f;
+  --color-border:#dce5de;
+  --color-control-border:#7b8b80;
+  --color-danger:#b42318;
+  --color-danger-soft:#fff1ef;
+  --color-warning:#855400;
+  --color-warning-soft:#fff6df;
+  --font-ui:Inter,system-ui,sans-serif;
+  --space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-6:24px;--space-8:32px;--space-12:48px;
+  --radius-control:12px;--radius-panel:24px;--radius-image:12px;
+  --shadow-panel:0 4px 20px rgb(21 36 27 / 5%);
+  --shadow-dialog:0 24px 80px rgb(21 36 27 / 18%);
+  --motion-fast:140ms;--motion-dialog:200ms;
+  --page-title:clamp(1.75rem,3.5vw,2.25rem);
+  --section-title:clamp(1.125rem,2.5vw,1.5rem);
+}

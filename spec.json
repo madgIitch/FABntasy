@@ -1067,6 +1067,69 @@
       "approved_at": "2026-09-07T15:05:42.963Z"
     },
     {
+      "id": "sprint-14d-green-white-design-system",
+      "name": "Sprint 14d - Green and White Visual Redesign",
+      "title": "Sprint 14D - Rediseño integral verde y blanco",
+      "status": "review_pending",
+      "sdd": true,
+      "milestone": "0.5.4",
+      "dependencies": [
+        "sprint-14c-user-profile-account",
+        "sprint-14b-live-round-experience"
+      ],
+      "objective": "Aplicar a todas las superficies existentes de Canastio el sistema visual luminoso verde y blanco derivado del análisis de componentes del vídeo de Marvin Schwaibold.",
+      "description": "Fuente visual y decisiones: docs/design/CANASTIO_14D_VISUAL_DIRECTION.md. Spec aprobada e implementada: docs/design/SPRINT_14D_SPEC.md. Rediseño de presentación y componentes compartidos; mantiene contratos, datos y permisos. Implementación pendiente de revisión.",
+      "user_stories": [
+        {
+          "id": "HU14D.1",
+          "story": "Como usuario quiero reconocer Canastio por su identidad andaluza verde y blanca y leer sus componentes con claridad en móvil y escritorio."
+        },
+        {
+          "id": "HU14D.2",
+          "story": "Como usuario quiero una estética consistente en todos los pasos, desde el registro y acceso a liga hasta el mercado, jornada y perfil."
+        }
+      ],
+      "tasks": [
+        "Inventariar rutas, componentes y estados existentes y capturar la línea base.",
+        "Definir tokens semánticos de color, tipografía, espaciado, radios, sombras y movimiento.",
+        "Crear o consolidar primitivas accesibles de superficies, botones, campos, listas, estados y diálogos.",
+        "Rediseñar portada, autenticación, onboarding, shell y assets de identidad necesarios.",
+        "Migrar Inicio, Mercado, Mi equipo, Jornada, Liga, perfil y explorador deportivo al sistema compartido.",
+        "Documentar adopción por Sprints 16, 19 y 21 sin activar funcionalidades futuras.",
+        "Validar regresión funcional, contraste, teclado, responsive y capturas antes/después."
+      ],
+      "deliverable": "Interfaz completa clara, verde y blanca, componentes compartidos documentados y evidencia visual de todas las familias de pantallas existentes.",
+      "acceptance": [
+        "La implementación sigue docs/design/CANASTIO_14D_VISUAL_DIRECTION.md; mantiene la distinción entre componentes finales del vídeo y láminas explicativas, sin introducir cuadrículas moradas, bloques pastel de wireframe ni halo de cursor.",
+        "Todas las rutas de producto existentes usan canvas claro, superficies blancas y verde principal #00843D; el lima #c9ff36 deja de ser acento de interfaz y no quedan páginas con fondos oscuros heredados, salvo módulos invertidos deliberados en verde profundo.",
+        "Los colores y escalas compartidos proceden de tokens semánticos; se migran globals.css y CSS Modules sin resolver el rediseño mediante una capa de overrides globales que deje componentes antiguos incoherentes.",
+        "Inter es la tipografía de interfaz, datos y títulos operativos; Oswald se limita a marca/portada, con máximo dos familias, números tabulares y campos de al menos 16 px.",
+        "Las superficies usan ritmo de 8 px, radio principal de 24 px y padding de 24 px reducible a 16 px en móvil; las filas de datos no se convierten en tarjetas elevadas individuales y ninguna medida de 352 px impide reflow.",
+        "Botones, campos, tabs, badges, avatares, listas y diálogos comparten variantes y estados accesibles; iconos coherentes y controles sin texto tienen nombre accesible, y las acciones principales tienen targets mínimos de 44 px.",
+        "La portada conserva marca reconocible y CTA visible en el primer viewport móvil; cualquier fotografía nueva es propia o autorizada, tiene fallback y no reutiliza imágenes o marcas del vídeo como assets de producción.",
+        "Registro mantiene username obligatorio y los flujos de verificación/recuperación; el onboarding sin membresía sigue limitado a crear liga, unirse y cerrar sesión, incluso al solicitar una ruta privada profunda.",
+        "El shell conserva cinco destinos móviles y avatar de perfil; identifica selección actual, respeta safe areas y no tapa controles ni foco.",
+        "Inicio conserva la prioridad de acción con vencimiento y sus fuentes reales; Mercado, Mi equipo, Jornada, Liga y perfil conservan acciones, permisos, borradores y estados temporales al cambiar su presentación.",
+        "Clasificación, calendario, fichas de jugador/equipo/partido y desglose de puntuación adoptan el mismo sistema; nombres largos, importes grandes y ausencia de retrato no rompen alineación ni ocultan información necesaria.",
+        "Loading, vacío, error, offline, provisional, bloqueado y pendiente reciben tratamiento coherente y textual; no se inventan métricas, mensajes, notificaciones, mapas ni progreso para reproducir un componente de referencia.",
+        "Se verifica contraste mínimo de 4.5:1 para texto normal y 3:1 para texto grande y gráficos/controles necesarios; foco visible y estados no dependen exclusivamente del color.",
+        "Se revisan capturas de las familias de pantallas a 320, 375, 430, 768 y 1440 px, con zoom 200 %, navegación por teclado y áreas seguras; no hay scroll horizontal salvo tablas justificadas y documentadas.",
+        "Las transiciones de feedback y diálogos son breves, no cambian el layout ni reinician animaciones en cada actualización; prefers-reduced-motion elimina desplazamientos y animación ornamental.",
+        "Tests existentes, typecheck, lint y build pasan; los smoke tests cubren registro, onboarding bloqueante, navegación, perfil/logout y flujos operativos críticos, acompañados de revisión manual de capturas y contraste.",
+        "El sprint no requiere migraciones, cambios en ingesta FAB ni alteración de contratos de negocio; el rollback visual no modifica datos. Notificaciones, seguridad avanzada y selector de temas permanecen en sus sprints con referencia al sistema 14D."
+      ],
+      "scope": [
+        "apps/web/**",
+        "tests/**",
+        "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": true,
+      "answers_hash": "sha256:357241e89e056b9b853a74ccc796c354b5c6aac8f18efb6c89e61b372408133a",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-07T18:07:57.871Z"
+    },
+    {
       "id": "sprint-15-home-dashboard",
       "name": "Sprint 15 - Home Dashboard",
       "status": "spec_ready",
@@ -1126,6 +1189,7 @@
     },
     {
       "id": "sprint-16-pwa-install-and-notifications",
+      "visual_spec_reference": "sprint-14d-green-white-design-system (aprobado; adoptar al implementar): docs/design/CANASTIO_14D_VISUAL_DIRECTION.md",
       "name": "Sprint 16 - PWA Install and Notifications",
       "status": "pending",
       "sdd": true,
@@ -1272,6 +1336,7 @@
     },
     {
       "id": "sprint-19-security-privacy-hardening",
+      "visual_spec_reference": "sprint-14d-green-white-design-system (aprobado; adoptar al implementar): docs/design/CANASTIO_14D_VISUAL_DIRECTION.md",
       "name": "Sprint 19 - Security and Privacy Hardening",
       "status": "pending",
       "sdd": true,
@@ -1373,6 +1438,7 @@
     },
     {
       "id": "sprint-21-accessibility-responsive-polish",
+      "visual_spec_reference": "sprint-14d-green-white-design-system (aprobado; adoptar al implementar): docs/design/CANASTIO_14D_VISUAL_DIRECTION.md; extender tokens al tema oscuro sin restaurar el acento lima",
       "name": "Sprint 21 - Accessibility and Responsive Polish",
       "status": "pending",
       "sdd": true,

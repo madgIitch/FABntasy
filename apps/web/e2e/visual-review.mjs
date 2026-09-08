@@ -1,0 +1,69 @@
+import { createRequire } from 'node:module';
+import fs from 'node:fs';
+import path from 'node:path';
+import http from 'node:http';
+import { chromium } from '@playwright/test';
+const req=createRequire(import.meta.url);
+const esbuild=createRequire(req.resolve('vitest/package.json'))('esbuild');
+const out=path.resolve('../../.local/14d-qa');fs.mkdirSync(out,{recursive:true});
+const capture=path.resolve('../../docs/design/14d-qa/components');fs.mkdirSync(capture,{recursive:true});
+const style=[];
+await esbuild.build({entryPoints:['e2e/visual-fixtures.tsx'],bundle:true,write:true,outfile:path.join(out,'app.js'),jsx:'automatic',platform:'browser',define:{'process.env.NODE_ENV':'"development"'},plugins:[{name:'fixtures',setup(build){
+ build.onResolve({filter:/\.css$/},a=>({path:path.resolve(a.resolveDir,a.path),namespace:'styles'}));
+ build.onLoad({filter:/.*/,namespace:'styles'},a=>{let css=fs.readFileSync(a.path,'utf8');const names={};if(a.path.endsWith('.module.css')){const prefix=path.basename(a.path).split('.')[0].replaceAll('-','_');css=css.replace(/\.([a-zA-Z_][\w-]*)/g,(_,n)=>{names[n]=prefix+'_'+n;return '.'+names[n];});}else{css=css.replace('@import "./tokens.css";',fs.readFileSync('app/tokens.css','utf8'));}style.push(css);return{contents:'export default '+JSON.stringify(names),loader:'js'};});
+ build.onResolve({filter:/^next\/(link|navigation)$/},a=>({path:a.path,namespace:'mock'}));
+ build.onResolve({filter:/auth\/actions$/},()=>({path:'actions',namespace:'mock'}));
+ build.onResolve({filter:/lib\/supabase\/server$/},()=>({path:'auth',namespace:'mock'}));
+ build.onResolve({filter:/server\/user-profile$/},()=>({path:'profile',namespace:'mock'}));
+ build.onLoad({filter:/.*/,namespace:'mock'},a=>{
+  const modules={
+   'next/link':'import React from "react"; export default function Link({children,...p}){return React.createElement("a",p,children)}',
+   'next/navigation':'export const usePathname=()=>({home:"/app",market:"/app/mercado",team:"/app/mi-equipo",journey:"/app/jornada",league:"/app/ligas"}[new URLSearchParams(location.search).get("case")]||"/app/perfil"); export const useRouter=()=>({refresh(){}});export const redirect=()=>{};',
+   actions:'export async function logout(){document.body.dataset.loggedOut="true";}',
+   auth:'export async function createClient(){return {auth:{getUser:async()=>({data:{user:{id:"demo",email:"demo@example.test",email_confirmed_at:"2026-09-07"}}})}}}',
+   profile:'export async function getUserProfileOverview(){return {username:"pepe_rodriguez",displayName:"Pepe Rodríguez Fernández",avatarPath:null,leagueCount:2,totalPoints:124.5,leagues:[{id:"demo",name:"Los del viernes",teamName:"Sevilla Supersonics",hasTeam:true,memberCount:12}]}}'
+  };return{contents:modules[a.path],loader:'jsx',resolveDir:process.cwd()};
+ });
+}}]});
+const css=style.join('\n');
+const server=http.createServer((r,res)=>{const url=new URL(r.url,'http://localhost');if(url.pathname==='/app.js'){res.setHeader('content-type','text/javascript');res.end(fs.readFileSync(path.join(out,'app.js')));}else if(url.pathname.startsWith('/fonts/')){res.end(fs.readFileSync(path.join('public',url.pathname)));}else{res.setHeader('content-type','text/html');res.end('<!doctype html><html lang="es"><meta name="viewport" content="width=device-width, initial-scale=1"><style>'+css+'</style><div id="root"></div><script src="/app.js"></script></html>');}});
+await new Promise(resolve=>server.listen(4178,'127.0.0.1',resolve));
+const browser=await chromium.launch({executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true});
+const page=await browser.newPage();
+const results=[];const errors=[];page.on('pageerror',e=>errors.push(e.message));
+await page.route('**/api/**',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({data:[]})}));
+try{
+ for(const width of [320,375,430,768,1440]){
+  await page.setViewportSize({width,height:900});
+  for(const name of ['register','onboarding','home','market','team','journey','league','profile','sports','states']){
+   await page.goto('http://127.0.0.1:4178/?case='+name);await page.locator('main').waitFor();await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:path.join(capture,`${name}-${width}.png`),fullPage:true});
+   const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);
+   results.push({name,width,overflow});
+  }
+ }
+ await page.setViewportSize({width:375,height:900});
+ await page.goto('http://127.0.0.1:4178/?case=register');
+ const username=page.locator('input[name="username"]');
+ if(!await username.evaluate(el=>el.required))throw Error('Username must remain required');
+ await username.fill('no válido');if(await username.evaluate(el=>el.checkValidity()))throw Error('Invalid username accepted');
+ await username.fill('pepe_23');if(!await username.evaluate(el=>el.checkValidity()))throw Error('Valid username rejected');
+ await page.getByLabel('Correo electrónico').focus();await page.keyboard.press('Tab');
+ if(!await username.evaluate(el=>el===document.activeElement))throw Error('Registration focus order changed');
+ await page.goto('http://127.0.0.1:4178/?case=onboarding');if(await page.locator('.bottom-nav').count())throw Error('Onboarding exposes navigation');
+ await page.goto('http://127.0.0.1:4178/?case=market');
+ if(await page.locator('.bottom-nav a').count()!==5)throw Error('Navigation must have five destinations');
+ if(await page.locator('.bottom-nav [aria-current="page"]').getAttribute('href')!=='/app/mercado')throw Error('Active section missing');
+ await page.getByRole('button',{name:'Comprar',exact:true}).first().click();
+ await page.getByRole('dialog').waitFor();await page.screenshot({path:path.join(capture,'market-dialog-375.png'),fullPage:true});
+ await page.keyboard.press('Escape');if(await page.getByRole('dialog').isVisible())throw Error('Escape failed');
+ if(!await page.getByRole('button',{name:'Comprar',exact:true}).first().evaluate(el=>el===document.activeElement))throw Error('Dialog failed to restore focus');
+ await page.getByPlaceholder('Jugador o equipo…').fill('Nadie coincide');if(!await page.getByText('No hay jugadores para este filtro.').isVisible())throw Error('Filtering failed');
+ await page.goto('http://127.0.0.1:4178/?case=team');await page.getByRole('button',{name:'Puntos',exact:true}).click();await page.screenshot({path:path.join(capture,'team-points-375.png'),fullPage:true});
+ await page.goto('http://127.0.0.1:4178/?case=profile');await page.locator('.profile-logout > .logout-button').click();await page.getByRole('dialog').waitFor();await page.keyboard.press('Escape');
+ await page.goto('http://127.0.0.1:4178/?case=league-member');await page.getByRole('button',{name:'Mi liga',exact:true}).click();await page.getByRole('button',{name:'Abandonar liga',exact:true}).click();await page.getByRole('dialog').waitFor();await page.getByRole('button',{name:'Cancelar',exact:true}).click();if(await page.getByRole('dialog').isVisible())throw Error('League cancel failed');
+ await page.emulateMedia({reducedMotion:'reduce'});await page.goto('http://127.0.0.1:4178/?case=home');
+ const animation=await page.locator('main').evaluate(el=>getComputedStyle(el).animationName);if(animation!=='none')throw Error('Reduced motion failed');
+ await page.setViewportSize({width:768,height:900});await page.goto('http://127.0.0.1:4178/?case=onboarding');await page.evaluate(()=>document.body.style.zoom='2');await page.screenshot({path:path.join(capture,'onboarding-zoom200.png'),fullPage:true});
+ fs.writeFileSync(path.join(capture,'results.json'),JSON.stringify({results,errors,smoke:'username required/validity/focus, onboarding navigation gate, five destinations/current section, market dialog/Escape/focus restoration/filter, team tabs, profile dialog, league leave cancellation, reduced motion, zoom'},null,2));
+ console.log(JSON.stringify({overflows:results.filter(r=>r.overflow),errors,captures:results.length}));
+}finally{await browser.close();server.close();}

@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 const root=resolve(process.cwd(),"../..");
 const service=readFileSync(resolve(root,"apps/web/src/server/journey.ts"),"utf8");
 const component=readFileSync(resolve(root,"apps/web/src/components/journey-live.tsx"),"utf8");
-const css=readFileSync(resolve(root,"apps/web/src/components/journey-live.module.css"),"utf8");
+const css=readFileSync(resolve(root,"apps/web/src/components/journey-live.module.css"),"utf8").replace(/\s+/g,"");
 
 describe("live journey UI contract",()=>{
  it("queries only starter slots and never manufactures a missing score",()=>{expect(service).toContain('where:{role:"STARTER"}');expect(service).toContain('totalPoints:roundScore?.points?.toString()??null');expect(service).not.toContain('role:"SUBSTITUTE"')});

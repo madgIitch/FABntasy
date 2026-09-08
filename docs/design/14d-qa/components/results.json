@@ -1,0 +1,256 @@
+{
+  "results": [
+    {
+      "name": "register",
+      "width": 320,
+      "overflow": false
+    },
+    {
+      "name": "onboarding",
+      "width": 320,
+      "overflow": false
+    },
+    {
+      "name": "home",
+      "width": 320,
+      "overflow": false
+    },
+    {
+      "name": "market",
+      "width": 320,
+      "overflow": false
+    },
+    {
+      "name": "team",
+      "width": 320,
+      "overflow": false
+    },
+    {
+      "name": "journey",
+      "width": 320,
+      "overflow": false
+    },
+    {
+      "name": "league",
+      "width": 320,
+      "overflow": false
+    },
+    {
+      "name": "profile",
+      "width": 320,
+      "overflow": false
+    },
+    {
+      "name": "sports",
+      "width": 320,
+      "overflow": false
+    },
+    {
+      "name": "states",
+      "width": 320,
+      "overflow": false
+    },
+    {
+      "name": "register",
+      "width": 375,
+      "overflow": false
+    },
+    {
+      "name": "onboarding",
+      "width": 375,
+      "overflow": false
+    },
+    {
+      "name": "home",
+      "width": 375,
+      "overflow": false
+    },
+    {
+      "name": "market",
+      "width": 375,
+      "overflow": false
+    },
+    {
+      "name": "team",
+      "width": 375,
+      "overflow": false
+    },
+    {
+      "name": "journey",
+      "width": 375,
+      "overflow": false
+    },
+    {
+      "name": "league",
+      "width": 375,
+      "overflow": false
+    },
+    {
+      "name": "profile",
+      "width": 375,
+      "overflow": false
+    },
+    {
+      "name": "sports",
+      "width": 375,
+      "overflow": false
+    },
+    {
+      "name": "states",
+      "width": 375,
+      "overflow": false
+    },
+    {
+      "name": "register",
+      "width": 430,
+      "overflow": false
+    },
+    {
+      "name": "onboarding",
+      "width": 430,
+      "overflow": false
+    },
+    {
+      "name": "home",
+      "width": 430,
+      "overflow": false
+    },
+    {
+      "name": "market",
+      "width": 430,
+      "overflow": false
+    },
+    {
+      "name": "team",
+      "width": 430,
+      "overflow": false
+    },
+    {
+      "name": "journey",
+      "width": 430,
+      "overflow": false
+    },
+    {
+      "name": "league",
+      "width": 430,
+      "overflow": false
+    },
+    {
+      "name": "profile",
+      "width": 430,
+      "overflow": false
+    },
+    {
+      "name": "sports",
+      "width": 430,
+      "overflow": false
+    },
+    {
+      "name": "states",
+      "width": 430,
+      "overflow": false
+    },
+    {
+      "name": "register",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "name": "onboarding",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "name": "home",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "name": "market",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "name": "team",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "name": "journey",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "name": "league",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "name": "profile",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "name": "sports",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "name": "states",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "name": "register",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "name": "onboarding",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "name": "home",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "name": "market",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "name": "team",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "name": "journey",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "name": "league",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "name": "profile",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "name": "sports",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "name": "states",
+      "width": 1440,
+      "overflow": false
+    }
+  ],
+  "errors": [],
+  "smoke": "username required/validity/focus, onboarding navigation gate, five destinations/current section, market dialog/Escape/focus restoration/filter, team tabs, profile dialog, league leave cancellation, reduced motion, zoom"
+}

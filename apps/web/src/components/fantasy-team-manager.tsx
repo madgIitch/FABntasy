@@ -59,7 +59,7 @@ export function FantasyTeamManager({ competitionSeasonId, roundNumber, initialTe
 
   const startersList = team.roster.filter((player) => starters.includes(player.playerRegistrationId));
   return <main className={`app-main ${styles.page}`}><Header roundNumber={roundNumber} />
-    <nav className={styles.views} aria-label="Vista del equipo">{views.map((item) => <button key={item.id} className={view === item.id ? styles.active : ""} onClick={() => setView(item.id)}>{item.label}</button>)}</nav>
+    <nav className={styles.views} aria-label="Vista del equipo">{views.map((item) => <button key={item.id} aria-pressed={view === item.id} className={view === item.id ? styles.active : ""} onClick={() => setView(item.id)}>{item.label}</button>)}</nav>
     <section className={styles.summary} aria-label="Presupuesto"><span><small>Valor de compra</small><strong>{credits.format(team.budgetUsed)}</strong></span><span><small>Disponible</small><strong>{credits.format(team.budgetRemaining)}</strong></span><span><small>Plantilla</small><strong>{team.roster.length}/7</strong></span></section>
     {locked && <p className={styles.locked}>Alineación cerrada · snapshot de la jornada {roundNumber}</p>}
     <div className={styles.stage} key={view}>{view === "court" ? <Court players={startersList} selected={starters} locked={locked} onToggle={toggleStarter} /> : <DataView view={view} players={team.roster} starters={starters} metrics={playerMetrics} />}</div>

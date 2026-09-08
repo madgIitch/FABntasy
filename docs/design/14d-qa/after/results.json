@@ -1,0 +1,127 @@
+[
+  {
+    "name": "landing",
+    "width": 320,
+    "overflow": false
+  },
+  {
+    "name": "register",
+    "width": 320,
+    "overflow": false
+  },
+  {
+    "name": "login",
+    "width": 320,
+    "overflow": false
+  },
+  {
+    "name": "reset",
+    "width": 320,
+    "overflow": false
+  },
+  {
+    "name": "offline",
+    "width": 320,
+    "overflow": false
+  },
+  {
+    "name": "landing",
+    "width": 375,
+    "overflow": false
+  },
+  {
+    "name": "register",
+    "width": 375,
+    "overflow": false
+  },
+  {
+    "name": "login",
+    "width": 375,
+    "overflow": false
+  },
+  {
+    "name": "reset",
+    "width": 375,
+    "overflow": false
+  },
+  {
+    "name": "offline",
+    "width": 375,
+    "overflow": false
+  },
+  {
+    "name": "landing",
+    "width": 430,
+    "overflow": false
+  },
+  {
+    "name": "register",
+    "width": 430,
+    "overflow": false
+  },
+  {
+    "name": "login",
+    "width": 430,
+    "overflow": false
+  },
+  {
+    "name": "reset",
+    "width": 430,
+    "overflow": false
+  },
+  {
+    "name": "offline",
+    "width": 430,
+    "overflow": false
+  },
+  {
+    "name": "landing",
+    "width": 768,
+    "overflow": false
+  },
+  {
+    "name": "register",
+    "width": 768,
+    "overflow": false
+  },
+  {
+    "name": "login",
+    "width": 768,
+    "overflow": false
+  },
+  {
+    "name": "reset",
+    "width": 768,
+    "overflow": false
+  },
+  {
+    "name": "offline",
+    "width": 768,
+    "overflow": false
+  },
+  {
+    "name": "landing",
+    "width": 1440,
+    "overflow": false
+  },
+  {
+    "name": "register",
+    "width": 1440,
+    "overflow": false
+  },
+  {
+    "name": "login",
+    "width": 1440,
+    "overflow": false
+  },
+  {
+    "name": "reset",
+    "width": 1440,
+    "overflow": false
+  },
+  {
+    "name": "offline",
+    "width": 1440,
+    "overflow": false
+  }
+]

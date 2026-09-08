@@ -279,3 +279,16 @@ Decisiones registradas:
 - **tests:** Incluye esquema, autorización, colisiones concurrentes, avatar, resumen, ligas, logout, navegación y viewport móvil.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-14d-green-white-design-system -->
+## 2026-09-07 · sprint-14d-green-white-design-system aprobado
+
+Contexto: se aprobó el spec `sprint-14d-green-white-design-system` (Sprint 14D - Rediseño integral verde y blanco).
+
+Decisiones registradas:
+
+- **auth_secrets:** Sesión y permisos existentes; ningún secreto en capturas.
+- **rollback_compat:** Cambio visual reversible sin migraciones.
+- **tests:** Checks, smoke tests y capturas revisadas en cinco anchos, foco, contraste y reduced motion.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

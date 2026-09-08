@@ -413,3 +413,22 @@ Objetivo no negociable:
 - **edge_cases:** Define fallback de avatar, registro atómico, alta retrocompatible para usuarios existentes, concurrencia de username, métricas pendientes y separación entre múltiples identidades de equipo.
 - **ui_states:** Define avatar persistente, perfil, edición, cuenta básica, listado de ligas, confirmación de logout, responsive, teclado y estados vacíos/error.
 
+<!-- harness:sprint-14d-green-white-design-system -->
+## sprint-14d-green-white-design-system · Sprint 14D - Rediseño integral verde y blanco
+
+Fuente visual y decisiones: docs/design/CANASTIO_14D_VISUAL_DIRECTION.md. Spec detallada propuesta: docs/design/SPRINT_14D_SPEC.md. Rediseño de presentación y componentes compartidos; mantiene contratos, datos y permisos. Requiere aprobación explícita antes de implementar.
+
+### Scope aprobado
+
+  - `apps/web/**`
+  - `tests/**`
+  - `docs/**`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** Sin cambios de persistencia; DTO y reglas existentes.
+- **external_contracts:** Sin nuevas APIs; assets locales y autorizados.
+- **edge_cases:** Sin liga, perfil incompleto, nombres largos, datos ausentes y cutoff; responsive desde 320 px.
+- **ui_states:** Sistema completo en docs/design/CANASTIO_14D_VISUAL_DIRECTION.md y docs/design/SPRINT_14D_SPEC.md.
+

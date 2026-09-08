@@ -1,19 +1,266 @@
-.access{width:100%;margin-top:3rem;padding:2rem 0 1rem;border-top:1px solid var(--line)}
-.intro{display:flex;align-items:flex-end;justify-content:space-between;gap:2rem;margin-bottom:1.35rem}
-.introHeading{display:block;min-width:0}.eyebrow{display:block;margin:0 0 .45rem;color:var(--lime);font-size:.64rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
-.title{display:block;margin:0;color:var(--paper);font:600 clamp(1.7rem,4vw,2.35rem)/1 Oswald;text-transform:uppercase}
-.introHint{display:block;max-width:17rem;margin:0;color:var(--muted);font-size:.72rem;line-height:1.5;text-align:right}
-.codeRow{display:grid;width:100%;grid-template-columns:minmax(0,1fr) auto;border-block:1px solid var(--line)}
-.codeBlock{display:grid;min-width:0;gap:.35rem;padding:1.15rem 1rem 1.15rem 0}.fieldLabel{display:block;color:var(--muted);font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
-.codeValue{display:block;overflow-wrap:anywhere;color:var(--paper);font:600 clamp(1.65rem,6vw,2.3rem)/1 Oswald;letter-spacing:.08em}
-.copyButton{display:flex;align-items:center;justify-content:space-between;gap:2.5rem;min-width:13rem;padding:0 1.2rem;border:0;background:var(--lime);color:var(--ink);font:800 .82rem "DM Sans";cursor:pointer;transition:transform .18s,background .18s}
-.buttonLabel{display:block}.buttonIcon{display:block;font-size:1.15rem;font-weight:800}.copyButton:hover{background:#dcff7c;transform:translateY(-2px)}
-.security{display:grid;width:100%;grid-template-columns:minmax(11rem,.7fr) minmax(16rem,1fr);gap:clamp(1.5rem,5vw,4rem);padding:2rem 0;border-bottom:1px solid var(--line)}
-.securityCopy{display:grid;align-content:start}.securityTitle{display:block;color:var(--paper);font:500 1.1rem Oswald;text-transform:uppercase}.securityHint{display:block;max-width:18rem;margin-top:.55rem;color:var(--muted);font-size:.7rem;line-height:1.45}
-.passwordForm{display:grid;min-width:0;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:.65rem}.passwordForm>.fieldLabel{grid-column:1/-1}
-.passwordInput{display:block;width:100%;min-width:0;min-height:3.25rem;padding:.8rem 0;border:0;border-bottom:1px solid #53665c;border-radius:0;background:transparent;color:var(--paper);font:400 .85rem "DM Sans";outline:none;transition:border-color .18s}.passwordInput::placeholder{color:#6f7c74}.passwordInput:focus{border-color:var(--lime)}
-.saveButton{display:flex;align-items:center;justify-content:space-between;gap:2rem;min-height:3.25rem;padding:0 1rem;border:1px solid #53665c;background:transparent;color:var(--paper);font:750 .78rem "DM Sans";cursor:pointer;transition:border-color .18s,color .18s}.saveButton:hover{border-color:var(--lime);color:var(--lime)}
-.copyButton:disabled,.saveButton:disabled,.leaveButton:disabled{cursor:wait;opacity:.55;transform:none}.feedback{display:block;margin:1rem 0 0;padding-left:.8rem;border-left:2px solid var(--lime);color:#cbd5ce;font-size:.74rem}
-.leaveButton{display:block;min-height:3rem;margin-top:1rem;padding:0;border:0;border-bottom:1px solid var(--danger);background:transparent;color:var(--danger);font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
-@media(max-width:700px){.access{margin-top:2.5rem;padding-top:1.5rem}.intro{display:grid;gap:.65rem}.introHint{max-width:22rem;text-align:left}.codeRow{grid-template-columns:minmax(0,1fr)}.codeBlock{padding:1rem 0}.copyButton{width:100%;min-width:0;min-height:3.4rem}.security{grid-template-columns:minmax(0,1fr);gap:1.35rem;padding:1.7rem 0}.passwordForm{grid-template-columns:minmax(0,1fr)}.saveButton{width:100%;min-height:3.4rem}.feedback{line-height:1.45}}
-@media(prefers-reduced-motion:reduce){.copyButton,.saveButton,.passwordInput{transition:none}}
+
+.access {
+  width: 100%;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: var(--radius-panel);
+  padding: 24px;
+  box-shadow: var(--shadow-panel);
+  border: none;
+  margin-top: 24px
+}
+.intro {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-bottom: 1.35rem
+}
+.introHeading {
+  display: block;
+  min-width: 0
+}
+.eyebrow {
+  display: block;
+  margin: 0 0 .45rem;
+  color: var(--color-brand-text);
+  font-size: .75rem;
+  font-weight: 800;
+  letter-spacing: normal;
+  text-transform: none
+}
+.title {
+  display: block;
+  margin: 0;
+  color: var(--color-text);
+  text-transform: none;
+  font: 600 var(--section-title)/1.2 var(--font-ui)
+}
+.introHint {
+  display: block;
+  max-width: 17rem;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: .75rem;
+  line-height: 1.5;
+  text-align: right
+}
+.codeRow {
+  display: grid;
+  width: 100%;
+  grid-template-columns: minmax(0,1fr) auto;
+  border-block: 1px solid var(--color-border)
+}
+.codeBlock {
+  display: grid;
+  min-width: 0;
+  gap: .35rem;
+  padding: 1.15rem 1rem 1.15rem 0
+}
+.fieldLabel {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: normal;
+  text-transform: none
+}
+.codeValue {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--color-text);
+  font: 600 clamp(1.65rem,6vw,2.3rem)/1 var(--font-ui);
+  letter-spacing: normal
+}
+.copyButton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2.5rem;
+  min-width: 13rem;
+  padding: 0 1.2rem;
+  border: 0;
+  background: var(--color-brand);
+  font: 800 .82rem var(--font-ui);
+  cursor: pointer;
+  transition: transform .18s,background .18s;
+  min-height: 44px;
+  border-radius: var(--radius-control);
+  color: var(--color-on-brand)
+}
+.buttonLabel {
+  display: block;
+  min-height: 44px;
+  border-radius: var(--radius-control)
+}
+.buttonIcon {
+  display: block;
+  font-size: 1.15rem;
+  font-weight: 800;
+  min-height: 44px;
+  border-radius: var(--radius-control)
+}
+.copyButton:hover {
+  background: var(--color-brand-hover)
+}
+.security {
+  display: grid;
+  width: 100%;
+  grid-template-columns: minmax(11rem,.7fr) minmax(16rem,1fr);
+  gap: clamp(1.5rem,5vw,4rem);
+  padding: 2rem 0;
+  border-bottom: 1px solid var(--color-border)
+}
+.securityCopy {
+  display: grid;
+  align-content: start
+}
+.securityTitle {
+  display: block;
+  color: var(--color-text);
+  font: 500 1.1rem var(--font-ui);
+  text-transform: none
+}
+.securityHint {
+  display: block;
+  max-width: 18rem;
+  margin-top: .55rem;
+  color: var(--color-text-muted);
+  font-size: .75rem;
+  line-height: 1.45
+}
+.passwordForm {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0,1fr) auto;
+  align-items: flex-end;
+  gap: .65rem
+}
+.passwordForm>.fieldLabel {
+  grid-column: 1/-1
+}
+.passwordInput {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  border-bottom: 1px solid var(--color-border);
+  font: 400 .85rem var(--font-ui);
+  transition: border-color .18s;
+  min-height: 44px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 16px;
+  padding: 12px;
+  border: 1px solid var(--color-control-border);
+  border-radius: var(--radius-control)
+}
+.passwordInput::placeholder {
+  color: var(--color-text-muted)
+}
+.passwordInput:focus {
+  border-color: var(--color-brand)
+}
+.saveButton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 0 1rem;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  font: 750 .78rem var(--font-ui);
+  cursor: pointer;
+  transition: border-color .18s,color .18s;
+  min-height: 44px;
+  border-radius: var(--radius-control)
+}
+.saveButton:hover {
+  border-color: var(--color-brand);
+  color: var(--color-brand-text)
+}
+.copyButton:disabled,.saveButton:disabled,.leaveButton:disabled {
+  cursor: wait;
+  opacity: .55;
+  transform: none
+}
+.feedback {
+  display: block;
+  margin: 1rem 0 0;
+  padding-left: .8rem;
+  border-left: 2px solid var(--color-brand);
+  color: var(--color-text-muted);
+  font-size: .75rem
+}
+.leaveButton {
+  display: block;
+  min-height: 3rem;
+  margin-top: 1rem;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--color-danger);
+  background: transparent;
+  color: var(--color-danger);
+  font-size: .75rem;
+  font-weight: 800;
+  letter-spacing: normal;
+  text-transform: none;
+  cursor: pointer
+}
+@media(max-width:700px){
+.access {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem
+}
+.intro {
+  display: grid;
+  gap: .65rem
+}
+.introHint {
+  max-width: 22rem;
+  text-align: left
+}
+.codeRow {
+  grid-template-columns: minmax(0,1fr)
+}
+.codeBlock {
+  padding: 1rem 0
+}
+.copyButton {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border-radius: var(--radius-control)
+}
+.security {
+  grid-template-columns: minmax(0,1fr);
+  gap: 1.35rem;
+  padding: 1.7rem 0
+}
+.passwordForm {
+  grid-template-columns: minmax(0,1fr)
+}
+.saveButton {
+  width: 100%;
+  min-height: 44px;
+  border-radius: var(--radius-control)
+}
+.feedback {
+  line-height: 1.45
+}}
+@media(prefers-reduced-motion:reduce){
+.copyButton,.saveButton,.passwordInput {
+  transition: none;
+  min-height: 44px;
+  font-size: 16px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--color-control-border);
+  padding: 12px;
+  background: var(--color-surface);
+  color: var(--color-text)
+}}
+@media (max-width: 720px) {
+.access {
+  padding: 20px 16px
+}
+}

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe,expect,it } from "vitest";
-import { calculateClauseBase } from "./fantasy-market";
+import { calculateClauseBase, MARKET_INITIAL_PRICE } from "./fantasy-market";
 
 describe("fantasy market rules",()=>{
   it("uses 175% of the greater acquisition or current price",()=>{
@@ -8,6 +8,7 @@ describe("fantasy market rules",()=>{
     expect(calculateClauseBase(15_000_000n,12_000_000n)).toBe(26_250_000n);
   });
   it("rounds half-up to an integer credit",()=>expect(calculateClauseBase(101n,100n)).toBe(177n));
+  it("charges the same 5 M initial price shown by the global market",()=>expect(MARKET_INITIAL_PRICE).toBe(5_000_000));
   it("initializes an empty team from the market instead of redirecting to roster setup",()=>{
     const service=readFileSync(new URL("./fantasy-market.ts",import.meta.url),"utf8");
     const page=readFileSync(new URL("../../app/app/mercado/page.tsx",import.meta.url),"utf8");

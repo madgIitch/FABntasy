@@ -1,8 +1,10 @@
 import { Prisma } from "@prisma/client";
 import { COLD_START_RULES } from "../../../../packages/domain/fantasy-team";
+import { PLAYER_PRICING_V1 } from "../../../../packages/domain/player-pricing";
 import { db } from "./db";
 
 export const FANTASY_MARKET_SCHEMA_VERSION="fantasy-market-api.v1" as const;
+export const MARKET_INITIAL_PRICE=PLAYER_PRICING_V1.initialPrice;
 export type MarketActor={authUserId:string};
 export type MarketErrorCode="AUTH_REQUIRED"|"TEAM_NOT_FOUND"|"PLAYER_NOT_FOUND"|"PRICE_UNAVAILABLE"|"PLAYER_OWNED"|"PLAYER_FREE"|"NOT_OWNER"|"INSUFFICIENT_BALANCE"|"ROSTER_FULL"|"REAL_TEAM_LIMIT"|"CLAUSES_CLOSED"|"PLAYER_PROTECTED"|"CLAUSE_LIMIT"|"SHIELD_ALREADY_USED"|"INVALID_INPUT"|"VERSION_CONFLICT";
 export class MarketServiceError extends Error{constructor(public code:MarketErrorCode,public status=409){super(code)}}
@@ -27,7 +29,7 @@ async function ensureMarketTeam(actor:MarketActor,leagueId:string){
     await tx.fantasyTeam.upsert({where:{userProfileId_leagueId:{userProfileId:profile.id,leagueId}},update:{},create:{userProfileId:profile.id,leagueId,competitionSeasonId:league.competitionSeasonId,rosterRuleSetId:rules.id}});
   });
 }
-async function currentPrice(tx:Prisma.TransactionClient,playerRegistrationId:string,competitionSeasonId:string){const p=await tx.playerPrice.findFirst({where:{playerRegistrationId,competitionSeasonId},orderBy:{updatedAt:"desc"}});if(p)return p.currentPrice;const rules=await tx.fantasyRosterRuleSet.findFirst({where:{competitionSeasonId,status:"ACTIVE"},orderBy:{createdAt:"desc"}});if(!rules)fail("PRICE_UNAVAILABLE");return rules.coldStartPriceCredits;}
+async function currentPrice(tx:Prisma.TransactionClient,playerRegistrationId:string,competitionSeasonId:string){const p=await tx.playerPrice.findFirst({where:{playerRegistrationId,competitionSeasonId},orderBy:{updatedAt:"desc"}});return p?.currentPrice??BigInt(MARKET_INITIAL_PRICE);}
 async function ledger(tx:Prisma.TransactionClient,teamId:string,leagueId:string,transactionId:string,type:string,amount:bigint,balance:bigint){await tx.fantasyBudgetLedgerEntry.create({data:{fantasyTeamId:teamId,leagueId,transactionId,entryType:type,amountCredits:amount,balanceAfter:balance}})}
 async function validateCapacity(tx:Prisma.TransactionClient,team:{id:string;rosterRuleSet:{rosterSize:number;maxPerRealTeam:number}},playerRegistrationId:string){const [count,player]=await Promise.all([tx.fantasyRosterSlot.count({where:{fantasyTeamId:team.id}}),tx.playerRegistration.findUnique({where:{id:playerRegistrationId},select:{teamRegistrationId:true}})]);if(!player)fail("PLAYER_NOT_FOUND",404);if(count>=team.rosterRuleSet.rosterSize)fail("ROSTER_FULL");const same=await tx.fantasyRosterSlot.count({where:{fantasyTeamId:team.id,playerRegistration:{teamRegistrationId:player.teamRegistrationId}}});if(same>=team.rosterRuleSet.maxPerRealTeam)fail("REAL_TEAM_LIMIT");}
 

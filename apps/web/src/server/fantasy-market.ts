@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import { COLD_START_RULES } from "../../../../packages/domain/fantasy-team";
 import { db } from "./db";
 
 export const FANTASY_MARKET_SCHEMA_VERSION="fantasy-market-api.v1" as const;
@@ -16,11 +17,21 @@ async function context(tx:Prisma.TransactionClient|typeof db,actor:MarketActor,l
   const next=await tx.game.findFirst({where:{competitionSeasonId:team.competitionSeasonId,scheduledAt:{gte:new Date()},roundNumber:{not:null}},orderBy:{scheduledAt:"asc"},select:{roundNumber:true,scheduledAt:true}});
   return {profile,team,roundNumber:next?.roundNumber??1,nextRoundAt:next?.scheduledAt??new Date(Date.now()+7*86400000)};
 }
+async function ensureMarketTeam(actor:MarketActor,leagueId:string){
+  await db.$transaction(async tx=>{
+    const profile=await tx.userProfile.findUnique({where:{authUserId:actor.authUserId},select:{id:true,username:true}});
+    if(!profile)fail("AUTH_REQUIRED",401);if(!profile.username)fail("INVALID_INPUT",422);
+    const league=await tx.fantasyLeague.findFirst({where:{id:leagueId,status:"ACTIVE",memberships:{some:{userProfileId:profile.id,status:"ACTIVE"}}},select:{competitionSeasonId:true}});
+    if(!league)fail("TEAM_NOT_FOUND",404);
+    const rules=await tx.fantasyRosterRuleSet.upsert({where:{competitionSeasonId_identifier_version:{competitionSeasonId:league.competitionSeasonId,identifier:COLD_START_RULES.identifier,version:COLD_START_RULES.version}},update:{},create:{competitionSeasonId:league.competitionSeasonId,identifier:COLD_START_RULES.identifier,version:COLD_START_RULES.version,budgetCredits:BigInt(COLD_START_RULES.budgetCredits),rosterSize:COLD_START_RULES.rosterSize,starterCount:COLD_START_RULES.starters,substituteCount:COLD_START_RULES.substitutes,maxPerRealTeam:COLD_START_RULES.maxPerRealTeam,positionLimits:COLD_START_RULES.positionLimits,coldStartPriceCredits:BigInt(COLD_START_RULES.coldStartPriceCredits)}});
+    await tx.fantasyTeam.upsert({where:{userProfileId_leagueId:{userProfileId:profile.id,leagueId}},update:{},create:{userProfileId:profile.id,leagueId,competitionSeasonId:league.competitionSeasonId,rosterRuleSetId:rules.id}});
+  });
+}
 async function currentPrice(tx:Prisma.TransactionClient,playerRegistrationId:string,competitionSeasonId:string){const p=await tx.playerPrice.findFirst({where:{playerRegistrationId,competitionSeasonId},orderBy:{updatedAt:"desc"}});if(p)return p.currentPrice;const rules=await tx.fantasyRosterRuleSet.findFirst({where:{competitionSeasonId,status:"ACTIVE"},orderBy:{createdAt:"desc"}});if(!rules)fail("PRICE_UNAVAILABLE");return rules.coldStartPriceCredits;}
 async function ledger(tx:Prisma.TransactionClient,teamId:string,leagueId:string,transactionId:string,type:string,amount:bigint,balance:bigint){await tx.fantasyBudgetLedgerEntry.create({data:{fantasyTeamId:teamId,leagueId,transactionId,entryType:type,amountCredits:amount,balanceAfter:balance}})}
 async function validateCapacity(tx:Prisma.TransactionClient,team:{id:string;rosterRuleSet:{rosterSize:number;maxPerRealTeam:number}},playerRegistrationId:string){const [count,player]=await Promise.all([tx.fantasyRosterSlot.count({where:{fantasyTeamId:team.id}}),tx.playerRegistration.findUnique({where:{id:playerRegistrationId},select:{teamRegistrationId:true}})]);if(!player)fail("PLAYER_NOT_FOUND",404);if(count>=team.rosterRuleSet.rosterSize)fail("ROSTER_FULL");const same=await tx.fantasyRosterSlot.count({where:{fantasyTeamId:team.id,playerRegistration:{teamRegistrationId:player.teamRegistrationId}}});if(same>=team.rosterRuleSet.maxPerRealTeam)fail("REAL_TEAM_LIMIT");}
 
-export async function getMarketContext(actor:MarketActor,leagueId:string){const c=await context(db,actor,leagueId);const slots=await db.fantasyRosterSlot.findMany({where:{leagueId},include:{fantasyTeam:{include:{userProfile:{select:{displayName:true,authUserId:true}}}},clauseInvestment:true}});return {leagueId,balanceCredits:Number(c.team.balanceCredits),teamId:c.team.id,roundNumber:c.roundNumber,clauseCutoffAt:new Date(c.nextRoundAt.getTime()-86400000).toISOString(),clausesOpen:new Date()<new Date(c.nextRoundAt.getTime()-86400000),ownership:slots.map(s=>({playerRegistrationId:s.playerRegistrationId,ownerTeamId:s.fantasyTeamId,ownerName:s.fantasyTeam.userProfile.displayName??"Manager Canastio",isMine:s.fantasyTeamId===c.team.id,acquisitionPrice:Number(s.acquisitionPrice),clauseInvestment:Number(s.clauseInvestment?.clauseBonusCredits??0n)}))};}
+export async function getMarketContext(actor:MarketActor,leagueId:string){await ensureMarketTeam(actor,leagueId);const c=await context(db,actor,leagueId);const slots=await db.fantasyRosterSlot.findMany({where:{leagueId},include:{fantasyTeam:{include:{userProfile:{select:{displayName:true,authUserId:true}}}},clauseInvestment:true}});return {leagueId,balanceCredits:Number(c.team.balanceCredits),teamId:c.team.id,roundNumber:c.roundNumber,clauseCutoffAt:new Date(c.nextRoundAt.getTime()-86400000).toISOString(),clausesOpen:new Date()<new Date(c.nextRoundAt.getTime()-86400000),ownership:slots.map(s=>({playerRegistrationId:s.playerRegistrationId,ownerTeamId:s.fantasyTeamId,ownerName:s.fantasyTeam.userProfile.displayName??"Manager Canastio",isMine:s.fantasyTeamId===c.team.id,acquisitionPrice:Number(s.acquisitionPrice),clauseInvestment:Number(s.clauseInvestment?.clauseBonusCredits??0n)}))};}
 
 export async function executeMarket(actor:MarketActor,input:{leagueId:string;playerRegistrationId:string;action:"BUY"|"SELL"|"CLAUSE"|"INVEST"|"SHIELD";credits?:number;idempotencyKey:string}){
  if(!input.idempotencyKey||!Number.isSafeInteger(input.credits??0)||input.credits!<0)fail("INVALID_INPUT",422);

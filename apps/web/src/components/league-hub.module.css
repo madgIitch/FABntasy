@@ -62,6 +62,8 @@
   border-radius: 50%;
   background: var(--color-brand)
 }
+.memberAction { display:flex; align-items:center; gap:14px }
+.memberAction button,.leagueStart button { min-height:44px; padding:0 14px; border:0; border-radius:var(--radius-control); background:var(--color-brand-soft); color:var(--color-brand-text); font-weight:800; cursor:pointer }
 .summary {
   display: grid;
   grid-template-columns: 1fr 1fr 1.25fr;
@@ -208,6 +210,14 @@
   padding-left: .8rem;
   background: var(--color-brand-soft)
 }
+.rankRow[data-me="true"] { margin-inline:-.4rem; padding-inline:.8rem; border-radius:var(--radius-control); background:var(--color-brand-soft) }
+.roundContext { margin:20px 0 0; color:var(--color-text-muted); font-size:.75rem }
+.leagueStart { display:grid; min-height:20rem; align-content:center; justify-items:start; margin-top:24px; padding:32px 24px; border-radius:var(--radius-panel); background:var(--color-surface); box-shadow:var(--shadow-panel) }
+.leagueStart>p { margin:0 0 8px; color:var(--color-brand-text); font-size:.75rem; font-weight:800 }
+.leagueStart h2 { max-width:26rem; margin:0; font:600 var(--section-title)/1.25 var(--font-ui) }
+.leagueStart>span { max-width:29rem; margin-top:12px; color:var(--color-text-muted); line-height:1.5 }
+.leagueStart>small { margin-top:24px; color:var(--color-text-muted) }
+.leagueStart button { margin-top:14px; background:var(--color-brand); color:var(--color-on-brand) }
 .rankRow>b {
   color: var(--color-brand-text);
   font: 500 1.15rem var(--font-ui)
@@ -368,6 +378,10 @@
 .members {
   padding-top: .35rem
 }
+.memberAction {
+  width: 100%;
+  justify-content: space-between
+}
 .summary {
   grid-template-columns: 1fr 1fr
 }
@@ -408,6 +422,10 @@
 }
 .newsPreview {
   grid-template-columns: 1fr
+}
+.leagueStart {
+  min-height: 19rem;
+  padding: 28px 20px
 }
 .sectionHead {
   align-items: start

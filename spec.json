@@ -1133,7 +1133,7 @@
       "id": "sprint-14e-forest-lime-global-reskin",
       "name": "Sprint 14e - Forest and Lime Global Reskin",
       "title": "Sprint 14E - Reskin global bosque y lima",
-      "status": "spec_ready",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.5.5",
       "dependencies": [
@@ -1178,7 +1178,10 @@
         "docs/**",
         "spec.json"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-08T23:13:19.872Z"
     },
     {
       "id": "sprint-15-home-dashboard",

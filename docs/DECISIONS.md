@@ -292,3 +292,12 @@ Decisiones registradas:
 - **tests:** Checks, smoke tests y capturas revisadas en cinco anchos, foco, contraste y reduced motion.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-14e-forest-lime-global-reskin -->
+## 2026-09-08 · sprint-14e-forest-lime-global-reskin aprobado
+
+Contexto: se aprobó el spec `sprint-14e-forest-lime-global-reskin` (Sprint 14E - Reskin global bosque y lima).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

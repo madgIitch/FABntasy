@@ -1,4 +1,4 @@
-.market { margin:auto; min-height:100svh; max-width:1200px; padding:32px 32px 120px; color:var(--color-text); background:var(--color-canvas) }
+.market { margin:auto; min-height:100svh; max-width:1200px; padding:32px 32px 120px; color:var(--color-text); background:transparent }
 .header { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px 32px; align-items:end; padding-bottom:24px }
 .eyebrow,.header h1,.header p { margin:0 }
 .eyebrow { margin-bottom:8px; color:var(--color-brand-text); font-size:.75rem; font-weight:800 }
@@ -8,7 +8,7 @@
 .balance span,.marketState small { color:var(--color-text-muted); font-size:.78rem }
 .marketState { grid-column:1/-1; display:flex; align-items:center; gap:10px }
 .marketState>span { padding:6px 10px; border-radius:999px; background:var(--color-brand-soft); color:var(--color-brand-text); font-size:.75rem; font-weight:700 }
-.marketState>span[data-open="false"] { background:#f3f0e8; color:var(--color-warning) }
+.marketState>span[data-open="false"] { background:var(--color-warning-soft); color:var(--color-warning) }
 .controls { position:relative; z-index:2; display:grid; gap:12px; margin-bottom:16px; padding:20px; border-radius:var(--radius-panel); background:var(--color-surface); box-shadow:var(--shadow-panel) }
 .searchRow { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:end }
 .controls label { display:grid; gap:6px }
@@ -22,9 +22,9 @@
 .quickFilters button { flex:0 0 auto }
 .advancedFilters { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)) auto; gap:12px; align-items:end; padding-top:12px; border-top:1px solid var(--color-border) }
 .clearFilters { color:var(--color-brand-text) }
-.pulse { display:grid; grid-template-columns:1fr auto; gap:16px; align-items:center; margin-bottom:20px; padding:18px 20px; border-radius:var(--radius-panel); background:var(--color-brand-deep); color:white }
+.pulse { display:grid; grid-template-columns:1fr auto; gap:16px; align-items:center; margin-bottom:20px; padding:18px 20px; border-radius:var(--radius-panel); background:var(--color-surface-selected); color:var(--color-text) }
 .pulse>div { display:grid; gap:4px }
-.pulse span,.pulse dt { color:rgba(255,255,255,.72); font-size:.72rem }
+.pulse span,.pulse dt { color:var(--color-text-muted); font-size:.72rem }
 .pulse strong { font-size:1.05rem }
 .pulse dl { display:flex; gap:24px; margin:0 }
 .pulse dl div { display:grid; justify-items:end }
@@ -54,7 +54,7 @@
 .marketActions button:disabled { opacity:.45; cursor:not-allowed }
 .message,.empty { margin:0; padding:24px 20px; color:var(--color-text-muted); font-size:.82rem }
 .message { color:var(--color-danger) }
-.toast { position:fixed; z-index:20; left:50%; bottom:calc(88px + env(safe-area-inset-bottom)); transform:translateX(-50%); margin:0; padding:12px 18px; border-radius:999px; background:var(--color-brand-deep); color:white; box-shadow:var(--shadow-dialog); font-size:.82rem; font-weight:700; white-space:nowrap; animation:marketToast .2s ease-out }
+.toast { position:fixed; z-index:20; left:50%; bottom:calc(88px + env(safe-area-inset-bottom)); transform:translateX(-50%); margin:0; padding:12px 18px; border-radius:999px; background:var(--color-surface-selected); color:var(--color-text); box-shadow:var(--shadow-dialog); font-size:.82rem; font-weight:700; white-space:nowrap; animation:marketToast .2s ease-out }
 .transaction { display:grid; gap:18px; margin-top:20px }
 .transactionPlayer { display:flex; align-items:center; gap:12px }
 .transactionPlayer>div { display:grid; min-width:0 }
@@ -71,7 +71,7 @@
 .financial dt { color:var(--color-text-muted); font-size:.82rem }
 .financial dd { margin:0; font-weight:650; font-variant-numeric:tabular-nums }
 .financial .total { padding-top:10px; border-top:1px solid color-mix(in srgb,var(--color-brand) 22%,transparent) }
-.financial .total dt,.financial .total dd { color:var(--color-brand-deep); font-weight:750 }
+.financial .total dt,.financial .total dd { color:var(--color-brand-text); font-weight:750 }
 .consequence { margin:0; font-size:.84rem; line-height:1.5 }
 .transactionActions { display:flex; justify-content:flex-end; gap:10px; margin-top:2px }
 .transactionActions button { min-height:44px }

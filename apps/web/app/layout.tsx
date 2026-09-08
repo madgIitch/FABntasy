@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   },
   appleWebApp: { capable: true, title: "Canastio", statusBarStyle: "black-translucent" },
 };
-export const viewport: Viewport = { themeColor: "#00843d", colorScheme: "light", viewportFit: "cover" };
+export const viewport: Viewport = { themeColor: "#081811", colorScheme: "dark", viewportFit: "cover" };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return <html lang="es"><body>{children}<ServiceWorkerRegistration /></body></html>;

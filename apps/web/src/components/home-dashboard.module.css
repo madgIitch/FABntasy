@@ -33,12 +33,12 @@
 }
 .hero {
   border-block: 1px solid var(--color-border);
-  background: var(--color-brand-deep);
+  background: var(--color-surface-selected);
   border-radius: var(--radius-panel);
   padding: 24px;
   box-shadow: var(--shadow-panel);
   border: none;
-  color: var(--color-on-brand)
+  color: var(--color-text)
 }
 .hero.urgent {
   border-top-color: var(--color-brand)
@@ -47,13 +47,13 @@
   font-weight: 800;
   letter-spacing: normal;
   text-transform: none;
-  color: var(--color-on-brand);
+  color: var(--color-text-muted);
   flex-wrap: wrap;
   font-size: 12px
 }
 .hero>p {
   font-size: .78rem;
-  color: var(--color-on-brand);
+  color: var(--color-text-muted);
   opacity: .85;
   margin: 24px 0 8px
 }
@@ -76,7 +76,7 @@
 }
 .heroStats small,.heroStats span {
   font: 500 .75rem var(--font-ui);
-  color: var(--color-on-brand)
+  color: var(--color-text-muted)
 }
 .heroStats b,.up {
   color: var(--color-brand-text)
@@ -90,13 +90,13 @@
   font-weight: 800;
   min-height: 44px;
   border-radius: var(--radius-control);
-  background: var(--color-surface);
-  color: var(--color-brand-deep)
+  background: var(--color-brand);
+  color: var(--color-on-brand)
 }
 .textAction {
   margin-top: 1.4rem;
   font-weight: 700;
-  color: var(--color-on-brand);
+  color: var(--color-brand-text);
   min-height: 44px;
   display: inline-flex;
   align-items: center;

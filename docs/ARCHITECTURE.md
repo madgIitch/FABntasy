@@ -432,3 +432,15 @@ Fuente visual y decisiones: docs/design/CANASTIO_14D_VISUAL_DIRECTION.md. Spec d
 - **edge_cases:** Sin liga, perfil incompleto, nombres largos, datos ausentes y cutoff; responsive desde 320 px.
 - **ui_states:** Sistema completo en docs/design/CANASTIO_14D_VISUAL_DIRECTION.md y docs/design/SPRINT_14D_SPEC.md.
 
+<!-- harness:sprint-14e-forest-lime-global-reskin -->
+## sprint-14e-forest-lime-global-reskin · Sprint 14E - Reskin global bosque y lima
+
+Spec detallada: docs/design/SPRINT_14E_SPEC.md. Sustituye únicamente la dirección cromática clara de 14D; conserva composición, tipografía, densidad, componentes, responsive y contratos funcionales.
+
+### Scope aprobado
+
+  - `apps/web/**`
+  - `tests/**`
+  - `docs/**`
+  - `spec.json`
+

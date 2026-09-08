@@ -1,6 +1,6 @@
 # Sprint 14E — Reskin global bosque y lima
 
-Estado: propuesta pendiente de aprobación (`spec_approved: false`).
+Estado: implementado y pendiente de revisión (`spec_approved: true`).
 
 ## Objetivo y relación con 14D
 

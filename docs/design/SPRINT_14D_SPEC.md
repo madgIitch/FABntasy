@@ -1,6 +1,6 @@
 # Sprint 14D — Rediseño integral verde y blanco
 
-Estado: implementado y pendiente de revisión (`spec_approved: true`).
+Estado: completado (`spec_approved: true`).
 
 ## Fuente y objetivo
 

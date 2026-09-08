@@ -5,10 +5,10 @@ import http from 'node:http';
 import { chromium } from '@playwright/test';
 const req=createRequire(import.meta.url);
 const esbuild=createRequire(req.resolve('vitest/package.json'))('esbuild');
-const out=path.resolve('../../.local/14d-qa');fs.mkdirSync(out,{recursive:true});
+const out=path.resolve('../../.local/14e-qa');fs.mkdirSync(out,{recursive:true});
 const capture=path.join(out,'captures');fs.mkdirSync(capture,{recursive:true});
 const style=[];
-await esbuild.build({entryPoints:['e2e/visual-fixtures.tsx'],bundle:true,write:true,outfile:path.join(out,'app.js'),jsx:'automatic',platform:'browser',define:{'process.env.NODE_ENV':'"development"'},plugins:[{name:'fixtures',setup(build){
+await esbuild.build({absWorkingDir:process.cwd(),entryPoints:['./e2e/visual-fixtures.tsx'],bundle:true,write:true,outfile:path.join(out,'app.js'),jsx:'automatic',platform:'browser',define:{'process.env.NODE_ENV':'"development"'},plugins:[{name:'fixtures',setup(build){
  build.onResolve({filter:/\.css$/},a=>({path:path.resolve(a.resolveDir,a.path),namespace:'styles'}));
  build.onLoad({filter:/.*/,namespace:'styles'},a=>{let css=fs.readFileSync(a.path,'utf8');const names={};if(a.path.endsWith('.module.css')){const prefix=path.basename(a.path).split('.')[0].replaceAll('-','_');css=css.replace(/\.([a-zA-Z_][\w-]*)/g,(_,n)=>{names[n]=prefix+'_'+n;return '.'+names[n];});}else{css=css.replace('@import "./tokens.css";',fs.readFileSync('app/tokens.css','utf8'));}style.push(css);return{contents:'export default '+JSON.stringify(names),loader:'js'};});
  build.onResolve({filter:/^next\/(link|navigation)$/},a=>({path:a.path,namespace:'mock'}));

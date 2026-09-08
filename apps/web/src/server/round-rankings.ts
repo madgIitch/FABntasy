@@ -79,13 +79,13 @@ export async function getRanking(actorAuthUserId: string, params: { competitionS
     if (!member) throw new RoundRankingError("LEAGUE_NOT_FOUND", 404); }
   const totals = await db.fantasyTeamTotal.findMany({ where: { competitionSeasonId: params.competitionSeasonId, leagueId: params.leagueId,
     ...(params.leagueId ? { fantasyTeam: { userProfile: { leagueMemberships: { some: { leagueId: params.leagueId, status: "ACTIVE" } } } } } : {}) },
-    include: { fantasyTeam: { include: { userProfile: { select: { displayName: true } } } } }, orderBy: params.leagueId ? { leaguePosition: "asc" } : { globalPosition: "asc" } });
+    include: { fantasyTeam: { include: { userProfile: { select: { username: true, displayName: true } } } } }, orderBy: params.leagueId ? { leaguePosition: "asc" } : { globalPosition: "asc" } });
   const roundScores = params.roundNumber === undefined ? [] : await db.fantasyRoundScore.findMany({ where: { competitionSeasonId: params.competitionSeasonId,
     leagueId: params.leagueId, roundNumber: params.roundNumber, supersededAt: null }, select: { fantasyTeamId: true, revision: true, status: true, points: true, breakdown: true } });
   const byTeam = new Map(roundScores.map((row) => [row.fantasyTeamId, row]));
   return totals.map((total) => { const round = byTeam.get(total.fantasyTeamId); const position = params.leagueId ? total.leaguePosition : total.globalPosition;
     const previous = params.leagueId ? total.previousLeaguePosition : total.previousGlobalPosition;
-    return { fantasyTeamId: total.fantasyTeamId, displayName: total.fantasyTeam.userProfile.displayName, isMe: total.fantasyTeam.userProfileId === profile.id, totalPoints: total.totalPoints.toString(),
+    return { fantasyTeamId: total.fantasyTeamId, username: total.fantasyTeam.userProfile.username, displayName: total.fantasyTeam.userProfile.displayName, isMe: total.fantasyTeam.userProfileId === profile.id, totalPoints: total.totalPoints.toString(),
       position, variation: position && previous ? previous - position : null, lastRoundNumber: total.lastRoundNumber,
       round: round ? { revision: round.revision, status: round.status, points: round.points?.toString() ?? null, breakdown: round.breakdown } : null }; });
 }

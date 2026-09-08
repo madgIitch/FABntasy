@@ -11,6 +11,7 @@ import { Icon } from "./ui/icon";
 type Season = { id: string; label: string };
 type Mode = "create" | "join";
 async function body(response: Response) { const type = response.headers.get("content-type") ?? ""; return type.includes("application/json") ? response.json() as Promise<{ error?: { code?: string } }> : null; }
+const errorMessage = (code: string | undefined, fallback: string) => code === "INVALID_INPUT" ? "No hemos podido completar tu perfil. Recarga la página e inténtalo de nuevo." : code ?? fallback;
 
 export function LeagueOnboarding({ seasons }: { seasons: Season[] }) {
   const [mode, setMode] = useState<Mode>("create");
@@ -30,7 +31,7 @@ export function LeagueOnboarding({ seasons }: { seasons: Season[] }) {
     setPending(true); setMessage("");
     const response = await fetch("/api/fantasy/leagues", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name, competitionSeasonId: seasonId, password: createPassword }) });
     const result = await body(response);
-    if (!response.ok) { setPending(false); setMessage(result?.error?.code ?? "No se pudo crear la liga"); return; }
+    if (!response.ok) { setPending(false); setMessage(errorMessage(result?.error?.code, "No se pudo crear la liga")); return; }
     location.assign("/app");
   }
   async function join() {
@@ -39,7 +40,7 @@ export function LeagueOnboarding({ seasons }: { seasons: Season[] }) {
     setPending(true); setMessage("");
     const response = await fetch("/api/fantasy/leagues/join", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code, password: joinPassword }) });
     const result = await body(response);
-    if (!response.ok) { setPending(false); setMessage(result?.error?.code ?? "Código o contraseña incorrectos"); return; }
+    if (!response.ok) { setPending(false); setMessage(errorMessage(result?.error?.code, "Código o contraseña incorrectos")); return; }
     location.assign("/app");
   }
 

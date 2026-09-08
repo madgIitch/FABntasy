@@ -8,6 +8,18 @@ export class ProfileServiceError extends Error {
   constructor(public code: "INVALID_USERNAME" | "USERNAME_TAKEN" | "PROFILE_NOT_FOUND") { super(code); }
 }
 
+export async function restoreUsernameFromAuthMetadata(authUserId: string, metadataUsername: unknown) {
+  if (typeof metadataUsername !== "string") return null;
+  const username = normalizeUsername(metadataUsername);
+  if (!USERNAME_PATTERN.test(username)) return null;
+  try {
+    return await db.userProfile.update({ where: { authUserId }, data: { username } });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && (error.code === "P2002" || error.code === "P2025")) return null;
+    throw error;
+  }
+}
+
 export async function updateUserProfile(authUserId: string, input: { username: string; displayName: string | null; avatarPath?: string | null }) {
   const username = normalizeUsername(input.username);
   if (!USERNAME_PATTERN.test(username)) throw new ProfileServiceError("INVALID_USERNAME");

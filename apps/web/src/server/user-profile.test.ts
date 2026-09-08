@@ -11,6 +11,15 @@ describe("user profile contracts", () => {
     expect(USERNAME_PATTERN.test("pepe@email.test")).toBe(false);
   });
 
+  it("restores legacy profiles only from the username selected in auth metadata", () => {
+    const service = readFileSync(new URL("./user-profile.ts", import.meta.url), "utf8");
+    const layout = readFileSync(new URL("../../app/app/layout.tsx", import.meta.url), "utf8");
+    expect(service).toContain("restoreUsernameFromAuthMetadata");
+    expect(service).toContain("USERNAME_PATTERN.test(username)");
+    expect(layout).toContain("user.user_metadata?.username");
+    expect(layout).not.toContain("user.email?.split");
+  });
+
   it("requires username during account creation without retaining passwords", () => {
     const form = readFileSync(new URL("../../app/auth/auth-form.tsx", import.meta.url), "utf8");
     const actions = readFileSync(new URL("../../app/auth/actions.ts", import.meta.url), "utf8");

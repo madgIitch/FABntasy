@@ -7,6 +7,7 @@ import { avatarUrl, profileInitial } from "../../src/lib/avatar";
 import { AccountAvatar, LogoutControl } from "./account-controls";
 import { LeagueOnboarding } from "../../src/components/league-onboarding";
 import { Navigation } from "../../src/components/ui/navigation";
+import { restoreUsernameFromAuthMetadata } from "../../src/server/user-profile";
 
 const nav = [
   ["/app", "Inicio", "home"],
@@ -19,7 +20,11 @@ const nav = [
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const { data: { user } } = await (await createClient()).auth.getUser();
   if (!user) redirect("/login");
-  const profile = await db.userProfile.findUnique({ where: { authUserId: user.id }, select: { username: true, displayName: true, avatarPath: true, leagueMemberships: { where: { status: "ACTIVE", league: { status: "ACTIVE", legacyTeamId: null } }, take: 1, select: { id: true } } } });
+  let profile = await db.userProfile.findUnique({ where: { authUserId: user.id }, select: { username: true, displayName: true, avatarPath: true, leagueMemberships: { where: { status: "ACTIVE", league: { status: "ACTIVE", legacyTeamId: null } }, take: 1, select: { id: true } } } });
+  if (profile && !profile.username) {
+    const restored = await restoreUsernameFromAuthMetadata(user.id, user.user_metadata?.username);
+    if (restored) profile = { ...profile, username: restored.username };
+  }
   if (!profile?.leagueMemberships.length) {
     const seasons = await db.competitionSeason.findMany({ where: { fantasyEnabled: true }, include: { competition: true }, orderBy: { createdAt: "desc" } });
     return <div className="league-gate"><LeagueOnboarding seasons={seasons.map((season) => ({ id: season.id, label: `${season.competition.name}${season.name ? ` · ${season.name}` : ""}` }))} /></div>;

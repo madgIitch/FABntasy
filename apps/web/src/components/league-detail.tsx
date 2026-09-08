@@ -6,7 +6,7 @@ import { Dialog } from "./ui/dialog";
 
 type ActionState = "idle" | "copying" | "saving" | "leaving";
 
-export function LeagueDetailActions({ leagueId, leagueCode, isOwner }: { leagueId: string; leagueCode: string; isOwner: boolean }) {
+export function LeagueDetailActions({ leagueId, leagueCode, isOwner, showInvitation = true }: { leagueId: string; leagueCode: string; isOwner: boolean; showInvitation?: boolean }) {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [action, setAction] = useState<ActionState>("idle");
@@ -62,13 +62,13 @@ export function LeagueDetailActions({ leagueId, leagueCode, isOwner }: { leagueI
   return <section className={styles.access} aria-labelledby="league-access-title">
     <div className={styles.intro}>
       <div className={styles.introHeading}>
-        <p className={styles.eyebrow}>Acceso</p>
-        <h3 className={styles.title} id="league-access-title">Invita a tu liga</h3>
+        <p className={styles.eyebrow}>{showInvitation ? "Acceso" : "Administración"}</p>
+        <h3 className={styles.title} id="league-access-title">{showInvitation ? "Invita a tu liga" : isOwner ? "Gestiona tu liga" : "Tu participación"}</h3>
       </div>
-      <p className={styles.introHint}>Comparte el código y la contraseña por separado.</p>
+      <p className={styles.introHint}>{showInvitation ? "Comparte el código y la contraseña por separado." : isOwner ? "Controla las credenciales de acceso." : "Gestiona tu pertenencia a esta liga."}</p>
     </div>
 
-    <div className={styles.codeRow}>
+    {showInvitation && <div className={styles.codeRow}>
       <div className={styles.codeBlock}>
         <span className={styles.fieldLabel}>Código de liga</span>
         <strong className={styles.codeValue}>{leagueCode}</strong>
@@ -77,7 +77,7 @@ export function LeagueDetailActions({ leagueId, leagueCode, isOwner }: { leagueI
         <span className={styles.buttonLabel}>{action === "copying" ? "Copiando…" : "Copiar código"}</span>
         <b className={styles.buttonIcon} aria-hidden="true">↗</b>
       </button>
-    </div>
+    </div>}
 
     {isOwner ? <div className={styles.security}>
       <div className={styles.securityCopy}>

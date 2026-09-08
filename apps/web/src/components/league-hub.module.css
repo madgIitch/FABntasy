@@ -178,7 +178,7 @@
   -webkit-text-stroke: 0;
   transform: none
 }
-.ranking,.settings,.managers {
+.ranking,.settings,.managers,.leagueAccess {
   padding-top: 3.5rem;
   background: var(--color-surface);
   border-radius: var(--radius-panel);
@@ -306,6 +306,18 @@
   font: 500 1rem var(--font-ui);
   text-transform: none
 }
+.inviteRow { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:18px 0; border-block:1px solid var(--color-border) }
+.inviteRow>div { display:grid; gap:6px }
+.inviteRow span,.memberListHead span,.memberRow>span { color:var(--color-text-muted); font-size:.75rem }
+.inviteRow strong { color:var(--color-brand-text); font:600 1.2rem/1 var(--font-ui); letter-spacing:.06em }
+.inviteRow button { min-height:44px; padding:0 14px; border:0; border-radius:var(--radius-control); background:var(--color-brand); color:var(--color-on-brand); font-weight:800; cursor:pointer }
+.inviteFeedback { margin:12px 0 0; color:var(--color-brand-text); font-size:.75rem }
+.memberList { margin-top:22px }
+.memberListHead,.memberRow { display:flex; align-items:center; gap:12px; padding:14px 0; border-bottom:1px solid var(--color-border) }
+.memberListHead { justify-content:space-between; padding-top:0 }
+.memberRow i { display:grid; place-items:center; width:36px; aspect-ratio:1; flex:0 0 auto; border-radius:50%; background:var(--color-brand-soft); color:var(--color-brand-text); font-style:normal; font-weight:800 }
+.memberRow>strong { min-width:0; flex:1; font:500 .95rem var(--font-ui) }
+.memberRow small { color:var(--color-brand-text); font-size:.7rem }
 .onboarding>header {
   border-bottom: 1px solid var(--color-border);
   padding: 24px 0;
@@ -474,6 +486,6 @@
 .header h1, .header select {
   font-size: var(--page-title)
 }
-.section, .summary, .ranking, .settings, .managers {
+.section, .summary, .ranking, .settings, .managers, .leagueAccess {
   padding: 20px 16px
 }}

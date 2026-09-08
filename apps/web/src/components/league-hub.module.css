@@ -273,6 +273,15 @@
   font-size: .75rem;
   text-transform: none
 }
+.activityEmpty { display:grid; align-content:start; justify-items:start; max-width:36rem; min-height:24rem; padding:clamp(40px,8vw,76px) 0 32px }
+.activityMark { display:grid; gap:5px; width:38px; margin-bottom:26px }
+.activityMark i { display:block; height:2px; border-radius:2px; background:var(--color-brand) }
+.activityMark i:nth-child(2) { width:74% }
+.activityMark i:nth-child(3) { width:46% }
+.activityEmpty>p { margin:0 0 7px; color:var(--color-brand-text); font-size:.75rem; font-weight:800 }
+.activityEmpty h2 { margin:0; font:600 var(--section-title)/1.25 var(--font-ui) }
+.activityEmpty>span { max-width:30rem; margin-top:14px; color:var(--color-text-muted); font-size:.84rem; line-height:1.55 }
+.activityEmpty>button { min-height:44px; margin-top:24px; padding:0 16px; border:0; border-radius:var(--radius-control); background:var(--color-brand); color:var(--color-on-brand); font-weight:800; cursor:pointer }
 .settings dl {
   margin: 0
 }
@@ -427,6 +436,7 @@
   min-height: 19rem;
   padding: 28px 20px
 }
+.activityEmpty { min-height:20rem; padding:42px 0 28px }
 .sectionHead {
   align-items: start
 }

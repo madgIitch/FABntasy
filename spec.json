@@ -1070,7 +1070,7 @@
       "id": "sprint-14d-green-white-design-system",
       "name": "Sprint 14d - Green and White Visual Redesign",
       "title": "Sprint 14D - Rediseño integral verde y blanco",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.5.4",
       "dependencies": [

@@ -40,7 +40,7 @@ img{max-width:100%}
 .court-lines:before{content:"";position:absolute;inset:10%;border:1px solid var(--color-border);border-radius:50%}
 .season-mark{position:absolute;bottom:24px;left:clamp(24px,6vw,96px);color:var(--color-text-muted);font-size:12px;letter-spacing:.06em}
 /* Account forms */
-.auth-page{min-height:100svh;display:flex;flex-direction:column;align-items:center;padding:32px 24px 48px;gap:40px}
+.auth-page{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px 48px;gap:28px}
 .auth-page>.wordmark{align-self:flex-start}
 .auth-panel{width:100%;max-width:464px;background:var(--color-surface);border-radius:var(--radius-panel);padding:32px;box-shadow:var(--shadow-panel);animation:rise 220ms ease-out both}
 .auth-panel h1{margin:0;font-size:30px;line-height:1.15}
@@ -210,4 +210,5 @@ img{max-width:100%}
  .confirm-dialog-body>div{flex-wrap:wrap}
 }
 @media(max-width:360px){.auth-panel{padding:24px 16px}.court-hero{padding-top:150px}.hero-logo{width:180px;top:90px}.bottom-nav a{font-size:10px}.profile-identity{align-items:flex-start}.profile-identity h2{font-size:18px}}
+@media(max-height:720px){.auth-page{justify-content:flex-start}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}

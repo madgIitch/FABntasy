@@ -23,7 +23,7 @@ export default async function MyTeamPage() {
 
   const nextGame = await db.game.findFirst({
     where: { competitionSeasonId: seasonId, syncStatus: "active", roundNumber: { not: null }, scheduledAt: { gt: new Date() } },
-    orderBy: [{ scheduledAt: "asc" }], select: { roundNumber: true },
+    orderBy: [{ scheduledAt: "asc" }], select: { roundNumber: true, scheduledAt: true },
   });
   const roundNumber = nextGame?.roundNumber ?? 1;
   let initialTeam = null;
@@ -63,6 +63,7 @@ export default async function MyTeamPage() {
   return <FantasyTeamManager
     competitionSeasonId={seasonId}
     roundNumber={roundNumber}
+    cutoffAt={nextGame?.scheduledAt?.toISOString() ?? null}
     initialTeam={initialTeam}
     playerMetrics={playerMetrics}
     eligiblePlayers={eligiblePlayers.map((item) => ({

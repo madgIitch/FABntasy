@@ -51,6 +51,8 @@ try{
  if(!await username.evaluate(el=>el===document.activeElement))throw Error('Registration focus order changed');
  await page.goto('http://127.0.0.1:4178/?case=onboarding');if(await page.locator('.bottom-nav').count())throw Error('Onboarding exposes navigation');
  if(await page.getByLabel('Código de liga').count())throw Error('Onboarding shows both alternatives at once');
+ await page.getByRole('button',{name:/Crear liga/}).click();
+ if(!await page.getByRole('alert').isVisible())throw Error('Create league validation feedback missing');
  await page.getByRole('radio',{name:/Tengo un código/}).check();
  if(!await page.getByLabel('Código de liga').isVisible()||await page.getByLabel('Nombre de la liga').count())throw Error('Onboarding mode switch failed');
  await page.goto('http://127.0.0.1:4178/?case=market');

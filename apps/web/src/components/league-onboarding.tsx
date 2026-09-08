@@ -24,6 +24,9 @@ export function LeagueOnboarding({ seasons }: { seasons: Season[] }) {
 
   function choose(nextMode: Mode) { setMode(nextMode); setMessage(""); }
   async function create() {
+    if (name.trim().length < 3) { setMessage("El nombre de la liga debe tener al menos 3 caracteres."); return; }
+    if (!seasonId) { setMessage("Selecciona una competición."); return; }
+    if (createPassword.length < 6) { setMessage("La contraseña debe tener al menos 6 caracteres."); return; }
     setPending(true); setMessage("");
     const response = await fetch("/api/fantasy/leagues", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name, competitionSeasonId: seasonId, password: createPassword }) });
     const result = await body(response);
@@ -31,6 +34,8 @@ export function LeagueOnboarding({ seasons }: { seasons: Season[] }) {
     location.assign("/app");
   }
   async function join() {
+    if (!code.trim()) { setMessage("Introduce el código de la liga."); return; }
+    if (!joinPassword) { setMessage("Introduce la contraseña de la liga."); return; }
     setPending(true); setMessage("");
     const response = await fetch("/api/fantasy/leagues/join", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code, password: joinPassword }) });
     const result = await body(response);
@@ -47,8 +52,8 @@ export function LeagueOnboarding({ seasons }: { seasons: Season[] }) {
       <label><input type="radio" name="league-mode" value="join" checked={mode === "join"} onChange={() => choose("join")} /><Icon name="user" /><span><strong>Tengo un código</strong><small>Únete a tus amigos</small></span></label>
     </fieldset>
     <section className={`${styles.actions} ${gateStyles.singleAction}`} aria-live="polite">
-      {mode === "create" ? <div><p className={gateStyles.formLabel}>CREAR</p><h2>Nueva liga</h2><Field label="Nombre de la liga" placeholder="Ej. Los del viernes" value={name} onChange={(event) => setName(event.target.value)} /><label className="ui-field"><span>Competición</span><select aria-label="Competición" value={seasonId} onChange={(event) => setSeasonId(event.target.value)}>{seasons.map((season) => <option key={season.id} value={season.id}>{season.label}</option>)}</select></label><Field label="Contraseña" type="password" autoComplete="new-password" minLength={6} maxLength={72} placeholder="Mínimo 6 caracteres" value={createPassword} onChange={(event) => setCreatePassword(event.target.value)} /><button disabled={pending || name.trim().length < 3 || !seasonId || createPassword.length < 6} onClick={() => void create()}>{pending ? "Creando…" : "Crear liga"}<span>→</span></button></div>
-        : <div><p className={gateStyles.formLabel}>UNIRME</p><h2>Entrar en una liga</h2><Field label="Código de liga" autoCapitalize="characters" placeholder="CNST-XXXXXX" value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} /><Field label="Contraseña" type="password" autoComplete="current-password" placeholder="Contraseña de la liga" value={joinPassword} onChange={(event) => setJoinPassword(event.target.value)} /><button disabled={pending || !code.trim() || !joinPassword} onClick={() => void join()}>{pending ? "Entrando…" : "Entrar en la liga"}<span>→</span></button></div>}
+      {mode === "create" ? <div><p className={gateStyles.formLabel}>CREAR</p><h2>Nueva liga</h2><Field label="Nombre de la liga" placeholder="Ej. Los del viernes" value={name} onChange={(event) => setName(event.target.value)} /><label className="ui-field"><span>Competición</span><select aria-label="Competición" value={seasonId} onChange={(event) => setSeasonId(event.target.value)}>{seasons.map((season) => <option key={season.id} value={season.id}>{season.label}</option>)}</select></label><Field label="Contraseña" type="password" autoComplete="new-password" minLength={6} maxLength={72} placeholder="Mínimo 6 caracteres" value={createPassword} onChange={(event) => setCreatePassword(event.target.value)} /><button type="button" disabled={pending} onClick={() => void create()}>{pending ? "Creando…" : "Crear liga"}<span>→</span></button></div>
+        : <div><p className={gateStyles.formLabel}>UNIRME</p><h2>Entrar en una liga</h2><Field label="Código de liga" autoCapitalize="characters" placeholder="CNST-XXXXXX" value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} /><Field label="Contraseña" type="password" autoComplete="current-password" placeholder="Contraseña de la liga" value={joinPassword} onChange={(event) => setJoinPassword(event.target.value)} /><button type="button" disabled={pending} onClick={() => void join()}>{pending ? "Entrando…" : "Entrar en la liga"}<span>→</span></button></div>}
     </section>
     {message && <p role="alert" className={styles.message}>{message}</p>}
     <p className={gateStyles.note}>Al completar este paso se activará el resto de Canastio.</p>

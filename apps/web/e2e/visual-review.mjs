@@ -50,6 +50,9 @@ try{
  await page.getByLabel('Correo electrónico').focus();await page.keyboard.press('Tab');
  if(!await username.evaluate(el=>el===document.activeElement))throw Error('Registration focus order changed');
  await page.goto('http://127.0.0.1:4178/?case=onboarding');if(await page.locator('.bottom-nav').count())throw Error('Onboarding exposes navigation');
+ if(await page.getByLabel('Código de liga').count())throw Error('Onboarding shows both alternatives at once');
+ await page.getByRole('button',{name:/Tengo un código/}).click();
+ if(!await page.getByLabel('Código de liga').isVisible()||await page.getByLabel('Nombre de la liga').count())throw Error('Onboarding mode switch failed');
  await page.goto('http://127.0.0.1:4178/?case=market');
  if(await page.locator('.bottom-nav a').count()!==5)throw Error('Navigation must have five destinations');
  if(await page.locator('.bottom-nav [aria-current="page"]').getAttribute('href')!=='/app/mercado')throw Error('Active section missing');

@@ -45,8 +45,8 @@ describe("user profile contracts", () => {
     expect(layout.indexOf("<LeagueOnboarding")).toBeLessThan(layout.indexOf('className="app-frame"'));
     expect(onboarding).toContain("Crear una liga");
     expect(onboarding).toContain("Tengo un código");
-    expect(onboarding).toContain('aria-pressed={mode === "create"}');
-    expect(onboarding).toContain('aria-pressed={mode === "join"}');
+    expect(onboarding).toContain('checked={mode === "create"}');
+    expect(onboarding).toContain('checked={mode === "join"}');
     expect(onboarding).toContain("<LogoutControl />");
     expect(onboarding).toContain('location.assign("/app")');
   });

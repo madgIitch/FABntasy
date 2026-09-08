@@ -16,4 +16,9 @@ describe("fantasy market rules",()=>{
     expect(page).not.toContain("Configura primero tu plantilla");
     expect(page).not.toContain("Ir a Mi equipo");
   });
+  it("exposes the market handler from the active Next app directory",()=>{
+    const route=readFileSync(new URL("../../app/api/fantasy/market/route.ts",import.meta.url),"utf8");
+    expect(route).toContain("export { GET, POST }");
+    expect(route).toContain("src/app/api/fantasy/market/route");
+  });
 });

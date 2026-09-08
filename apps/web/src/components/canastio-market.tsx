@@ -9,7 +9,7 @@ type MarketMeta={leagueId:string;leagueName:string;balanceCredits:number;clauses
 type TradeAction = "BUY" | "SELL" | "CLAUSE" | "INVEST" | "SHIELD";
 const tradeLabels = { BUY: "Comprar", SELL: "Vender", CLAUSE: "Pagar cláusula", INVEST: "Aumentar cláusula", SHIELD: "Blindar" };
 const money=new Intl.NumberFormat("es-ES",{notation:"compact",maximumFractionDigits:2});
-export function CanastioMarket({players,updatedAt,market}:{players:readonly MarketPlayer[];updatedAt?:string;market:MarketMeta}){
+export function CanastioMarket({players,market}:{players:readonly MarketPlayer[];updatedAt?:string;market:MarketMeta}){
  const [trade,setTrade]=useState<{player:MarketPlayer;action:TradeAction}|null>(null);const [investment,setInvestment]=useState("");const [tradeError,setTradeError]=useState("");
  function requestTrade(player:MarketPlayer,action:TradeAction){setTradeError("");setInvestment("");setTrade({player,action});}
  const [query,setQuery]=useState("");const [trend,setTrend]=useState<"ALL"|MarketPlayer["trend"]>("ALL");const [team,setTeam]=useState("ALL");const [price,setPrice]=useState("ALL");const [ownership,setOwnership]=useState("ALL");const [advancedOpen,setAdvancedOpen]=useState(false);const [message,setMessage]=useState("");const [pending,setPending]=useState("");

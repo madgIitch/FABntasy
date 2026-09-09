@@ -166,7 +166,12 @@ La suite reproduce persistencia, calendario, economía, roster, alineación, est
 
 Para poder iniciar sesión y navegar por los escenarios, crea **21 usuarios de QA** mediante Supabase Auth. Este número cubre el perfil `realistic`: el usuario `00` queda reservado para probar onboarding sin liga y los usuarios `01`–`20` representan managers de liga.
 
-No insertes las filas manualmente en `auth.users`. Créales desde **Authentication → Users → Add user** o mediante la Admin Auth API. Marca el correo como confirmado y utiliza contraseñas exclusivas de QA, nunca credenciales personales o de producción.
+No insertes las filas manualmente en `auth.users` ni uses **Authentication → Users → Add user**: ese modal no permite enviar `raw_user_meta_data.username` y el trigger de Canastio rechaza correctamente la creación con `invalid_username`. Usa una de estas vías:
+
+1. **Recomendada para empezar:** registra cada cuenta desde `/registro`, porque el formulario de Canastio envía `{ username }` a Supabase Auth.
+2. **Recomendada para automatizar:** Admin Auth API con `user_metadata: { username: "qa_manager_XX" }` y `email_confirm: true`, ejecutada solo desde un entorno local seguro.
+
+Los dominios `example.com` de la tabla son identificadores ilustrativos, no buzones utilizables para confirmar el correo. Si registras desde la app, usa alias que lleguen a una bandeja real; por ejemplo, `tuusuario+canastio.qa.00@gmail.com`. Utiliza contraseñas exclusivas de QA, nunca credenciales personales o de producción.
 
 | Cuenta lógica | Correo recomendado | Username | Uso |
 |---|---|---|---|
@@ -214,7 +219,7 @@ slot,auth_user_id,email,username
 
 ### Preparación adicional
 
-1. Crea los usuarios en el mismo proyecto Supabase al que apunta la aplicación que abrirás en el navegador.
+1. Crea los usuarios en el mismo proyecto Supabase al que apunta la aplicación que abrirás en el navegador, mediante `/registro` o la Admin Auth API con metadata `username`.
 2. Comprueba que puedes iniciar sesión al menos con `qa-00` y `qa-01` antes de cargar escenarios.
 3. Conserva las contraseñas en un gestor local o archivo ignorado por Git; no deben añadirse al repositorio.
 4. Confirma que las migraciones de Canastio están aplicadas en ese proyecto.

@@ -7,7 +7,15 @@ import { getPlayerPrices } from "../../../src/server/player-pricing";
 import { requireLeagueActor } from "../../../src/server/private-league-http";
 import { listLeagues } from "../../../src/server/private-leagues";
 
-export default async function MarketPage({searchParams}:{searchParams:Promise<{league?:string}>}) {
+export default async function MarketPage(props:{searchParams:Promise<{league?:string}>}) {
+ try{return await renderMarketPage(props);}catch(error){
+  const failure=error as {name?:string;message?:string;code?:string;digest?:string;meta?:unknown};
+  console.error("[market-page] render_failed",{name:failure?.name,code:failure?.code,digest:failure?.digest,message:failure?.message,meta:failure?.meta});
+  throw error;
+ }
+}
+
+async function renderMarketPage({searchParams}:{searchParams:Promise<{league?:string}>}) {
   const actor=await requireLeagueActor(); const leagues=await listLeagues(actor); const query=await searchParams;
   if(!leagues.length)return <main className="app-main"><section className="empty-state"><span aria-hidden="true">⇅</span><h1>Mercado de liga</h1><p>Necesitas pertenecer a una liga para comprar, vender o clausular jugadores.</p><Link className="primary-action" href="/app/ligas">Crear o unirme <span>→</span></Link></section></main>;
   const league=leagues.find(item=>item.id===query.league)??leagues[0];

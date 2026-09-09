@@ -161,3 +161,65 @@ node scripts/test-data-gate.mjs teardown-isolation
 ## 11. Límites
 
 La suite reproduce persistencia, calendario, economía, roster, alineación, estados de jornada, publicación, corrección, precios y aislamiento de liga. Las carreras concurrentes reales deben ejecutarse contra las APIs de dominio en un entorno con sesiones sintéticas; no deben simularse mediante inserts paralelos. FAB permanece mockeado y no se realizan peticiones de red.
+
+## 12. Usuarios Supabase para pruebas visuales
+
+Para poder iniciar sesión y navegar por los escenarios, crea **21 usuarios de QA** mediante Supabase Auth. Este número cubre el perfil `realistic`: el usuario `00` queda reservado para probar onboarding sin liga y los usuarios `01`–`20` representan managers de liga.
+
+No insertes las filas manualmente en `auth.users`. Créales desde **Authentication → Users → Add user** o mediante la Admin Auth API. Marca el correo como confirmado y utiliza contraseñas exclusivas de QA, nunca credenciales personales o de producción.
+
+| Cuenta lógica | Correo recomendado | Username | Uso |
+|---|---|---|---|
+| qa-00 | `canastio.qa.00@example.com` | `qa_manager_00` | Usuario sin liga / onboarding |
+| qa-01 | `canastio.qa.01@example.com` | `qa_manager_01` | Propietario y administrador de liga |
+| qa-02 | `canastio.qa.02@example.com` | `qa_manager_02` | Manager miembro |
+| qa-03 | `canastio.qa.03@example.com` | `qa_manager_03` | Manager miembro |
+| qa-04 | `canastio.qa.04@example.com` | `qa_manager_04` | Manager miembro |
+| qa-05 | `canastio.qa.05@example.com` | `qa_manager_05` | Manager miembro |
+| qa-06 | `canastio.qa.06@example.com` | `qa_manager_06` | Manager miembro |
+| qa-07 | `canastio.qa.07@example.com` | `qa_manager_07` | Manager miembro |
+| qa-08 | `canastio.qa.08@example.com` | `qa_manager_08` | Manager miembro |
+| qa-09 | `canastio.qa.09@example.com` | `qa_manager_09` | Manager miembro |
+| qa-10 | `canastio.qa.10@example.com` | `qa_manager_10` | Manager miembro |
+| qa-11 | `canastio.qa.11@example.com` | `qa_manager_11` | Manager miembro |
+| qa-12 | `canastio.qa.12@example.com` | `qa_manager_12` | Manager miembro |
+| qa-13 | `canastio.qa.13@example.com` | `qa_manager_13` | Manager miembro |
+| qa-14 | `canastio.qa.14@example.com` | `qa_manager_14` | Manager miembro |
+| qa-15 | `canastio.qa.15@example.com` | `qa_manager_15` | Manager miembro |
+| qa-16 | `canastio.qa.16@example.com` | `qa_manager_16` | Manager miembro |
+| qa-17 | `canastio.qa.17@example.com` | `qa_manager_17` | Manager miembro |
+| qa-18 | `canastio.qa.18@example.com` | `qa_manager_18` | Manager miembro |
+| qa-19 | `canastio.qa.19@example.com` | `qa_manager_19` | Manager miembro |
+| qa-20 | `canastio.qa.20@example.com` | `qa_manager_20` | Manager miembro |
+
+Para el perfil `small` solo son necesarias `qa-00`, `qa-01`, `qa-02` y `qa-03`. Conviene crear las 21 una sola vez para que los tres perfiles compartan un catálogo estable.
+
+### Datos que debes devolver para enlazarlos
+
+Cuando estén creados, exporta o copia exclusivamente estas columnas de cada usuario:
+
+```text
+id,email,created_at,email_confirmed_at,raw_user_meta_data
+```
+
+El dato imprescindible es `id`, el UUID real asignado por Supabase Auth. No envíes `encrypted_password`, tokens, claves de servicio, cookies, refresh tokens ni la contraseña elegida. Si `raw_user_meta_data` no contiene el username no pasa nada: el adaptador lo escribirá en `user_profiles` usando la tabla anterior.
+
+Formato ideal para pasármelo:
+
+```csv
+slot,auth_user_id,email,username
+00,UUID_DE_SUPABASE,canastio.qa.00@example.com,qa_manager_00
+01,UUID_DE_SUPABASE,canastio.qa.01@example.com,qa_manager_01
+```
+
+### Preparación adicional
+
+1. Crea los usuarios en el mismo proyecto Supabase al que apunta la aplicación que abrirás en el navegador.
+2. Comprueba que puedes iniciar sesión al menos con `qa-00` y `qa-01` antes de cargar escenarios.
+3. Conserva las contraseñas en un gestor local o archivo ignorado por Git; no deben añadirse al repositorio.
+4. Confirma que las migraciones de Canastio están aplicadas en ese proyecto.
+5. Obtén los UUID y prepara el CSV anterior.
+6. Antes de ejecutar el runner contra ese proyecto, hay que adaptar la foundation para aceptar un `identity-map` y evitar que genere UUID de Auth deterministas. **No ejecutes todavía `run` sobre el Supabase compartido**, porque la versión actual intenta crear sus propias identidades sintéticas.
+7. Tras adaptar el script, la web deberá usar ese mismo Supabase y el escenario podrá inspeccionarse iniciando sesión con cualquiera de las cuentas QA.
+
+El futuro mapa de identidades mantendrá una asociación estable: slot `00` sin liga, slot `01` propietario y slots `02`–`20` miembros. Así, un mismo login representará el mismo manager en todos los escenarios visuales.

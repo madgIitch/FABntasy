@@ -28,8 +28,8 @@ BEGIN
   DELETE FROM league_memberships WHERE league_id IN(v_league,v_second_league);
   DELETE FROM fantasy_leagues WHERE id=v_second_league AND name='Liga Secundaria ' || v_run;
   DELETE FROM fantasy_leagues WHERE id=v_league AND name='Liga Sintética ' || v_run;
-  DELETE FROM player_price_events WHERE competition_season_id=v_cs AND algorithm_version='14f-v1';
-  DELETE FROM player_prices WHERE competition_season_id=v_cs AND algorithm_version='14f-v1';
+  DELETE FROM player_price_events WHERE competition_season_id=v_cs AND algorithm_version IN('14f-v1','canastio-market-v1');
+  DELETE FROM player_prices WHERE competition_season_id=v_cs AND algorithm_version IN('14f-v1','canastio-market-v1');
   DELETE FROM fantasy_rule_set_activations WHERE competition_season_id=v_cs;
   UPDATE fantasy_scoring_rule_sets SET status='DRAFT',published_at=NULL WHERE competition_season_id=v_cs AND identifier='14f-' || v_run;
   DELETE FROM fantasy_scoring_rule_sets WHERE competition_season_id=v_cs AND identifier='14f-' || v_run;

@@ -59,8 +59,8 @@ BEGIN
   END LOOP;
 
   INSERT INTO player_prices(id,player_registration_id,competition_season_id,algorithm_version,current_price,status,last_round_number,all_time_high,all_time_low,created_at,updated_at)
-  SELECT md5(v_run || ':price:' || pr.id)::uuid,pr.id,v_cs,'14f-v1',5000000,'PROVISIONAL',NULL,5000000,5000000,v_clock,v_clock
+  SELECT md5(v_run || ':price:' || pr.id)::uuid,pr.id,v_cs,'canastio-market-v1',5000000,'PROVISIONAL',NULL,5000000,5000000,v_clock,v_clock
   FROM player_registrations pr WHERE pr.competition_season_id=v_cs
-  ON CONFLICT(id) DO NOTHING;
+  ON CONFLICT(id) DO UPDATE SET algorithm_version=excluded.algorithm_version,current_price=excluded.current_price,status=excluded.status,updated_at=excluded.updated_at;
 END $$;
 COMMIT;

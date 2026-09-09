@@ -75,9 +75,9 @@ BEGIN
 
   IF v_scenario IN ('pricing.history','league.activity','account.multi-league','round.corrected') THEN
     INSERT INTO player_price_events(id,player_price_id,player_registration_id,competition_season_id,round_number,algorithm_version,input_revision,status,previous_price,target_price,new_price,recent_form,season_average,market_rating,percentile,dnp_streak,input_snapshot,created_at)
-    SELECT md5(v_run || ':price-event:' || pp.id)::uuid,pp.id,pp.player_registration_id,v_cs,1,'14f-v1',md5(v_run || ':pv1:' || pp.id)||md5(v_run || ':pv2:' || pp.id),'APPLIED',5000000,5200000,5200000,12,11,12,0.6,0,'{"synthetic":true}'::jsonb,v_clock
-    FROM player_prices pp WHERE pp.competition_season_id=v_cs AND pp.algorithm_version='14f-v1' ON CONFLICT(id) DO NOTHING;
-    UPDATE player_prices SET current_price=5200000,last_round_number=1,all_time_high=5200000,updated_at=v_clock WHERE competition_season_id=v_cs AND algorithm_version='14f-v1';
+    SELECT md5(v_run || ':price-event:' || pp.id)::uuid,pp.id,pp.player_registration_id,v_cs,1,'canastio-market-v1',md5(v_run || ':pv1:' || pp.id)||md5(v_run || ':pv2:' || pp.id),'APPLIED',5000000,5200000,5200000,12,11,12,0.6,0,'{"synthetic":true}'::jsonb,v_clock
+    FROM player_prices pp WHERE pp.competition_season_id=v_cs AND pp.algorithm_version='canastio-market-v1' ON CONFLICT(id) DO NOTHING;
+    UPDATE player_prices SET current_price=5200000,last_round_number=1,all_time_high=5200000,updated_at=v_clock WHERE competition_season_id=v_cs AND algorithm_version='canastio-market-v1';
   END IF;
 
   IF v_scenario IN ('round.published','round.corrected','pricing.history','league.activity','account.multi-league') THEN

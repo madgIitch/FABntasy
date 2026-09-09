@@ -34,7 +34,9 @@ BEGIN
   UPDATE fantasy_scoring_rule_sets SET status='DRAFT',published_at=NULL WHERE competition_season_id=v_cs AND identifier='14f-' || v_run;
   DELETE FROM fantasy_scoring_rule_sets WHERE competition_season_id=v_cs AND identifier='14f-' || v_run;
   DELETE FROM fantasy_roster_rule_sets WHERE competition_season_id=v_cs AND identifier='14f-' || v_run;
-  DELETE FROM user_profiles WHERE id IN (SELECT md5(v_run || ':profile:' || i)::uuid FROM generate_series(0,{{managers}}) i);
-  DELETE FROM auth.users WHERE id IN (SELECT md5(v_run || ':auth:' || i)::uuid FROM generate_series(0,{{managers}}) i);
+  IF NOT {{external_identities}} THEN
+    DELETE FROM user_profiles WHERE id IN (SELECT md5(v_run || ':profile:' || i)::uuid FROM generate_series(0,{{managers}}) i);
+    DELETE FROM auth.users WHERE id IN (SELECT md5(v_run || ':auth:' || i)::uuid FROM generate_series(0,{{managers}}) i);
+  END IF;
 END $$;
 COMMIT;

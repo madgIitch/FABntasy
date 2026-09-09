@@ -16,7 +16,9 @@ DECLARE
   v_balance bigint := 100000000;
   v_locked boolean := false;
   i integer := 0;
+  v_owner_profile uuid;
 BEGIN
+  SELECT id INTO v_owner_profile FROM user_profiles WHERE auth_user_id=COALESCE((SELECT (x->>'authUserId')::uuid FROM jsonb_array_elements({{identity_map}}::jsonb) x WHERE x->>'slot'='01'),md5(v_run || ':auth:1')::uuid);
   IF v_scenario IN ('market.partial-roster','market.operations','market.rejections') THEN v_roster:=2; END IF;
   IF v_scenario IN ('lineup.draft','lineup.locked','round.live','round.published','round.corrected','pricing.history','league.activity','account.multi-league') THEN v_roster:=7; END IF;
   IF v_scenario='lineup.draft' THEN v_lineup_size:=4; END IF;
@@ -107,11 +109,11 @@ BEGIN
 
   IF v_scenario='account.multi-league' THEN
     INSERT INTO fantasy_leagues(id,competition_season_id,owner_profile_id,name,league_code,status,member_limit,version,created_at,updated_at)
-    VALUES(md5(v_run || ':league:2')::uuid,v_cs,md5(v_run || ':profile:1')::uuid,'Liga Secundaria ' || v_run,'S'||upper(substr(md5(v_run),1,8)),'ACTIVE',20,1,v_clock,v_clock) ON CONFLICT(id) DO NOTHING;
+    VALUES(md5(v_run || ':league:2')::uuid,v_cs,v_owner_profile,'Liga Secundaria ' || v_run,'S'||upper(substr(md5(v_run),1,8)),'ACTIVE',20,1,v_clock,v_clock) ON CONFLICT(id) DO NOTHING;
     INSERT INTO league_memberships(id,league_id,user_profile_id,role,status,joined_at)
-    VALUES(md5(v_run || ':membership:secondary')::uuid,md5(v_run || ':league:2')::uuid,md5(v_run || ':profile:1')::uuid,'OWNER','ACTIVE',v_clock) ON CONFLICT(id) DO NOTHING;
+    VALUES(md5(v_run || ':membership:secondary')::uuid,md5(v_run || ':league:2')::uuid,v_owner_profile,'OWNER','ACTIVE',v_clock) ON CONFLICT(id) DO NOTHING;
     INSERT INTO fantasy_teams(id,name,user_profile_id,competition_season_id,roster_rule_set_id,league_id,version,balance_credits,created_at,updated_at)
-    VALUES(md5(v_run || ':fantasy-team:secondary')::uuid,'Equipo Secundario',md5(v_run || ':profile:1')::uuid,v_cs,md5(v_run || ':roster-rule')::uuid,md5(v_run || ':league:2')::uuid,1,100000000,v_clock,v_clock) ON CONFLICT(id) DO NOTHING;
+    VALUES(md5(v_run || ':fantasy-team:secondary')::uuid,'Equipo Secundario',v_owner_profile,v_cs,md5(v_run || ':roster-rule')::uuid,md5(v_run || ':league:2')::uuid,1,100000000,v_clock,v_clock) ON CONFLICT(id) DO NOTHING;
     INSERT INTO fantasy_budget_ledger(id,fantasy_team_id,league_id,entry_type,amount_credits,balance_after,created_at)
     VALUES(md5(v_run || ':initial-ledger:secondary')::uuid,md5(v_run || ':fantasy-team:secondary')::uuid,md5(v_run || ':league:2')::uuid,'INITIAL_BALANCE',100000000,100000000,v_clock) ON CONFLICT(id) DO NOTHING;
   END IF;

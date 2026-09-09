@@ -179,6 +179,21 @@ npm run test:data:provision-users
 
 La contraseña compartida y el mapa de UUID quedan en `.local/qa-users.json`, que está ignorado por Git. El comando no imprime secretos y es idempotente: una segunda ejecución actualiza las mismas cuentas en lugar de duplicarlas.
 
+Una vez configurada una `TEST_DATABASE_URL` directa al PostgreSQL del mismo proyecto Supabase, carga el escenario usando esos perfiles reales:
+
+```powershell
+$env:CANASTIO_TEST_DATABASE = "1"
+node scripts/test-data.mjs run `
+  --scenario round.live `
+  --profile small `
+  --seed 1406 `
+  --clock 2026-10-02T18:00:00+02:00 `
+  --run-id visual_round_live `
+  --identity-map .local/qa-users.json
+```
+
+El runner comprueba que el mapa contiene suficientes slots y que cada UUID ya tiene un `user_profiles` creado por el trigger. El teardown elimina liga, equipos y fixtures del run, pero conserva los usuarios y perfiles Supabase para reutilizarlos en el siguiente escenario.
+
 Los dominios `example.com` de la tabla son identificadores ilustrativos, no buzones utilizables para confirmar el correo. Si registras desde la app, usa alias que lleguen a una bandeja real; por ejemplo, `tuusuario+canastio.qa.00@gmail.com`. Utiliza contraseñas exclusivas de QA, nunca credenciales personales o de producción.
 
 | Cuenta lógica | Correo recomendado | Username | Uso |
@@ -232,7 +247,8 @@ slot,auth_user_id,email,username
 3. Conserva las contraseñas en un gestor local o archivo ignorado por Git; no deben añadirse al repositorio.
 4. Confirma que las migraciones de Canastio están aplicadas en ese proyecto.
 5. Obtén los UUID y prepara el CSV anterior.
-6. Antes de ejecutar el runner contra ese proyecto, hay que adaptar la foundation para aceptar un `identity-map` y evitar que genere UUID de Auth deterministas. **No ejecutes todavía `run` sobre el Supabase compartido**, porque la versión actual intenta crear sus propias identidades sintéticas.
-7. Tras adaptar el script, la web deberá usar ese mismo Supabase y el escenario podrá inspeccionarse iniciando sesión con cualquiera de las cuentas QA.
+6. Configura `TEST_DATABASE_URL` con la conexión PostgreSQL directa o Session Pooler del proyecto y verifica cuidadosamente que es el proyecto de pruebas.
+7. Ejecuta `run` con `--identity-map .local/qa-users.json`; la web deberá usar ese mismo Supabase.
+8. Inicia sesión con `qa_manager_00` para onboarding o `qa_manager_01` para el propietario del escenario y navega por la app.
 
 El futuro mapa de identidades mantendrá una asociación estable: slot `00` sin liga, slot `01` propietario y slots `02`–`20` miembros. Así, un mismo login representará el mismo manager en todos los escenarios visuales.

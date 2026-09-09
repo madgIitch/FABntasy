@@ -46,7 +46,9 @@ test("todos los scripts SQL 14F renderizan sin placeholders", () => {
     real_teams: 4,
     players_per_team: 10,
     managers: 3,
-    rounds: 2
+    rounds: 2,
+    identity_map: "'[]'",
+    external_identities: "false"
   };
   for (const file of files) {
     const template = readFileSync(new URL(`../${file}`, import.meta.url), "utf8");

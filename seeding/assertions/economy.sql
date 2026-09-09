@@ -33,7 +33,7 @@ BEGIN
     RAISE EXCEPTION '14F duplicated player ownership';
   END IF;
 
-  IF EXISTS(SELECT 1 FROM user_profiles WHERE id=md5(v_run || ':profile:0')::uuid AND username IS NULL) THEN
+  IF EXISTS(SELECT 1 FROM user_profiles WHERE auth_user_id=COALESCE((SELECT (x->>'authUserId')::uuid FROM jsonb_array_elements({{identity_map}}::jsonb) x WHERE x->>'slot'='00'),md5(v_run || ':auth:0')::uuid) AND username IS NULL) THEN
     RAISE EXCEPTION '14F synthetic onboarding profile has no username';
   END IF;
 END $$;

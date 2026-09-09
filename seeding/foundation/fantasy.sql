@@ -11,6 +11,8 @@ DECLARE
   v_profile uuid;
   v_auth uuid;
   v_team uuid;
+  v_identities jsonb := {{identity_map}}::jsonb;
+  v_username text;
   i integer;
 BEGIN
   INSERT INTO fantasy_roster_rule_sets(id,competition_season_id,identifier,version,budget_credits,roster_size,starter_count,substitute_count,max_per_real_team,position_limits,cold_start_price_credits,status,created_at)
@@ -23,24 +25,27 @@ BEGIN
 
   -- Profile 0 is intentionally left without a league for onboarding.no-league.
   FOR i IN 0..{{managers}} LOOP
-    v_profile := md5(v_run || ':profile:' || i)::uuid;
-    v_auth := md5(v_run || ':auth:' || i)::uuid;
-    INSERT INTO auth.users(id,raw_user_meta_data,created_at)
-    VALUES(v_auth,jsonb_build_object('username','u_' || substr(md5(v_run),1,6) || '_' || lpad(i::text,3,'0')),v_clock)
-    ON CONFLICT(id) DO NOTHING;
-    UPDATE user_profiles SET id=v_profile,username='u_' || substr(md5(v_run),1,6) || '_' || lpad(i::text,3,'0'),display_name='Usuario Sintético ' || lpad(i::text,3,'0'),updated_at=v_clock
-    WHERE auth_user_id=v_auth AND id<>v_profile;
-    INSERT INTO user_profiles(id,auth_user_id,username,display_name,created_at,updated_at)
-    VALUES(v_profile,v_auth,'u_' || substr(md5(v_run),1,6) || '_' || lpad(i::text,3,'0'),'Usuario Sintético ' || lpad(i::text,3,'0'),v_clock,v_clock)
-    ON CONFLICT(auth_user_id) DO UPDATE SET username=excluded.username,display_name=excluded.display_name,updated_at=excluded.updated_at;
+    v_auth := COALESCE((SELECT (x->>'authUserId')::uuid FROM jsonb_array_elements(v_identities) x WHERE x->>'slot'=lpad(i::text,2,'0')),md5(v_run || ':auth:' || i)::uuid);
+    v_username := COALESCE((SELECT x->>'username' FROM jsonb_array_elements(v_identities) x WHERE x->>'slot'=lpad(i::text,2,'0')),'u_' || substr(md5(v_run),1,6) || '_' || lpad(i::text,3,'0'));
+    IF jsonb_array_length(v_identities)>0 THEN
+      SELECT id INTO v_profile FROM user_profiles WHERE auth_user_id=v_auth;
+      IF v_profile IS NULL THEN RAISE EXCEPTION '14F Supabase profile missing for slot %',i; END IF;
+      UPDATE user_profiles SET username=v_username,display_name='Usuario Sintético ' || lpad(i::text,3,'0'),updated_at=v_clock WHERE id=v_profile;
+    ELSE
+      v_profile := md5(v_run || ':profile:' || i)::uuid;
+      INSERT INTO auth.users(id,raw_user_meta_data,created_at) VALUES(v_auth,jsonb_build_object('username',v_username),v_clock) ON CONFLICT(id) DO NOTHING;
+      UPDATE user_profiles SET id=v_profile,username=v_username,display_name='Usuario Sintético ' || lpad(i::text,3,'0'),updated_at=v_clock WHERE auth_user_id=v_auth AND id<>v_profile;
+      INSERT INTO user_profiles(id,auth_user_id,username,display_name,created_at,updated_at) VALUES(v_profile,v_auth,v_username,'Usuario Sintético ' || lpad(i::text,3,'0'),v_clock,v_clock)
+      ON CONFLICT(auth_user_id) DO UPDATE SET username=excluded.username,display_name=excluded.display_name,updated_at=excluded.updated_at;
+    END IF;
   END LOOP;
 
   INSERT INTO fantasy_leagues(id,competition_season_id,owner_profile_id,name,league_code,password_hash,status,member_limit,version,created_at,updated_at)
-  VALUES(v_league,v_cs,md5(v_run || ':profile:1')::uuid,'Liga Sintética ' || v_run,'T' || upper(substr(md5(v_run),1,8)),NULL,'ACTIVE',greatest(20,{{managers}}),1,v_clock,v_clock)
+  VALUES(v_league,v_cs,(SELECT id FROM user_profiles WHERE auth_user_id=COALESCE((SELECT (x->>'authUserId')::uuid FROM jsonb_array_elements(v_identities) x WHERE x->>'slot'='01'),md5(v_run || ':auth:1')::uuid)),'Liga Sintética ' || v_run,'T' || upper(substr(md5(v_run),1,8)),NULL,'ACTIVE',greatest(20,{{managers}}),1,v_clock,v_clock)
   ON CONFLICT(id) DO NOTHING;
 
   FOR i IN 1..{{managers}} LOOP
-    v_profile := md5(v_run || ':profile:' || i)::uuid;
+    SELECT id INTO v_profile FROM user_profiles WHERE auth_user_id=COALESCE((SELECT (x->>'authUserId')::uuid FROM jsonb_array_elements(v_identities) x WHERE x->>'slot'=lpad(i::text,2,'0')),md5(v_run || ':auth:' || i)::uuid);
     v_team := md5(v_run || ':fantasy-team:' || i)::uuid;
     INSERT INTO league_memberships(id,league_id,user_profile_id,role,status,joined_at)
     VALUES(md5(v_run || ':membership:' || i)::uuid,v_league,v_profile,CASE WHEN i=1 THEN 'OWNER' ELSE 'MEMBER' END,'ACTIVE',v_clock + (i*interval '1 minute'))

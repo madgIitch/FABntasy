@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { randomUUID } from "node:crypto";
-import { readFileSync, writeFileSync, mkdtempSync, rmSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -29,7 +29,7 @@ function printHelp() {
     `  preflight --scenario <id> --profile <name> --seed <int> --clock <iso> [--run-id <id>]\n` +
     `  bootstrap --scenario <id> --profile <name> --seed <int> --clock <iso> --run-id <id>\n` +
     `  foundation --scenario <id> --profile <name> --seed <int> --clock <iso> --run-id <id>\n` +
-    `  run --scenario <id> --profile <name> --seed <int> --clock <iso> --run-id <id>\n` +
+    `  run --scenario <id> --profile <name> --seed <int> --clock <iso> --run-id <id> [--identity-map <json>]\n` +
     `  assert --scenario <id> --profile <name> --seed <int> --clock <iso> --run-id <id>\n` +
     `  teardown --scenario <id> --profile <name> --seed <int> --clock <iso> --run-id <id>\n\n` +
     `Los comandos que muten datos exigirán CANASTIO_TEST_DATABASE=1 y TEST_DATABASE_URL.\n`);
@@ -47,7 +47,18 @@ function context(manifest, options) {
   const clock = assertClock(options.clock);
   const runId = assertSafeRunId(options["run-id"] ?? `run_${randomUUID().replaceAll("-", "").slice(0, 16)}`);
   const databaseUrl = assertTestDatabase();
-  return { scenario, profile, dimensions, seed, clock, runId, databaseUrl };
+  const identityPath = options["identity-map"] ? resolve(root, options["identity-map"]) : null;
+  let identities = [];
+  if (identityPath) {
+    if (!existsSync(identityPath)) throw new Error(`identity-map no existe: ${identityPath}`);
+    const parsed = JSON.parse(readFileSync(identityPath, "utf8"));
+    identities = parsed.users ?? parsed;
+    if (!Array.isArray(identities) || identities.length < dimensions.managers + 1) throw new Error(`identity-map necesita al menos ${dimensions.managers + 1} usuarios`);
+    for (const identity of identities.slice(0, dimensions.managers + 1)) {
+      if (!/^\d{2,3}$/.test(identity.slot ?? "") || !/^[0-9a-f-]{36}$/i.test(identity.authUserId ?? "") || !/^[a-z0-9_]{3,24}$/.test(identity.username ?? "")) throw new Error("identity-map contiene una identidad inválida");
+    }
+  }
+  return { scenario, profile, dimensions, seed, clock, runId, databaseUrl, identities };
 }
 
 function executeSql(relativePath, ctx) {
@@ -61,7 +72,9 @@ function executeSql(relativePath, ctx) {
     real_teams: ctx.dimensions.realTeams,
     players_per_team: playersPerTeam,
     managers: ctx.dimensions.managers,
-    rounds: ctx.dimensions.rounds
+    rounds: ctx.dimensions.rounds,
+    identity_map: sqlLiteral(JSON.stringify(ctx.identities)),
+    external_identities: ctx.identities.length ? "true" : "false"
   });
   const dir = mkdtempSync(join(tmpdir(), "canastio-14f-"));
   const file = join(dir, "run.sql");
@@ -99,7 +112,7 @@ try {
   } else if (["preflight", "bootstrap", "foundation", "run", "assert", "teardown"].includes(command)) {
     if (errors.length) throw new Error(errors.join("; "));
     const ctx = context(manifest, options);
-    const { scenario, profile, seed, clock, runId, databaseUrl } = ctx;
+    const { scenario, profile, seed, clock, runId, databaseUrl, identities } = ctx;
     const target = new URL(databaseUrl);
     const runManifest = {
       schemaVersion: "canastio-test-run.v1",
@@ -110,7 +123,8 @@ try {
       clock,
       profile,
       target: `${target.hostname}/${decodeURIComponent(target.pathname.slice(1))}`,
-      keepOnFail: options["keep-on-fail"] === "true"
+      keepOnFail: options["keep-on-fail"] === "true",
+      identityMode: identities.length ? "supabase" : "generated"
     };
     process.stdout.write(JSON.stringify(runManifest, null, 2) + "\n");
     if (command === "bootstrap") executeSql("seeding/bootstrap/supabase.sql", ctx);

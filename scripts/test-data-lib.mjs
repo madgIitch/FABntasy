@@ -31,6 +31,9 @@ export function validateManifest(manifest) {
     }
   }
   if (ids.size !== 15) errors.push(`se esperaban 15 escenarios canónicos; encontrados ${ids.size}`);
+  if (manifest.transitions?.length !== 12) errors.push("se esperaban 12 checkpoints T0-T11");
+  if (new Set(manifest.expectedRejections ?? []).size !== 10) errors.push("se esperaban 10 rechazos canónicos");
+  if (new Set(manifest.concurrencyRaces ?? []).size !== 6) errors.push("se esperaban 6 carreras canónicas");
   return errors;
 }
 
@@ -73,4 +76,20 @@ export function parseArgs(argv) {
     i += 1;
   }
   return { command, options };
+}
+
+export function sqlLiteral(value) {
+  return `'${String(value).replaceAll("'", "''")}'`;
+}
+
+export function renderSql(template, values) {
+  const used = new Set();
+  const rendered = template.replace(/\{\{([a-z_]+)\}\}/g, (_, key) => {
+    if (!(key in values)) throw new Error(`falta el parámetro SQL ${key}`);
+    used.add(key);
+    return String(values[key]);
+  });
+  const unresolved = rendered.match(/\{\{[^}]+\}\}/g);
+  if (unresolved) throw new Error(`parámetros SQL sin resolver: ${unresolved.join(", ")}`);
+  return rendered;
 }

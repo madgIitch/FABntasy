@@ -11,6 +11,12 @@
     "test:data:list": "node scripts/test-data.mjs list",
     "test:data:validate": "node scripts/test-data.mjs validate",
     "test:data:unit": "node --test tests/test-data-manifest.test.mjs",
+    "test:data:foundation": "node scripts/test-data.mjs foundation",
+    "test:data:bootstrap": "node scripts/test-data.mjs bootstrap",
+    "test:data:run": "node scripts/test-data.mjs run",
+    "test:data:assert": "node scripts/test-data.mjs assert",
+    "test:data:teardown": "node scripts/test-data.mjs teardown",
+    "test:data:gate": "node scripts/test-data-gate.mjs",
     "prisma": "prisma"
   },
   "devDependencies": {

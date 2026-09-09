@@ -1187,7 +1187,7 @@
       "id": "sprint-14f-production-simulation-suite",
       "name": "Sprint 14f - Production Simulation and SQL Scenario Suite",
       "title": "Sprint 14F - Simulación productiva y suite de escenarios SQL",
-      "status": "in_progress",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.5.6",
       "dependencies": [

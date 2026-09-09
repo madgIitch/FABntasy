@@ -5,6 +5,40 @@
     "realistic": { "realTeams": 12, "players": 120, "managers": 20, "rounds": 22 },
     "stress": { "realTeams": 24, "players": 288, "managers": 200, "rounds": 46 }
   },
+  "transitions": [
+    "T0_USER_WITHOUT_LEAGUE",
+    "T1_LEAGUE_CREATED",
+    "T2_MANAGERS_JOINED",
+    "T3_MARKET_OPEN",
+    "T4_MARKET_OPERATIONS",
+    "T5_LINEUPS_SAVED",
+    "T6_LINEUPS_LOCKED",
+    "T7_ROUND_LIVE",
+    "T8_GAMES_FINISHED",
+    "T9_ROUND_PUBLISHED",
+    "T10_PRICES_AND_ACTIVITY",
+    "T11_BOXSCORE_CORRECTED"
+  ],
+  "expectedRejections": [
+    "INSUFFICIENT_BALANCE",
+    "ROSTER_FULL",
+    "REAL_TEAM_LIMIT",
+    "PLAYER_OWNED",
+    "PLAYER_PROTECTED",
+    "CLAUSES_CLOSED",
+    "CLAUSE_LIMIT",
+    "LINEUP_INCOMPLETE",
+    "PLAYER_NOT_ON_ROSTER",
+    "IDEMPOTENCY_REPLAY"
+  ],
+  "concurrencyRaces": [
+    "DOUBLE_BUY",
+    "BUY_VS_CLAUSE",
+    "DOUBLE_CLAUSE",
+    "IDEMPOTENCY_REPLAY",
+    "LINEUP_AT_CUTOFF",
+    "PUBLISH_VS_CORRECTION"
+  ],
   "scenarios": [
     { "id": "onboarding.no-league", "checkpoint": "T0", "tags": ["onboarding", "auth"] },
     { "id": "league.new-admin", "checkpoint": "T1", "tags": ["league", "auth"] },

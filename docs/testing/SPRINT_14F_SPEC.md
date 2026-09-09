@@ -1,6 +1,6 @@
 # Sprint 14F — Simulación productiva y suite de escenarios SQL
 
-Estado: propuesta lista para aprobación (`spec_approved: false`).
+Estado: implementación terminada, pendiente de revisión humana (`spec_approved: true`, `status: review_pending`).
 
 ## Objetivo
 

@@ -14,7 +14,7 @@ Estas operaciones no conectan con PostgreSQL.
 
 ## Preflight de un run
 
-Las futuras operaciones con datos utilizarán exclusivamente `TEST_DATABASE_URL` y requieren la confirmación explícita `CANASTIO_TEST_DATABASE=1`.
+Todas las operaciones con datos utilizan exclusivamente `TEST_DATABASE_URL` y requieren la confirmación explícita `CANASTIO_TEST_DATABASE=1`.
 
 ```powershell
 $env:CANASTIO_TEST_DATABASE = "1"
@@ -38,4 +38,8 @@ El preflight valida el catálogo, los parámetros, la compatibilidad del escenar
 - `clock` debe ser ISO-8601 con zona explícita.
 - `seed` debe ser un entero seguro.
 
-Los comandos de foundation, escenarios, assertions y teardown se incorporarán sobre este contrato. Ninguno podrá relajar estas guardas.
+## Ciclo ejecutable
+
+La implementación completa expone `bootstrap`, `foundation`, `run`, `assert` y `teardown`, además de los gates de integración. La guía operativa, con el orden recomendado y ejemplos reproducibles, está en [SPRINT_14F_INSTRUCTIONS.md](SPRINT_14F_INSTRUCTIONS.md).
+
+Ningún comando puede relajar estas guardas ni usar `DATABASE_URL` como fallback.

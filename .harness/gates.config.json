@@ -2,6 +2,11 @@
   "gates": [
     { "name": "seed-manifest-validate", "cmd": "node scripts/test-data.mjs validate", "blocking": true },
     { "name": "seed-runner-unit", "cmd": "node --test tests/test-data-manifest.test.mjs", "blocking": true },
+    { "name": "seed-small-smoke", "cmd": "node scripts/test-data-gate.mjs small-smoke", "blocking": true },
+    { "name": "seed-idempotency", "cmd": "node scripts/test-data-gate.mjs idempotency", "blocking": true },
+    { "name": "seed-assertions", "cmd": "node scripts/test-data-gate.mjs assertions", "blocking": true },
+    { "name": "seed-realistic-cycle", "cmd": "node scripts/test-data-gate.mjs realistic-cycle", "blocking": true },
+    { "name": "seed-teardown-isolation", "cmd": "node scripts/test-data-gate.mjs teardown-isolation", "blocking": true },
     { "name": "typecheck", "cmd": "pnpm typecheck", "blocking": true },
     { "name": "lint", "cmd": "pnpm lint", "blocking": true },
     { "name": "test", "cmd": "pnpm test", "blocking": true },

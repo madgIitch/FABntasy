@@ -14,6 +14,16 @@ type PlayerMetrics = Record<string, { roundPoints: number | null; recentPoints: 
 const views: { id: View; label: string }[] = [{ id: "court", label: "Cancha" }, { id: "points", label: "Puntos" }, { id: "value", label: "Valor" }, { id: "form", label: "Forma" }];
 const credits = new Intl.NumberFormat("es-ES", { notation: "compact", maximumFractionDigits: 1 });
 
+export function nextLineupSelection(starters: string[], selectedId: string | null, id: string, starterLimit = 5) {
+  const clickedIsStarter = starters.includes(id);
+  if (starters.length < starterLimit && !clickedIsStarter) return { starters: [...starters, id], selectedId: null };
+  if (selectedId === id) return { starters, selectedId: null };
+  if (!selectedId) return { starters, selectedId: id };
+  const selectedIsStarter = starters.includes(selectedId);
+  if (selectedIsStarter === clickedIsStarter) return { starters, selectedId: id };
+  return { starters: starters.map((starterId) => starterId === (selectedIsStarter ? selectedId : id) ? (selectedIsStarter ? id : selectedId) : starterId), selectedId: null };
+}
+
 export function FantasyTeamManager({ competitionSeasonId, roundNumber, initialTeam, eligiblePlayers = [], playerMetrics = {}, cutoffAt = null }: { competitionSeasonId: string; roundNumber: number; initialTeam: Team | null; eligiblePlayers?: Player[]; playerMetrics?: PlayerMetrics; cutoffAt?: string | null }) {
   const [team, setTeam] = useState(initialTeam);
   const [view, setView] = useState<View>("court");
@@ -31,14 +41,10 @@ export function FantasyTeamManager({ competitionSeasonId, roundNumber, initialTe
 
   function selectForSwap(id: string) {
     if (locked) return;
-    if (selectedId === id) { setSelectedId(null); return; }
-    if (!selectedId) { setSelectedId(id); return; }
-    const selectedIsStarter = starters.includes(selectedId);
-    const targetIsStarter = starters.includes(id);
-    if (selectedIsStarter === targetIsStarter) { setSelectedId(id); return; }
-    setStarters((current) => current.map((starterId) => starterId === (selectedIsStarter ? selectedId : id) ? (selectedIsStarter ? id : selectedId) : starterId));
-    setSelectedId(null);
-    setStatus("ready");
+    const next = nextLineupSelection(starters, selectedId, id);
+    setStarters(next.starters);
+    setSelectedId(next.selectedId);
+    if (next.starters !== starters) setStatus("ready");
   }
 
   async function saveLineup() {
@@ -89,7 +95,7 @@ function Header({ roundNumber, locked, cutoffAt }: { roundNumber: number; locked
 
 function LineupSurface({ players, substitutes, rosterSize, selectedId, locked, onSelect }: { players: Player[]; substitutes: Player[]; rosterSize: number; selectedId: string | null; locked: boolean; onSelect: (id: string) => void }) {
   return <section className={styles.lineupSurface} aria-label="Gestor de alineación">
-    <p className={styles.hint}>{locked ? "Esta alineación ya no admite cambios." : selectedId ? "Ahora toca un jugador de la otra zona para intercambiarlos." : "Toca un titular y después un suplente para intercambiarlos."}</p>
+    <p className={styles.hint}>{locked ? "Esta alineación ya no admite cambios." : players.length < 5 ? `Toca un suplente para completar tu quinteto · ${players.length}/5` : selectedId ? "Ahora toca un jugador de la otra zona para intercambiarlos." : "Toca un titular y después un suplente para intercambiarlos."}</p>
     <div className={styles.court} aria-label="Quinteto titular"><div className={styles.centerCircle} />{players.map((player, index) => <div className={`${styles.courtPlayer} ${styles[`spot${index + 1}`]}`} key={player.playerRegistrationId}><PlayerButton player={player} selected={selectedId === player.playerRegistrationId} locked={locked} onClick={() => onSelect(player.playerRegistrationId)} /></div>)}</div>
     <div className={styles.bench}><header><div><p className="eyebrow">Rotación</p><h2>Banquillo</h2></div><span>{substitutes.length}/2</span></header><div className={styles.benchPlayers}>{substitutes.map((player) => <PlayerButton key={player.playerRegistrationId} player={player} selected={selectedId === player.playerRegistrationId} locked={locked} onClick={() => onSelect(player.playerRegistrationId)} />)}{Array.from({ length: Math.max(0, 7 - rosterSize) }).map((_, index) => <Link href="/app/mercado" className={styles.emptySlot} key={index}><span>+</span><strong>Añadir jugador</strong><small>Ir al mercado</small></Link>)}</div></div>
   </section>;

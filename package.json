@@ -17,6 +17,7 @@
     "test:data:assert": "node scripts/test-data.mjs assert",
     "test:data:teardown": "node scripts/test-data.mjs teardown",
     "test:data:gate": "node scripts/test-data-gate.mjs",
+    "test:data:provision-users": "node scripts/provision-qa-users.mjs",
     "prisma": "prisma"
   },
   "devDependencies": {

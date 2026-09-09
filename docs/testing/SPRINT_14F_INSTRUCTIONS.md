@@ -171,6 +171,14 @@ No insertes las filas manualmente en `auth.users` ni uses **Authentication → U
 1. **Recomendada para empezar:** registra cada cuenta desde `/registro`, porque el formulario de Canastio envía `{ username }` a Supabase Auth.
 2. **Recomendada para automatizar:** Admin Auth API con `user_metadata: { username: "qa_manager_XX" }` y `email_confirm: true`, ejecutada solo desde un entorno local seguro.
 
+Con `NEXT_PUBLIC_SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` en el `.env` local, el provisionador incluido crea o actualiza las 21 cuentas en cadena:
+
+```powershell
+npm run test:data:provision-users
+```
+
+La contraseña compartida y el mapa de UUID quedan en `.local/qa-users.json`, que está ignorado por Git. El comando no imprime secretos y es idempotente: una segunda ejecución actualiza las mismas cuentas en lugar de duplicarlas.
+
 Los dominios `example.com` de la tabla son identificadores ilustrativos, no buzones utilizables para confirmar el correo. Si registras desde la app, usa alias que lleguen a una bandeja real; por ejemplo, `tuusuario+canastio.qa.00@gmail.com`. Utiliza contraseñas exclusivas de QA, nunca credenciales personales o de producción.
 
 | Cuenta lógica | Correo recomendado | Username | Uso |

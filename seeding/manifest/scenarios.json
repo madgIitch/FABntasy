@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "canastio-test-scenarios.v1",
+  "profiles": {
+    "small": { "realTeams": 4, "players": 40, "managers": 3, "rounds": 2 },
+    "realistic": { "realTeams": 12, "players": 120, "managers": 20, "rounds": 22 },
+    "stress": { "realTeams": 24, "players": 288, "managers": 200, "rounds": 46 }
+  },
+  "scenarios": [
+    { "id": "onboarding.no-league", "checkpoint": "T0", "tags": ["onboarding", "auth"] },
+    { "id": "league.new-admin", "checkpoint": "T1", "tags": ["league", "auth"] },
+    { "id": "league.realistic-20", "checkpoint": "T2", "profiles": ["realistic", "stress"], "tags": ["league"] },
+    { "id": "market.empty-roster", "checkpoint": "T3", "tags": ["market", "economy"] },
+    { "id": "market.partial-roster", "checkpoint": "T4", "tags": ["market", "economy", "roster"] },
+    { "id": "market.operations", "checkpoint": "T4", "tags": ["market", "economy", "activity"] },
+    { "id": "market.rejections", "checkpoint": "T4", "tags": ["market", "negative", "concurrency"] },
+    { "id": "lineup.draft", "checkpoint": "T5", "tags": ["lineup"] },
+    { "id": "lineup.locked", "checkpoint": "T6", "tags": ["lineup", "cutoff"] },
+    { "id": "round.live", "checkpoint": "T7", "tags": ["round", "scoring"] },
+    { "id": "round.published", "checkpoint": "T9", "tags": ["round", "scoring", "ranking"] },
+    { "id": "round.corrected", "checkpoint": "T11", "tags": ["round", "correction", "audit"] },
+    { "id": "pricing.history", "checkpoint": "T10", "tags": ["pricing"] },
+    { "id": "league.activity", "checkpoint": "T10", "tags": ["league", "activity"] },
+    { "id": "account.multi-league", "checkpoint": "T10", "tags": ["account", "league", "isolation"] }
+  ]
+}

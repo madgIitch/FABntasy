@@ -8,6 +8,9 @@
     "typecheck": "corepack pnpm --filter @fabntasy/web typecheck",
     "lint": "corepack pnpm --filter @fabntasy/web lint",
     "test": "corepack pnpm --filter @fabntasy/web test",
+    "test:data:list": "node scripts/test-data.mjs list",
+    "test:data:validate": "node scripts/test-data.mjs validate",
+    "test:data:unit": "node --test tests/test-data-manifest.test.mjs",
     "prisma": "prisma"
   },
   "devDependencies": {

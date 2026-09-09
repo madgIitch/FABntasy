@@ -1,5 +1,7 @@
 {
   "gates": [
+    { "name": "seed-manifest-validate", "cmd": "node scripts/test-data.mjs validate", "blocking": true },
+    { "name": "seed-runner-unit", "cmd": "node --test tests/test-data-manifest.test.mjs", "blocking": true },
     { "name": "typecheck", "cmd": "pnpm typecheck", "blocking": true },
     { "name": "lint", "cmd": "pnpm lint", "blocking": true },
     { "name": "test", "cmd": "pnpm test", "blocking": true },

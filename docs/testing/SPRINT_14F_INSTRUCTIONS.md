@@ -26,6 +26,12 @@ $env:CANASTIO_REQUIRE_TEST_DB = "1"
 
 La suite rechaza el destino antes de renderizar o ejecutar SQL si estas guardas no se cumplen.
 
+Para un pooler remoto de Supabase, añade además `CANASTIO_TEST_PROJECT_REF` con el identificador público del proyecto. El runner exige que coincida con el usuario de la conexión:
+
+```powershell
+$env:CANASTIO_TEST_PROJECT_REF = "tu_project_ref"
+```
+
 ## 3. Preparar el esquema
 
 En PostgreSQL genérico, crea primero el contrato mínimo que las migraciones esperan de Supabase:

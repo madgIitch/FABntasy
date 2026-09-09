@@ -72,4 +72,8 @@ test("la base nunca se infiere de DATABASE_URL", () => {
     assertTestDatabase({ CANASTIO_TEST_DATABASE: "1", TEST_DATABASE_URL: "postgres://x:y@localhost/canastio_test" }),
     "postgres://x:y@localhost/canastio_test"
   );
+  assert.equal(
+    assertTestDatabase({ CANASTIO_TEST_DATABASE: "1", CANASTIO_TEST_PROJECT_REF: "abcdefghijklmnopqrst", TEST_DATABASE_URL: "postgres://postgres.abcdefghijklmnopqrst:x@aws.pooler.supabase.com/postgres" }),
+    "postgres://postgres.abcdefghijklmnopqrst:x@aws.pooler.supabase.com/postgres"
+  );
 });

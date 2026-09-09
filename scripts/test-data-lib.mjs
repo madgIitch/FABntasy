@@ -58,7 +58,9 @@ export function assertTestDatabase(env = process.env) {
   const url = new URL(raw);
   const database = decodeURIComponent(url.pathname.slice(1)).toLowerCase();
   const target = `${url.hostname}/${database}`;
-  const safeHost = ["localhost", "127.0.0.1", "::1", "db"].includes(url.hostname) || target.includes("test") || target.includes("dev");
+  const projectRef = env.CANASTIO_TEST_PROJECT_REF?.toLowerCase();
+  const confirmedSupabase = Boolean(projectRef && /^[a-z0-9]{15,30}$/.test(projectRef) && url.username.toLowerCase().includes(projectRef));
+  const safeHost = ["localhost", "127.0.0.1", "::1", "db"].includes(url.hostname) || target.includes("test") || target.includes("dev") || confirmedSupabase;
   if (!safeHost) throw new Error(`base rechazada por la guarda de seguridad: ${target}`);
   return raw;
 }

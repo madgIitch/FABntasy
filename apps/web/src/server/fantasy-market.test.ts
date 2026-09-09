@@ -9,6 +9,13 @@ describe("fantasy market rules",()=>{
   });
   it("rounds half-up to an integer credit",()=>expect(calculateClauseBase(101n,100n)).toBe(177n));
   it("charges the same 5 M initial price shown by the global market",()=>expect(MARKET_INITIAL_PRICE).toBe(5_000_000));
+  it("exposes active protection expiry to every league member",()=>{
+    const service=readFileSync(new URL("./fantasy-market.ts",import.meta.url),"utf8");
+    expect(service).toContain("protectedUntil:{gt:now}");
+    expect(service).toContain("playerRegistrationId===s.playerRegistrationId");
+    expect(service).toContain("p.fantasyTeamId===s.fantasyTeamId");
+    expect(service).toContain("serverNow:now.toISOString()");
+  });
   it("initializes an empty team from the market instead of redirecting to roster setup",()=>{
     const service=readFileSync(new URL("./fantasy-market.ts",import.meta.url),"utf8");
     const page=readFileSync(new URL("../../app/app/mercado/page.tsx",import.meta.url),"utf8");

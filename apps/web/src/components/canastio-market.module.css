@@ -40,6 +40,7 @@
 .identity a { overflow-wrap:anywhere; font-size:.9rem; font-weight:650; line-height:1.35 }
 .identity small,.identity em,.form small,.form i { color:var(--color-text-muted); font-size:.72rem; font-style:normal }
 .identity em { display:none }
+.identity .protection { display:block; color:var(--color-warning); font-weight:700; font-variant-numeric:tabular-nums }
 .form { display:grid; grid-template-columns:auto 1fr; align-items:baseline; gap:2px 6px }
 .form b { font-size:1rem; font-variant-numeric:tabular-nums }
 .form i { grid-column:1/-1 }
@@ -73,6 +74,7 @@
 .financial .total { padding-top:10px; border-top:1px solid color-mix(in srgb,var(--color-brand) 22%,transparent) }
 .financial .total dt,.financial .total dd { color:var(--color-brand-text); font-weight:750 }
 .consequence { margin:0; font-size:.84rem; line-height:1.5 }
+.rejection { border:1px solid color-mix(in srgb,var(--color-danger) 48%,transparent); background:rgb(104 31 35 / 72%)!important; color:#ffd9d4!important; box-shadow:inset 3px 0 0 var(--color-danger) }
 .transactionActions { display:flex; justify-content:flex-end; gap:10px; margin-top:2px }
 .transactionActions button { min-height:44px }
 @keyframes marketToast { from { opacity:0; transform:translate(-50%,8px) } }

@@ -2,7 +2,8 @@
 
 - [Dirección visual 14D](design/CANASTIO_14D_VISUAL_DIRECTION.md) — análisis del vídeo, componentes y adaptación verde/blanco para Canastio (propuesta).
 - [Spec 14D](design/SPRINT_14D_SPEC.md) — rediseño integral verde y blanco completado.
-- [Spec 14E](design/SPRINT_14E_SPEC.md) — reskin global bosque oscuro, blanco roto y lima implementado y pendiente de revisión.
+- [Spec 14E](design/SPRINT_14E_SPEC.md) — reskin global bosque oscuro, blanco roto y lima completado.
+- [Spec 14F](testing/SPRINT_14F_SPEC.md) — propuesta de simulación productiva, escenarios SQL y ciclo de datos del harness.
 - [Actividad de liga (propuesta futura)](design/FUTURE_LEAGUE_ACTIVITY_SPEC.md) — taxonomía, contrato y estados previstos para el feed cronológico.
 
 - `ARCHITECTURE.md` — visión general, componentes, flujo de datos.

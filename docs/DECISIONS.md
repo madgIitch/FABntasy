@@ -301,3 +301,12 @@ Contexto: se aprobó el spec `sprint-14e-forest-lime-global-reskin` (Sprint 14E 
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-14f-production-simulation-suite -->
+## 2026-09-09 · sprint-14f-production-simulation-suite aprobado
+
+Contexto: se aprobó el spec `sprint-14f-production-simulation-suite` (Sprint 14F - Simulación productiva y suite de escenarios SQL).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

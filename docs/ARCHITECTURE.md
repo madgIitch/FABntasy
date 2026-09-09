@@ -444,3 +444,21 @@ Spec detallada: docs/design/SPRINT_14E_SPEC.md. Sustituye únicamente la direcci
   - `docs/**`
   - `spec.json`
 
+<!-- harness:sprint-14f-production-simulation-suite -->
+## sprint-14f-production-simulation-suite · Sprint 14F - Simulación productiva y suite de escenarios SQL
+
+Spec detallada: docs/testing/SPRINT_14F_SPEC.md. Separa foundation, escenarios, transiciones, operaciones reales, assertions, diagnóstico, evidencia y teardown, integrándolos en el ciclo del harness.
+
+### Scope aprobado
+
+  - `seeding/**`
+  - `tests/**`
+  - `apps/web/src/server/**`
+  - `services/fab_ingestor/tests/**`
+  - `scripts/**`
+  - `prisma/**`
+  - `docs/**`
+  - `.harness/**`
+  - `package.json`
+  - `spec.json`
+

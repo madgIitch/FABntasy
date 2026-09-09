@@ -1184,6 +1184,85 @@
       "approved_at": "2026-09-08T23:13:19.872Z"
     },
     {
+      "id": "sprint-14f-production-simulation-suite",
+      "name": "Sprint 14f - Production Simulation and SQL Scenario Suite",
+      "title": "Sprint 14F - Simulación productiva y suite de escenarios SQL",
+      "status": "spec_ready",
+      "sdd": true,
+      "milestone": "0.5.6",
+      "dependencies": [
+        "sprint-14e-forest-lime-global-reskin",
+        "sprint-13-market-transactions",
+        "sprint-14-round-scoring-rankings",
+        "sprint-14c-user-profile-account"
+      ],
+      "objective": "Convertir los seeds de desarrollo en una suite determinista, aislada y verificable que reproduzca el ciclo productivo principal de Canastio por escenarios y transiciones.",
+      "description": "Spec detallada: docs/testing/SPRINT_14F_SPEC.md. Separa foundation, escenarios, transiciones, operaciones reales, assertions, diagnóstico, evidencia y teardown, integrándolos en el ciclo del harness.",
+      "user_stories": [
+        {
+          "id": "HU14F.1",
+          "story": "Como desarrollador quiero cargar estados productivos reproducibles para probar cualquier fase del ciclo fantasy sin preparar datos manualmente."
+        },
+        {
+          "id": "HU14F.2",
+          "story": "Como mantenedor quiero verificar automáticamente que economía, plantillas, jornadas, precios, rankings y actividad permanecen reconciliados tras cada transición."
+        },
+        {
+          "id": "HU14F.3",
+          "story": "Como equipo quiero que el harness reproduzca fallos con la misma semilla y reloj y conserve evidencia saneada sin poner en riesgo datos ajenos."
+        }
+      ],
+      "tasks": [
+        "Inventariar seeds, tablas, invariantes, operaciones y estados temporales actuales.",
+        "Definir manifiesto de ejecución con scenario, run_id, seed, clock, profile y keep_on_fail.",
+        "Extraer una foundation deportiva determinista y coherente para perfiles small y realistic.",
+        "Crear personas sintéticas y el catálogo canónico de escenarios de onboarding, liga, mercado, alineación, jornada, pricing y multi-liga.",
+        "Implementar el ciclo reanudable T0-T11 con transiciones temporales y checkpoints.",
+        "Ejercitar mediante servicios/API reales las mutaciones con reglas, autorización, locks e idempotencia.",
+        "Crear assertions y diagnósticos bloqueantes para deporte, economía, ownership, lineup, scoring, ranking, precios, seguridad y aislamiento.",
+        "Añadir casos negativos y carreras concurrentes con resultados admitidos explícitos.",
+        "Implementar runner, teardown seguro, evidencia por run y compatibilidad con los seeds existentes.",
+        "Integrar gates de datos en el harness y documentar operación, diagnóstico, cobertura y límites de fidelidad."
+      ],
+      "deliverable": "Suite ejecutable de escenarios sintéticos que reproduce una liga desde onboarding hasta jornada corregida, valida invariantes después de cada fase y se integra con los gates y la evidencia del harness.",
+      "acceptance": [
+        "Existe una arquitectura separada para foundation, scenarios, transitions, assertions, diagnostics y teardown, accesible mediante un runner único.",
+        "Todo run requiere scenario, run_id, seed, clock y profile; repetir parámetros produce resultados de dominio equivalentes y reproducibles.",
+        "El runner rechaza bases no marcadas como test y el teardown demuestra que solo elimina datos atribuibles al run seleccionado.",
+        "Los perfiles small y realistic cumplen sus volúmenes; realistic crea 12 equipos reales, al menos 120 jugadores, 20 managers y una temporada navegable.",
+        "Las estadísticas sintéticas mantienen coherencia de minutos, tiros, marcador y estados DNP, ausente, aplazado, parcial, final y corregido.",
+        "Se implementan los 15 escenarios canónicos descritos en docs/testing/SPRINT_14F_SPEC.md y el ciclo puede detenerse o reanudarse por checkpoint.",
+        "Las operaciones con reglas o concurrencia pasan por servicios/API reales; SQL directo se limita a precondiciones, fixtures deportivos, assertions y diagnóstico.",
+        "Las assertions económicas detectan automáticamente divergencias entre presupuesto, ledger, saldo, adquisiciones, precios y cláusulas.",
+        "Las assertions de ownership, roster, lineup, scoring, ranking, precios, permisos e aislamiento pasan después de cada transición crítica.",
+        "Los rechazos mínimos y las seis carreras concurrentes terminan sin propiedad doble, ledger parcial, duplicidad idempotente o publicación incoherente.",
+        "La vertical T0-T11 produce actividad a partir de acciones reales y estados navegables de onboarding, Mercado, Mi equipo, Jornada, Liga y Perfil.",
+        "Una corrección de boxscore conserva revisiones auditables, supersede resultados y recalcula totales, posiciones y precios sin duplicados.",
+        "Setup, transiciones y teardown son reejecutables; keep_on_fail controla la conservación de un run fallido y su diagnóstico permanece acotado.",
+        "El harness incorpora seed-manifest-validate, seed-small-smoke, seed-idempotency, seed-assertions, seed-realistic-cycle y seed-teardown-isolation sin retirar gates existentes.",
+        "Los tests funcionan sin llamadas reales a FAB y la evidencia no contiene secretos, PII ni dumps completos.",
+        "Los seeds anteriores disponen de compatibilidad durante la migración y el rollback no requiere mutaciones destructivas.",
+        "Typecheck, lint, tests web, pytest, ruff, Prisma validate, gates de datos y diff-scope pasan en una base de integración limpia.",
+        "La documentación cubre catálogo, parámetros, comandos, tiempos esperados, diagnóstico, matriz de cobertura y límites frente a producción."
+      ],
+      "scope": [
+        "seeding/**",
+        "tests/**",
+        "apps/web/src/server/**",
+        "services/fab_ingestor/tests/**",
+        "scripts/**",
+        "prisma/**",
+        "docs/**",
+        ".harness/**",
+        "package.json",
+        "spec.json"
+      ],
+      "spec_approved": true,
+      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-09T00:07:01.071Z"
+    },
+    {
       "id": "sprint-15-home-dashboard",
       "name": "Sprint 15 - Home Dashboard",
       "status": "spec_ready",

@@ -10,4 +10,6 @@ Checklist de implementación. El agente marca [x] al completar; los gates verifi
 - [x] (T6) AC6: Stats solo consulta partidos terminados elegibles cuyo estado no sea `stats_final`, salvo resync explícito mediante `--force-stats`.  ↔ R6
 - [x] (T7) AC7: SIGINT/SIGTERM detiene nuevas fases, cancela nuevas peticiones FAB, acota la llamada activa por timeout y no deja locks persistentes.  ↔ R7
 - [x] (T8) AC8: Tests sin red cubren calendario, DST, locks, retries, circuit breaker, filtrado `stats_final`, redacción y shutdown; integración PostgreSQL prueba exclusión e `ingestion_runs`.  ↔ R8
+- [x] (T9) AC9: Tras stats, `sync-all` invoca el lifecycle interno autenticado para scoring, ranking y pricing de jornadas completamente sincronizadas.  ↔ R9
+- [x] (T10) AC10: La reejecución no duplica resultados vigentes y las correcciones conservan el historial auditable.  ↔ R10
 - [x] Tests que cubran los criterios de aceptación

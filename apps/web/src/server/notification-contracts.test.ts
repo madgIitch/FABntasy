@@ -1,0 +1,11 @@
+import { describe, expect, it } from "vitest";
+import { NOTIFICATION_INTENTS, isNotificationIntent, lineupReminderEligibility, lineupReminderEventId, notificationEventKey, roundResultEventId, safeNotificationDestination } from "../../../../packages/domain/notifications";
+import { parseSubscription } from "./notifications";
+describe("notification contracts",()=>{
+ it("defines twelve independent intentions",()=>{expect(NOTIFICATION_INTENTS).toHaveLength(12);expect(new Set(NOTIFICATION_INTENTS).size).toBe(12)});
+ it("validates intentions and internal destinations",()=>{expect(isNotificationIntent("ROUND_RESULT")).toBe(true);expect(isNotificationIntent("SPAM")).toBe(false);expect(safeNotificationDestination("https://evil.test")).toBe("/app");expect(safeNotificationDestination("//evil.test")).toBe("/app");expect(safeNotificationDestination("/app/jornada?round=2")).toBe("/app/jornada?round=2")});
+ it("builds a stable per-user event key",()=>{expect(notificationEventKey("u1","ROUND_RESULT","round:4:revision:2")).toBe("u1:ROUND_RESULT:round:4:revision:2")});
+ it("accepts only bounded HTTPS push subscriptions",()=>{expect(parseSubscription({endpoint:"https://push.example/sub",keys:{p256dh:"p",auth:"a"}})).toEqual({endpoint:"https://push.example/sub",p256dh:"p",auth:"a"});expect(()=>parseSubscription({endpoint:"http://push.example/sub",keys:{p256dh:"p",auth:"a"}})).toThrow("INVALID_SUBSCRIPTION")});
+ it("never schedules lineup notices after cutoff or for a valid lineup",()=>{const cutoffAt=new Date("2026-09-11T18:00:00Z");expect(lineupReminderEligibility({now:new Date("2026-09-11T17:31:00Z"),cutoffAt,lineupValid:false,windowMinutes:30})).toBe(true);expect(lineupReminderEligibility({now:cutoffAt,cutoffAt,lineupValid:false,windowMinutes:30})).toBe(false);expect(lineupReminderEligibility({now:new Date("2026-09-11T17:31:00Z"),cutoffAt,lineupValid:true,windowMinutes:30})).toBe(false);expect(lineupReminderEventId("l1",4,"TEAM_CUTOFF")).toContain("Europe/Madrid")});
+ it("notifies only published results and distinguishes corrections",()=>{expect(roundResultEventId("l1",4,1,false)).toBeNull();expect(roundResultEventId("l1",4,1,true)).not.toBe(roundResultEventId("l1",4,2,true))});
+});

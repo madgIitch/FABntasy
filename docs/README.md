@@ -7,6 +7,7 @@
 - [Operación de la suite 14F](testing/SPRINT_14F_INSTRUCTIONS.md) — preparación de PostgreSQL, ejecución, assertions, diagnóstico, gates y teardown seguro.
 - [Runner de datos 14F](testing/TEST_DATA_RUNNER.md) — catálogo, preflight y guardas para bases sintéticas.
 - [Actividad de liga (propuesta futura)](design/FUTURE_LEAGUE_ACTIVITY_SPEC.md) — taxonomía, contrato y estados previstos para el feed cronológico.
+- [PWA y notificaciones](PWA_NOTIFICATIONS.md) — configuración VAPID, seguridad, caché y semántica de entrega.
 
 - `ARCHITECTURE.md` — visión general, componentes, flujo de datos.
 - `DECISIONS.md` — registro de decisiones (ADR). El harness añade entradas al tomar decisiones relevantes.

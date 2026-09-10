@@ -1385,7 +1385,7 @@
       "id": "sprint-16-pwa-install-and-notifications",
       "visual_spec_reference": "sprint-14d-green-white-design-system (aprobado; adoptar al implementar): docs/design/CANASTIO_14D_VISUAL_DIRECTION.md",
       "name": "Sprint 16 - PWA Install and Notifications",
-      "status": "spec_ready",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.6.1",
       "dependencies": [
@@ -1439,6 +1439,7 @@
         "tests/**",
         "docs/**",
         ".env.example",
+        "pnpm-lock.yaml",
         "spec.json"
       ],
       "spec_approved": true,

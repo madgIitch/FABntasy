@@ -5,6 +5,7 @@ import { avatarUrl, profileInitial } from "../../../src/lib/avatar";
 import { getUserProfileOverview } from "../../../src/server/user-profile";
 import { Icon } from "../../../src/components/ui/icon";
 import { LogoutControl } from "../account-controls";
+import { PwaSettings } from "./pwa-settings";
 
 const points = new Intl.NumberFormat("es-ES", { maximumFractionDigits: 1 });
 
@@ -40,6 +41,8 @@ export default async function ProfilePage() {
         <Link className="setting-row" href="/recuperar-clave"><Icon name="lock" /><span><strong>Contraseña</strong><small>••••••••</small></span><Icon name="chevron" /></Link>
       </div>
     </section>
+
+    <PwaSettings vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} />
 
     <div className="profile-logout setting-row"><Icon name="logout" /><LogoutControl /></div>
   </main>;

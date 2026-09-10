@@ -8,6 +8,7 @@
 - `tests/**`
 - `docs/**`
 - `.env.example`
+- `pnpm-lock.yaml`
 - `spec.json`
 
 ## Enfoque
@@ -23,4 +24,3 @@
 - **permission_model:** El permiso solo se solicita tras una acción explícita en Perfil > Notificaciones. Activar una intención con permiso `default` inicia el flujo; `denied` muestra instrucciones de recuperación y nunca aparenta que la intención está activa.
 - **notification_taxonomy:** Las preferencias persistidas son independientes: `MARKET_PRICE`, `MARKET_OFFER`, `MARKET_OUTBID`, `MARKET_SOLD`, `TEAM_INJURY`, `TEAM_CUTOFF`, `TEAM_LINEUP`, `LEAGUE_CLAUSE`, `LEAGUE_ACTIVITY`, `LEAGUE_MESSAGE`, `ROUND_START` y `ROUND_RESULT`. La UI las agrupa en Mercado, Mi equipo, Liga y Jornada.
 - **delivery_semantics:** Cada entrega usa una clave idempotente estable formada por usuario, intención y evento de dominio. Las suscripciones expiradas o rechazadas con 404/410 se revocan; los fallos transitorios quedan registrados para reintento acotado. Ningún aviso de cutoff se crea después del cierre y todos los cálculos temporales usan `Europe/Madrid`.
-

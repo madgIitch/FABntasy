@@ -9,18 +9,72 @@ datasource db {
 }
 
 model UserProfile {
-  id                  String             @id @default(uuid()) @db.Uuid
-  authUserId          String             @unique @map("auth_user_id") @db.Uuid
-  username            String?            @unique @db.VarChar(24)
-  displayName         String?            @map("display_name")
-  avatarPath          String?            @map("avatar_path")
-  createdAt           DateTime           @default(now()) @map("created_at")
-  updatedAt           DateTime           @updatedAt @map("updated_at")
-  fantasyTeams        FantasyTeam[]
-  ownedFantasyLeagues FantasyLeague[]    @relation("FantasyLeagueOwner")
-  leagueMemberships   LeagueMembership[]
+  id                      String                   @id @default(uuid()) @db.Uuid
+  authUserId              String                   @unique @map("auth_user_id") @db.Uuid
+  username                String?                  @unique @db.VarChar(24)
+  displayName             String?                  @map("display_name")
+  avatarPath              String?                  @map("avatar_path")
+  createdAt               DateTime                 @default(now()) @map("created_at")
+  updatedAt               DateTime                 @updatedAt @map("updated_at")
+  fantasyTeams            FantasyTeam[]
+  ownedFantasyLeagues     FantasyLeague[]          @relation("FantasyLeagueOwner")
+  leagueMemberships       LeagueMembership[]
+  pushSubscriptions       PushSubscription[]
+  notificationPreferences NotificationPreference[]
+  notificationDeliveries  NotificationDelivery[]
 
   @@map("user_profiles")
+}
+
+model PushSubscription {
+  id            String                 @id @default(uuid()) @db.Uuid
+  userProfileId String                 @map("user_profile_id") @db.Uuid
+  endpoint      String                 @unique @db.Text
+  p256dh        String                 @db.Text
+  auth          String                 @db.Text
+  userAgent     String?                @map("user_agent") @db.VarChar(512)
+  lastSeenAt    DateTime               @default(now()) @map("last_seen_at") @db.Timestamptz(3)
+  revokedAt     DateTime?              @map("revoked_at") @db.Timestamptz(3)
+  createdAt     DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime               @updatedAt @map("updated_at") @db.Timestamptz(3)
+  userProfile   UserProfile            @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+  deliveries    NotificationDelivery[]
+
+  @@index([userProfileId, revokedAt])
+  @@map("push_subscriptions")
+}
+
+model NotificationPreference {
+  id            String      @id @default(uuid()) @db.Uuid
+  userProfileId String      @map("user_profile_id") @db.Uuid
+  intent        String      @db.VarChar(32)
+  enabled       Boolean     @default(false)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+  userProfile   UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([userProfileId, intent])
+  @@map("notification_preferences")
+}
+
+model NotificationDelivery {
+  id                 String           @id @default(uuid()) @db.Uuid
+  userProfileId      String           @map("user_profile_id") @db.Uuid
+  pushSubscriptionId String           @map("push_subscription_id") @db.Uuid
+  intent             String           @db.VarChar(32)
+  eventKey           String           @map("event_key") @db.VarChar(191)
+  status             String           @db.VarChar(24)
+  attemptCount       Int              @default(0) @map("attempt_count")
+  lastErrorCode      String?          @map("last_error_code") @db.VarChar(64)
+  deliveredAt        DateTime?        @map("delivered_at") @db.Timestamptz(3)
+  createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  userProfile        UserProfile      @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+  pushSubscription   PushSubscription @relation(fields: [pushSubscriptionId], references: [id], onDelete: Cascade)
+
+  @@unique([pushSubscriptionId, intent, eventKey])
+  @@index([userProfileId, status, createdAt])
+  @@map("notification_deliveries")
 }
 
 model Federation {

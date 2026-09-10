@@ -6,6 +6,7 @@ import { createClient } from "../../src/lib/supabase/server";
 import { authDebug, authDebugError, newAuthOperation } from "./auth-debug";
 import { authErrorLog, registrationErrorMessage } from "./auth-errors";
 import { passwordResetRedirect } from "./safe-redirect";
+import { revokeSubscription } from "../../src/server/notifications";
 
 export type AuthState = { status: "idle" | "error" | "success"; message: string; values?: { email?: string; username?: string } };
 
@@ -106,8 +107,11 @@ export async function updatePassword(_: AuthState, formData: FormData): Promise<
 
 export async function logout() {
   const operation = newAuthOperation("logout");
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) await revokeSubscription(user.id).catch(() => undefined);
   authDebug(operation, "supabase_request_started");
-  await (await createClient()).auth.signOut();
+  await supabase.auth.signOut();
   authDebug(operation, "completed");
   redirect("/login");
 }

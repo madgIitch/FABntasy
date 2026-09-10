@@ -22,13 +22,22 @@ describe("auth and PWA security contracts", () => {
   it("never caches mutations or authenticated pages", () => {
     const sw = readFileSync(new URL("../../public/sw.js", import.meta.url), "utf8");
     expect(sw).toContain('event.request.method!=="GET"');
-    expect(sw).not.toContain('"/app"');
+    const publicAssets = sw.match(/PUBLIC_ASSETS=(\[[^;]+\])/);
+    expect(publicAssets).not.toBeNull();
+    expect(JSON.parse(publicAssets![1])).not.toContain("/app");
+    expect(sw).not.toContain("caches.put");
   });
 
   it("declares a standalone manifest", () => {
     const manifest = JSON.parse(readFileSync(new URL("../../public/manifest.webmanifest", import.meta.url), "utf8"));
     expect(manifest.display).toBe("standalone");
     expect(manifest.start_url).toBe("/app");
+    expect(manifest.icons).toEqual(expect.arrayContaining([
+      expect.objectContaining({ sizes: "192x192", purpose: "any" }),
+      expect.objectContaining({ sizes: "192x192", purpose: "maskable" }),
+      expect.objectContaining({ sizes: "512x512", purpose: "any" }),
+      expect.objectContaining({ sizes: "512x512", purpose: "maskable" }),
+    ]));
   });
 
   it("turns signup delivery failures into actionable, safe messages", () => {

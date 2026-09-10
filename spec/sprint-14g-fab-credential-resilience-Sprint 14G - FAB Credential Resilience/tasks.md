@@ -9,5 +9,5 @@ Checklist de implementación. El agente marca [x] al completar; los gates verifi
 - [x] (T5) Un almacén no escribible falla al arrancar en modo live con diagnóstico saneado.  ↔ R5
 - [x] (T6) ingestion_runs distingue expiración, fallo de renovación, contrato y respuesta sin secretos.  ↔ R6
 - [x] (T7) El ciclo completo vuelve a ser idempotente después de una renovación.  ↔ R7
-- [ ] (T8) Tests sin red y un smoke live opt-in demuestran rotación, recuperación, replay único y redacción.  ↔ R8
+- [x] (T8) Tests sin red y un smoke live opt-in demuestran rotación, recuperación, replay único y redacción.  ↔ R8
 - [x] Tests sin red que cubren los criterios de aceptación

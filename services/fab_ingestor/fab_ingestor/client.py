@@ -8,6 +8,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from collections.abc import Callable, Mapping
+from contextlib import nullcontext
 from dataclasses import dataclass
 from typing import ClassVar, Protocol
 
@@ -17,7 +18,19 @@ class FabError(RuntimeError):
 
 
 class FabResponseError(FabError):
-    pass
+    code = "FAB_RESPONSE"
+
+
+class FabAuthExpiredError(FabResponseError):
+    code = "FAB_AUTH_EXPIRED"
+
+
+class FabAuthRefreshError(FabResponseError):
+    code = "FAB_AUTH_REFRESH_FAILED"
+
+
+class FabContractError(FabResponseError):
+    code = "FAB_CONTRACT_ERROR"
 
 
 class FabTransportError(FabError):
@@ -93,6 +106,7 @@ class FabClient:
         sleeper: Callable[[float], None] = time.sleep,
         clock: Callable[[], float] = time.monotonic,
         cancellation_check: Callable[[], bool] = lambda: False,
+        auto_refresh_credentials: bool = False,
     ) -> None:
         self._store = credential_store
         self._base_url = base_url.rstrip("/")
@@ -104,6 +118,7 @@ class FabClient:
         self._clock = clock
         self._last_request_at: float | None = None
         self._cancelled = cancellation_check
+        self._auto_refresh_credentials = auto_refresh_credentials
 
     def register_device(self) -> Credentials:
         payload = self._post(
@@ -355,11 +370,22 @@ class FabClient:
         raise FabResponseError("FAB search returned an invalid response")
 
     def _post(self, path: str, fields: Mapping[str, str], *, authenticated: bool = True) -> dict:
+        credentials = self._store.load() if authenticated else None
+        if authenticated and credentials is None:
+            raise FabResponseError("FAB credentials are not configured")
+        payload = self._request_json(path, fields, credentials)
+        self._rotate_key(payload)
+        if authenticated and self._is_auth_signal(payload):
+            if not self._auto_refresh_credentials:
+                raise FabAuthExpiredError("FAB authentication may have expired")
+            return self._refresh_and_replay(path, fields, credentials)
+        return payload
+
+    def _request_json(
+        self, path: str, fields: Mapping[str, str], credentials: Credentials | None
+    ) -> dict:
         request_fields = dict(fields)
-        if authenticated:
-            credentials = self._store.load()
-            if credentials is None:
-                raise FabResponseError("FAB credentials are not configured")
+        if credentials is not None:
             request_fields.update(id_dispositivo=credentials.device_id, key=credentials.key)
 
         for attempt in range(self._max_retries + 1):
@@ -386,9 +412,55 @@ class FabClient:
                 raise FabResponseError("FAB returned invalid JSON") from error
             if not isinstance(payload, dict):
                 raise FabResponseError("FAB returned an invalid response")
-            self._rotate_key(payload)
             return payload
         raise AssertionError("retry loop exhausted")
+
+    @staticmethod
+    def _is_auth_signal(payload: Mapping[str, object]) -> bool:
+        error = str(payload.get("error", "")).strip().casefold()
+        return (
+            str(payload.get("resultado", "")).casefold() == "error"
+            and error in {"faltan parámetros", "faltan parametros"}
+            and not payload.get("key")
+        )
+
+    def _probe(self, credentials: Credentials) -> bool:
+        payload = self._request_json(
+            "/v2/busqueda.ashx",
+            {"accion": "buscarCategoria", "texto": "Sevilla", "skip": "0"},
+            credentials,
+        )
+        self._rotate_key(payload)
+        if self._is_auth_signal(payload):
+            return False
+        if str(payload.get("resultado", "")).casefold() == "correcto" or isinstance(
+            payload.get("categorias"), list
+        ):
+            return True
+        raise FabContractError("FAB authentication probe returned an invalid contract")
+
+    def _refresh_and_replay(
+        self, path: str, fields: Mapping[str, str], rejected: Credentials | None
+    ) -> dict:
+        if rejected is None:
+            raise FabAuthExpiredError("FAB authentication has expired")
+        if self._probe(rejected):
+            raise FabContractError("FAB request no longer matches the confirmed contract")
+        lock = getattr(self._store, "renewal_lock", None)
+        with lock() if lock is not None else nullcontext():
+            current = self._store.load()
+            if current is None:
+                raise FabAuthRefreshError("FAB credential refresh failed")
+            if current == rejected:
+                try:
+                    current = self.register_device()
+                except FabError as error:
+                    raise FabAuthRefreshError("FAB credential refresh failed") from error
+            replay = self._request_json(path, fields, current)
+            self._rotate_key(replay)
+            if self._is_auth_signal(replay):
+                raise FabAuthRefreshError("FAB rejected refreshed credentials")
+            return replay
 
     def _rotate_key(self, payload: dict) -> None:
         new_key = payload.get("key")

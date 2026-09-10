@@ -1,12 +1,16 @@
 import json
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier, Lock
 
 import pytest
 
 from fab_ingestor.auth import FileCredentialStore
 from fab_ingestor.client import (
     Credentials,
+    FabAuthRefreshError,
     FabCancelledError,
     FabClient,
+    FabContractError,
     FabResponseError,
     FabTransportError,
     MemoryCredentialStore,
@@ -297,3 +301,100 @@ def test_file_store_replaces_credentials_atomically(tmp_path):
     store.replace(Credentials("device", "second"))
     assert store.load() == Credentials("device", "second")
     assert list(path.parent.iterdir()) == [path]
+
+
+def test_expired_identity_is_probed_refreshed_and_replayed_once():
+    calls = []
+
+    def transport(url, fields, timeout):
+        calls.append((url, dict(fields)))
+        if url.endswith("/dispositivo.ashx"):
+            return response({"resultado": "correcto", "id_dispositivo": "new-device", "key": "new-key"})
+        if fields["id_dispositivo"] == "old-device":
+            return response({"resultado": "error", "error": "Faltan parámetros"})
+        return response({"categorias": [], "numeroMaximoResultados": 20})
+
+    store = MemoryCredentialStore(Credentials("old-device", "old-key"))
+    client = FabClient(
+        store, transport=transport, min_interval=0, auto_refresh_credentials=True
+    )
+
+    assert client.search_category("Sevilla") == []
+    assert store.load() == Credentials("new-device", "new-key")
+    assert len(calls) == 4  # original, probe, registration and one replay
+
+
+def test_successful_probe_classifies_original_failure_as_contract_error():
+    calls = []
+
+    def transport(url, fields, timeout):
+        calls.append(url)
+        if len(calls) == 1:
+            return response({"resultado": "error", "error": "Faltan parametros"})
+        return response({"resultado": "correcto", "categorias": []})
+
+    client = FabClient(
+        MemoryCredentialStore(Credentials("device", "key")),
+        transport=transport,
+        min_interval=0,
+        auto_refresh_credentials=True,
+    )
+    with pytest.raises(FabContractError):
+        client.search_category("Sevilla")
+    assert len(calls) == 2
+
+
+def test_refreshed_identity_is_never_replayed_more_than_once():
+    calls = []
+
+    def transport(url, fields, timeout):
+        calls.append(url)
+        if url.endswith("/dispositivo.ashx"):
+            return response({"resultado": "correcto", "id_dispositivo": "new", "key": "new"})
+        return response({"resultado": "error", "error": "Faltan parámetros"})
+
+    client = FabClient(
+        MemoryCredentialStore(Credentials("old", "old")),
+        transport=transport,
+        min_interval=0,
+        auto_refresh_credentials=True,
+    )
+    with pytest.raises(FabAuthRefreshError):
+        client.search_category("Sevilla")
+    assert len(calls) == 4
+
+
+def test_file_store_writability_preflight_leaves_no_probe(tmp_path):
+    store = FileCredentialStore(tmp_path / "credentials" / "fab.json")
+    store.assert_writable()
+    assert list((tmp_path / "credentials").iterdir()) == []
+
+
+def test_concurrent_workers_converge_on_one_registered_identity(tmp_path):
+    store = FileCredentialStore(tmp_path / "shared" / "fab.json")
+    store.replace(Credentials("old-device", "old-key"))
+    probes = Barrier(2)
+    counter_lock = Lock()
+    registrations = 0
+
+    def transport(url, fields, timeout):
+        nonlocal registrations
+        if url.endswith("/dispositivo.ashx"):
+            with counter_lock:
+                registrations += 1
+            return response({"resultado": "correcto", "id_dispositivo": "new-device", "key": "new-key"})
+        if fields["id_dispositivo"] == "old-device":
+            if fields.get("texto") == "Sevilla":
+                probes.wait(timeout=2)
+            return response({"resultado": "error", "error": "Faltan parámetros"})
+        return response({"categorias": [], "numeroMaximoResultados": 20})
+
+    def run(text):
+        return FabClient(
+            store, transport=transport, min_interval=0, auto_refresh_credentials=True
+        ).search_category(text)
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        assert list(executor.map(run, ["Córdoba", "Granada"])) == [[], []]
+    assert registrations == 1
+    assert store.load() == Credentials("new-device", "new-key")

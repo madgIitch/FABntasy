@@ -54,6 +54,13 @@ def main() -> None:
     args = parser.parse_args()
     settings = Settings.from_env()
     store = FileCredentialStore(settings.credentials_file)
+    if settings.mode == "live":
+        try:
+            store.assert_writable()
+        except OSError as error:
+            raise SystemExit("FAB credential directory must be persistent and writable in live mode") from error
+        if store.load() is None and settings.device_id is not None and settings.key is not None:
+            store.replace(Credentials(settings.device_id, settings.key))
 
     if args.command in {"sync-all", "run-scheduler"}:
         if not settings.database_url:
@@ -66,6 +73,7 @@ def main() -> None:
                     store,
                     timeout=settings.request_timeout_seconds,
                     cancellation_check=stop_event.is_set,
+                    auto_refresh_credentials=settings.auto_refresh_credentials,
                 ),
                 repository,
                 retry_policy=RetryPolicy(
@@ -116,7 +124,7 @@ def main() -> None:
         if args.command == "sync-competition-stats" and not args.category_id:
             parser.error("sync-competition-stats requires --category-id")
         with SportsRepository.connect(settings.database_url) as repository:
-            client = FabClient(store)
+            client = FabClient(store, auto_refresh_credentials=settings.auto_refresh_credentials)
             summary = (
                 sync_game_stats(client, repository, external_game_id=str(args.game_id))
                 if args.command == "sync-game-stats"
@@ -138,7 +146,7 @@ def main() -> None:
             raise SystemExit("DATABASE_URL is required to sync competition games")
         with SportsRepository.connect(settings.database_url) as repository:
             summary = sync_competition_games(
-                FabClient(store),
+                FabClient(store, auto_refresh_credentials=settings.auto_refresh_credentials),
                 repository,
                 category_competition_id=str(args.category_id),
             )
@@ -157,7 +165,7 @@ def main() -> None:
             raise SystemExit("DATABASE_URL is required to sync a competition")
         with SportsRepository.connect(settings.database_url) as repository:
             summary = sync_competition_teams(
-                FabClient(store),
+                FabClient(store, auto_refresh_credentials=settings.auto_refresh_credentials),
                 repository,
                 category_competition_id=str(args.category_id),
             )
@@ -177,7 +185,7 @@ def main() -> None:
         return
 
     if args.command in {"discover-categories", "select-competition"}:
-        client = FabClient(store)
+        client = FabClient(store, auto_refresh_credentials=settings.auto_refresh_credentials)
         payloads: list[dict] = []
         candidates = discover_categories(client, args.query, payload_sink=payloads.append)
         if args.command == "discover-categories":

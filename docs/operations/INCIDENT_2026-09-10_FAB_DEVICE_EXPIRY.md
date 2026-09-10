@@ -63,3 +63,10 @@ Un job desatendido seguirá necesitando intervención manual cuando caduque la i
 
 La solución debe clasificar el rechazo mediante una sonda autenticada controlada, renovar como máximo una vez, reproducir solo operaciones de lectura seguras, persistir atómicamente el nuevo par y conservar diagnóstico saneado. Este trabajo se planifica en Sprint 14G.
 
+## Recuperación implementada en Sprint 14G
+
+El cliente trata `resultado=error`, `error=Faltan parámetros` y ausencia de `key` como una señal ambigua, no como prueba suficiente de caducidad. Ejecuta una sonda de lectura contra el contrato ya confirmado de `buscarCategoria`. Si la sonda funciona, clasifica la petición original como `FAB_CONTRACT_ERROR`; si reproduce el rechazo, coordina la renovación mediante un lock asociado al fichero, vuelve a cargar las credenciales por si otro worker ya las cambió y registra un dispositivo solo cuando siguen obsoletas.
+
+La petición original se repite una sola vez. Un segundo rechazo termina como `FAB_AUTH_REFRESH_FAILED`. Los errores 429, 5xx y de transporte conservan su política de retry y nunca activan la renovación.
+
+La recuperación se controla con `FAB_AUTO_CREDENTIAL_REFRESH=true|false`. En modo `live`, el proceso comprueba al arrancar que el directorio de `FAB_CREDENTIALS_FILE` permite escritura y reemplazo atómico. El montaje Docker correcto sigue siendo el directorio persistente en lectura/escritura, nunca el JSON individual como `readonly`.

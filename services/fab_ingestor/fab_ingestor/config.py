@@ -21,6 +21,7 @@ class Settings:
     circuit_recovery_seconds: float
     fantasy_lifecycle_url: str | None
     internal_job_secret: str | None
+    auto_refresh_credentials: bool
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -47,6 +48,7 @@ class Settings:
         circuit_recovery = float(os.getenv("FAB_CIRCUIT_RECOVERY_SECONDS", "300"))
         fantasy_lifecycle_url = os.getenv("CANASTIO_FANTASY_LIFECYCLE_URL") or None
         internal_job_secret = os.getenv("CANASTIO_INTERNAL_JOB_SECRET") or None
+        auto_refresh_credentials = os.getenv("FAB_AUTO_CREDENTIAL_REFRESH", "true").lower() in {"1", "true", "yes"}
         if bool(fantasy_lifecycle_url) != bool(internal_job_secret):
             raise ValueError("CANASTIO_FANTASY_LIFECYCLE_URL and CANASTIO_INTERNAL_JOB_SECRET must be configured together")
         if not 60 <= idle_minutes <= 180:
@@ -80,4 +82,5 @@ class Settings:
             circuit_recovery,
             fantasy_lifecycle_url,
             internal_job_secret,
+            auto_refresh_credentials,
         )

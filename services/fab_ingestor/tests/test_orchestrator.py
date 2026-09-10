@@ -5,7 +5,12 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from fab_ingestor.client import FabTransportError
+from fab_ingestor.client import (
+    FabAuthExpiredError,
+    FabAuthRefreshError,
+    FabContractError,
+    FabTransportError,
+)
 from fab_ingestor.orchestrator import (
     CircuitBreaker,
     CircuitOpenError,
@@ -120,6 +125,27 @@ def test_phase_failure_is_stored_as_code_without_exception_message(monkeypatch):
     serialized = repr(repository.finished)
     assert "credential-like" not in serialized
     assert "UNEXPECTED" in serialized
+
+
+@pytest.mark.parametrize(
+    ("error", "code"),
+    [
+        (FabAuthExpiredError("secret"), "FAB_AUTH_EXPIRED"),
+        (FabAuthRefreshError("secret"), "FAB_AUTH_REFRESH_FAILED"),
+        (FabContractError("secret"), "FAB_CONTRACT_ERROR"),
+    ],
+)
+def test_fab_credential_failures_are_persisted_as_safe_codes(monkeypatch, error, code):
+    repository = Repository()
+
+    def fail(*_args, **_kwargs):
+        raise error
+
+    monkeypatch.setattr("fab_ingestor.orchestrator.sync_competition_teams", fail)
+    IngestionOrchestrator(object(), repository).sync_all()
+    serialized = repr(repository.finished)
+    assert code in serialized
+    assert "secret" not in serialized
 
 
 def test_transient_failures_retry_with_backoff_and_open_circuit():

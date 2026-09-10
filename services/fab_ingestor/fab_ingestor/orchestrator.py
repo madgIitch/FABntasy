@@ -297,7 +297,7 @@ def _error_code(error: Exception) -> str:
     if isinstance(error, FantasyLifecycleTransportError):
         return "FANTASY_LIFECYCLE_TRANSPORT"
     if isinstance(error, FabResponseError):
-        return "FAB_RESPONSE"
+        return getattr(error, "code", "FAB_RESPONSE")
     if isinstance(
         error, (CompetitionDiscoveryError, ScheduleContractError, BoxscoreContractError)
     ):

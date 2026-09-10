@@ -20,8 +20,36 @@ BEGIN
   ON CONFLICT(id) DO NOTHING;
 
   INSERT INTO fantasy_scoring_rule_sets(id,competition_season_id,identifier,version,calculation_type,status,definition,published_at,created_at,updated_at)
-  VALUES(v_scoring,v_cs,'14f-' || v_run,'1.0.0','PROVINCIAL','DRAFT','{"schemaVersion":"fantasy-ruleset.v1","synthetic":true}'::jsonb,NULL,v_clock,v_clock)
-  ON CONFLICT(id) DO UPDATE SET status='DRAFT',published_at=NULL;
+  VALUES(
+    v_scoring,v_cs,'canastio.provincial.player-game','1.0.0','PROVINCIAL','DRAFT',
+    '{
+      "identifier":"canastio.provincial.player-game",
+      "version":"1.0.0",
+      "calculationType":"PROVINCIAL",
+      "formula":"PTS + 0.50*3PM + 0.25*FTM - 0.50*FC",
+      "terms":[
+        {"id":"points","label":"Puntos","expression":"PTS","inputs":["points"],"coefficient":"1","required":true},
+        {"id":"three-pointers","label":"Triples anotados","expression":"3PM","inputs":["threePointersMade"],"coefficient":"0.50","required":true},
+        {"id":"free-throws","label":"Tiros libres anotados","expression":"FTM","inputs":["freeThrowsMade"],"coefficient":"0.25","required":true},
+        {"id":"fouls","label":"Faltas cometidas","expression":"FC","inputs":["foulsCommitted"],"coefficient":"-0.50","required":true}
+      ],
+      "bonuses":[],
+      "nullPolicy":"REJECT_REQUIRED",
+      "dnpPolicy":"ZERO_MINUTES_ALL_STATS_ZERO",
+      "allowNegativeRaw":true,
+      "rounding":{"mode":"HALF_UP","scale":1,"stage":"FINAL_ONLY"},
+      "normalization":{"minimumSample":20,"method":"POPULATION_Z_SCORE","base":"20","factor":"10","minimum":"0","maximum":"50"}
+    }'::jsonb,
+    NULL,v_clock,v_clock
+  )
+  ON CONFLICT(id) DO UPDATE SET
+    identifier=excluded.identifier,
+    version=excluded.version,
+    calculation_type=excluded.calculation_type,
+    definition=excluded.definition,
+    status='DRAFT',
+    published_at=NULL,
+    updated_at=excluded.updated_at;
 
   -- Profile 0 is intentionally left without a league for onboarding.no-league.
   FOR i IN 0..{{managers}} LOOP

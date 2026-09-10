@@ -15,7 +15,7 @@ export async function recomputePlayerPrices(competitionSeasonId: string, roundNu
   if (algorithmVersion !== PLAYER_PRICING_V1.version) throw new Error("UNSUPPORTED_ALGORITHM_VERSION");
   if (!Number.isSafeInteger(roundNumber) || roundNumber < 1) throw new Error("INVALID_ROUND_NUMBER");
   return retrySerializable(() => db.$transaction(async (tx) => {
-    await tx.$queryRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${`player-pricing:${competitionSeasonId}:${algorithmVersion}`}))`);
+    await tx.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${`player-pricing:${competitionSeasonId}:${algorithmVersion}`}))`);
     const registrations = await tx.playerRegistration.findMany({
       where: { competitionSeasonId },
       include: {
@@ -55,21 +55,55 @@ export async function recomputePlayerPrices(competitionSeasonId: string, roundNu
     });
     const results = calculatePriceCohort(input, Math.max(1, confirmedRounds.length));
     const revision = inputRevision({ competitionSeasonId, roundNumber, algorithmVersion, input });
-    for (const result of results) {
-      const price = await tx.playerPrice.upsert({
-        where: { playerRegistrationId_competitionSeasonId_algorithmVersion: { playerRegistrationId: result.playerRegistrationId, competitionSeasonId, algorithmVersion } },
-        create: { playerRegistrationId: result.playerRegistrationId, competitionSeasonId, algorithmVersion, currentPrice: result.newPrice, status: result.status, lastRoundNumber: roundNumber, allTimeHigh: result.newPrice, allTimeLow: result.newPrice },
-        update: { currentPrice: result.newPrice, status: result.status, lastRoundNumber: roundNumber,
-          allTimeHigh: { set: Math.max(result.newPrice, Number(registrations.find((item) => item.id === result.playerRegistrationId)?.prices[0]?.allTimeHigh ?? result.newPrice)) },
-          allTimeLow: { set: Math.min(result.newPrice, Number(registrations.find((item) => item.id === result.playerRegistrationId)?.prices[0]?.allTimeLow ?? result.newPrice)) } },
-      });
-      await tx.playerPriceEvent.createMany({ data: [{ playerPriceId: price.id, playerRegistrationId: result.playerRegistrationId, competitionSeasonId,
-        roundNumber, algorithmVersion, inputRevision: revision, status: result.status, previousPrice: result.previousPrice, targetPrice: result.targetPrice,
-        newPrice: result.newPrice, recentForm: result.recentForm, seasonAverage: result.seasonAverage, marketRating: result.marketRating,
-        percentile: result.percentile, dnpStreak: result.dnpStreak, inputSnapshot: input.find((item) => item.playerRegistrationId === result.playerRegistrationId)! as unknown as Prisma.InputJsonValue }], skipDuplicates: true });
+    const existingIds = new Set(registrations.flatMap((registration) => registration.prices.map((price) => price.playerRegistrationId)));
+    await tx.playerPrice.createMany({
+      data: results.filter((result) => !existingIds.has(result.playerRegistrationId)).map((result) => ({
+        playerRegistrationId: result.playerRegistrationId, competitionSeasonId, algorithmVersion,
+        currentPrice: result.newPrice, status: result.status, lastRoundNumber: roundNumber,
+        allTimeHigh: result.newPrice, allTimeLow: result.newPrice,
+      })),
+      skipDuplicates: true,
+    });
+    if (results.length) {
+      const rows = results.map((result) => Prisma.sql`(
+        ${result.playerRegistrationId}::uuid,
+        ${BigInt(result.newPrice)}::bigint,
+        ${result.status}::text,
+        ${roundNumber}::integer
+      )`);
+      await tx.$executeRaw(Prisma.sql`
+        UPDATE player_prices AS price
+        SET current_price = change.new_price,
+            status = change.status,
+            last_round_number = change.round_number,
+            all_time_high = GREATEST(price.all_time_high, change.new_price),
+            all_time_low = LEAST(price.all_time_low, change.new_price),
+            updated_at = NOW()
+        FROM (VALUES ${Prisma.join(rows)}) AS change(player_registration_id, new_price, status, round_number)
+        WHERE price.player_registration_id = change.player_registration_id
+          AND price.competition_season_id = ${competitionSeasonId}::uuid
+          AND price.algorithm_version = ${algorithmVersion}
+      `);
     }
+    const persistedPrices = await tx.playerPrice.findMany({
+      where: { competitionSeasonId, algorithmVersion, playerRegistrationId: { in: results.map((result) => result.playerRegistrationId) } },
+      select: { id: true, playerRegistrationId: true },
+    });
+    const priceIdByRegistration = new Map(persistedPrices.map((price) => [price.playerRegistrationId, price.id]));
+    const inputByRegistration = new Map(input.map((item) => [item.playerRegistrationId, item]));
+    await tx.playerPriceEvent.createMany({ data: results.map((result) => ({
+      playerPriceId: priceIdByRegistration.get(result.playerRegistrationId)!, playerRegistrationId: result.playerRegistrationId, competitionSeasonId,
+      roundNumber, algorithmVersion, inputRevision: revision, status: result.status, previousPrice: result.previousPrice, targetPrice: result.targetPrice,
+      newPrice: result.newPrice, recentForm: result.recentForm, seasonAverage: result.seasonAverage, marketRating: result.marketRating,
+      percentile: result.percentile, dnpStreak: result.dnpStreak,
+      inputSnapshot: inputByRegistration.get(result.playerRegistrationId)! as unknown as Prisma.InputJsonValue,
+    })), skipDuplicates: true });
     return { competitionSeasonId, roundNumber, algorithmVersion, inputRevision: revision, updated: results.length };
-  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }));
+  }, {
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+    maxWait: 10_000,
+    timeout: 30_000,
+  }));
 }
 
 export async function backfillPlayerPrices(competitionSeasonId: string, throughRound: number, algorithmVersion = PLAYER_PRICING_V1.version) {

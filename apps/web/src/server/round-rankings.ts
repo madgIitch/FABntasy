@@ -39,7 +39,11 @@ export async function recomputeRoundRankings(competitionSeasonId: string, roundN
     }
     await rebuildTotals(tx, competitionSeasonId);
     return { roundNumber, teams: lineups.length, published, provisional };
-  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  }, {
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+    maxWait: 10_000,
+    timeout: 30_000,
+  });
 }
 
 type Tx = Prisma.TransactionClient;

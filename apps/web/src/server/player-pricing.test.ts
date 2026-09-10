@@ -25,6 +25,17 @@ describe("Canastio player pricing v1", () => {
     expect(result[18].percentile).toBe(result[19].percentile);
   });
 
+  it("prices a production-sized cohort deterministically", () => {
+    const players = cohort(500);
+    const first = calculatePriceCohort(players, 4);
+    const second = calculatePriceCohort(players, 4);
+    expect(first).toEqual(second);
+    expect(first).toHaveLength(500);
+    expect(first.every((item) => Number.isSafeInteger(item.newPrice)
+      && item.newPrice >= PLAYER_PRICING_V1.minimumPrice
+      && item.newPrice <= PLAYER_PRICING_V1.maximumPrice)).toBe(true);
+  });
+
   it("caps early rises at 12 percent and mature falls at 10 percent", () => {
     expect(calculatePriceCohort(cohort(), 1).at(-1)!.newPrice).toBe(5_600_000);
     expect(calculatePriceCohort(cohort(20, { currentPrice: 20_000_000 }), 4)[0].newPrice).toBe(18_000_000);

@@ -88,7 +88,11 @@ export async function recomputeRound(competitionSeasonId: string, roundNumber: n
       breakdown: result.breakdown as unknown as Prisma.InputJsonValue,
     })), skipDuplicates: true });
     return rows.length;
-  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }));
+  }, {
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+    maxWait: 10_000,
+    timeout: 30_000,
+  }));
   if (process.env.FANTASY_ROUND_SCORING_ENABLED !== "false") await recomputeRoundRankings(competitionSeasonId, roundNumber);
   return count;
 }

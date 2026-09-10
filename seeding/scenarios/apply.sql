@@ -24,6 +24,11 @@ DECLARE
   v_player_no integer;
 BEGIN
   SELECT id INTO v_owner_profile FROM user_profiles WHERE auth_user_id=COALESCE((SELECT (x->>'authUserId')::uuid FROM jsonb_array_elements({{identity_map}}::jsonb) x WHERE x->>'slot'='01'),md5(v_run || ':auth:1')::uuid);
+  IF v_scenario IN ('round.live','round.finished','round.published','round.corrected','pricing.history','league.activity','account.multi-league') THEN
+    UPDATE fantasy_scoring_rule_sets
+    SET status='ACTIVE',published_at=COALESCE(published_at,v_clock),updated_at=v_clock
+    WHERE id=v_scoring;
+  END IF;
   IF v_scenario IN ('market.partial-roster','market.operations','market.rejections') THEN v_roster:=2; END IF;
   IF v_scenario IN ('lineup.draft','lineup.locked','round.live','round.finished','round.published','round.corrected','pricing.history','league.activity','account.multi-league') THEN v_roster:=7; END IF;
   IF v_scenario='lineup.draft' THEN v_lineup_size:=4; END IF;

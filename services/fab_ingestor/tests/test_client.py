@@ -344,6 +344,23 @@ def test_successful_probe_classifies_original_failure_as_contract_error():
     assert len(calls) == 2
 
 
+def test_public_probe_is_read_only_and_does_not_register_an_expired_identity():
+    calls = []
+
+    def transport(url, fields, timeout):
+        calls.append(url)
+        return response({"resultado": "error", "error": "Faltan parámetros"})
+
+    client = FabClient(
+        MemoryCredentialStore(Credentials("device", "key")),
+        transport=transport,
+        min_interval=0,
+        auto_refresh_credentials=True,
+    )
+    assert client.probe_credentials() is False
+    assert calls == ["https://appaficion.andaluzabaloncesto.org/v2/busqueda.ashx"]
+
+
 def test_refreshed_identity_is_never_replayed_more_than_once():
     calls = []
 

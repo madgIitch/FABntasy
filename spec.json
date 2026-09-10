@@ -1270,7 +1270,7 @@
       "id": "sprint-14g-fab-credential-resilience",
       "name": "Sprint 14G - FAB Credential Resilience",
       "title": "Sprint 14G - Resiliencia de credenciales FAB",
-      "status": "in_progress",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.5.7",
       "dependencies": [

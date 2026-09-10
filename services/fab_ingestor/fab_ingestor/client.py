@@ -142,6 +142,13 @@ class FabClient:
         self._store.replace(credentials)
         return credentials
 
+    def probe_credentials(self) -> bool:
+        """Perform one safe authenticated read without renewing the device."""
+        credentials = self._store.load()
+        if credentials is None:
+            raise FabResponseError("FAB credentials are not configured")
+        return self._probe(credentials)
+
     def search_match(self, text: str, *, page_size: int = 20) -> list[dict]:
         return self._search("match", text, page_size)
 

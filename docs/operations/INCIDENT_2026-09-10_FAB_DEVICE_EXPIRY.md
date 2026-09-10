@@ -70,3 +70,13 @@ El cliente trata `resultado=error`, `error=Faltan parámetros` y ausencia de `ke
 La petición original se repite una sola vez. Un segundo rechazo termina como `FAB_AUTH_REFRESH_FAILED`. Los errores 429, 5xx y de transporte conservan su política de retry y nunca activan la renovación.
 
 La recuperación se controla con `FAB_AUTO_CREDENTIAL_REFRESH=true|false`. En modo `live`, el proceso comprueba al arrancar que el directorio de `FAB_CREDENTIALS_FILE` permite escritura y reemplazo atómico. El montaje Docker correcto sigue siendo el directorio persistente en lectura/escritura, nunca el JSON individual como `readonly`.
+
+La sonda puede validarse manualmente sin renovar la identidad ni ejecutar una sincronización:
+
+```powershell
+docker run --rm `
+  --env-file "C:\Users\peorr\Desktop\FABntasy\.env" `
+  --mount "type=bind,source=C:\Users\peorr\Desktop\FABntasy\services\fab_ingestor\.local,target=/var/lib/canastio" `
+  -e FAB_CREDENTIALS_FILE=/var/lib/canastio/fab-credentials.json `
+  canastio-fab-ingestor:test probe-auth
+```

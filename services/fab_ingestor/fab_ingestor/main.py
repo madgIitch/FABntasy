@@ -29,6 +29,7 @@ def main() -> None:
         choices=(
             "status",
             "register-device",
+            "probe-auth",
             "discover-categories",
             "select-competition",
             "sync-competition-teams",
@@ -183,6 +184,14 @@ def main() -> None:
         FabClient(store).register_device()
         print(f"FAB device registered and stored securely in {settings.credentials_file}")
         return
+
+    if args.command == "probe-auth":
+        if settings.mode != "live":
+            raise SystemExit("probe-auth requires INGESTOR_MODE=live")
+        if FabClient(store, auto_refresh_credentials=False).probe_credentials():
+            print("FAB credential probe succeeded")
+            return
+        raise SystemExit("FAB credential probe confirmed an expired identity")
 
     if args.command in {"discover-categories", "select-competition"}:
         client = FabClient(store, auto_refresh_credentials=settings.auto_refresh_credentials)

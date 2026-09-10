@@ -7,6 +7,7 @@ DO $$
 DECLARE
   v_run text := {{run_id}};
   v_cs uuid := md5(v_run || ':competition-season')::uuid;
+  v_scoring uuid := md5(v_run || ':scoring-rule')::uuid;
   v_league uuid := md5(v_run || ':league')::uuid;
   v_second_league uuid := md5(v_run || ':league:2')::uuid;
 BEGIN
@@ -31,8 +32,8 @@ BEGIN
   DELETE FROM player_price_events WHERE competition_season_id=v_cs AND algorithm_version IN('14f-v1','canastio-market-v1');
   DELETE FROM player_prices WHERE competition_season_id=v_cs AND algorithm_version IN('14f-v1','canastio-market-v1');
   DELETE FROM fantasy_rule_set_activations WHERE competition_season_id=v_cs;
-  UPDATE fantasy_scoring_rule_sets SET status='DRAFT',published_at=NULL WHERE competition_season_id=v_cs AND identifier='14f-' || v_run;
-  DELETE FROM fantasy_scoring_rule_sets WHERE competition_season_id=v_cs AND identifier='14f-' || v_run;
+  UPDATE fantasy_scoring_rule_sets SET status='DRAFT',published_at=NULL WHERE id=v_scoring AND competition_season_id=v_cs;
+  DELETE FROM fantasy_scoring_rule_sets WHERE id=v_scoring AND competition_season_id=v_cs;
   DELETE FROM fantasy_roster_rule_sets WHERE competition_season_id=v_cs AND identifier='14f-' || v_run;
   IF NOT {{external_identities}} THEN
     DELETE FROM user_profiles WHERE id IN (SELECT md5(v_run || ':profile:' || i)::uuid FROM generate_series(0,{{managers}}) i);

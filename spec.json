@@ -1326,7 +1326,7 @@
     {
       "id": "sprint-15-home-dashboard",
       "name": "Sprint 15 - Home Dashboard",
-      "status": "in_progress",
+      "status": "done",
       "sdd": true,
       "milestone": "0.6.0",
       "dependencies": [

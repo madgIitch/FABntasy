@@ -282,6 +282,18 @@
 .activityEmpty h2 { margin:0; font:600 var(--section-title)/1.25 var(--font-ui) }
 .activityEmpty>span { max-width:30rem; margin-top:14px; color:var(--color-text-muted); font-size:.84rem; line-height:1.55 }
 .activityEmpty>button { min-height:44px; margin-top:24px; padding:0 16px; border:0; border-radius:var(--radius-control); background:var(--color-brand); color:var(--color-on-brand); font-weight:800; cursor:pointer }
+.activityFeed { padding:32px 0 40px }
+.activityFeed header { padding-bottom:20px; border-bottom:1px solid var(--color-border) }
+.activityFeed header p { margin:0 0 6px; color:var(--color-brand-text); font-size:.75rem; font-weight:800 }
+.activityFeed header h2 { margin:0; font:600 var(--section-title)/1.25 var(--font-ui) }
+.activityFeed ol { margin:0; padding:0; list-style:none }
+.activityFeed li { display:grid; grid-template-columns:36px minmax(0,1fr) auto; gap:12px; align-items:start; padding:18px 0; border-bottom:1px solid var(--color-border) }
+.activityFeed li>i { display:grid; place-items:center; width:36px; height:36px; border-radius:50%; background:var(--color-brand-soft); color:var(--color-brand-text); font-style:normal; font-size:.75rem; font-weight:800 }
+.activityFeed li>div { display:grid; gap:3px; min-width:0 }
+.activityFeed li strong,.activityFeed li b { font-weight:750 }
+.activityFeed li span { line-height:1.35 }
+.activityFeed time { color:var(--color-text-muted); font-size:.72rem }
+.activityFeed li>em { color:var(--color-brand-text); font-style:normal; font-weight:800; white-space:nowrap }
 .settings dl {
   margin: 0
 }

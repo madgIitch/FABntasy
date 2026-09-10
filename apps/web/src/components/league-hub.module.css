@@ -23,32 +23,29 @@
   letter-spacing: normal;
   text-transform: none
 }
-.header h1,.header select,.page>header h1 {
+.header h1,.page>header h1 {
   margin: 0;
   text-transform: none;
   letter-spacing: -.035em;
   color: var(--color-text);
   font: 600 var(--page-title)/1.2 var(--font-ui)
 }
-.header select {
-  font-size: 16px;
-  border-radius: var(--radius-control);
-  border: 1px solid var(--color-control-border);
-  padding: 12px;
-  background: var(--color-surface);
-  color: var(--color-text);
-  font: 600 var(--page-title)/1.2 var(--font-ui);
-  max-width: 100%
-}
-.header select option {
-  font: 1rem var(--font-ui);
-  font-size: 16px;
-  border-radius: var(--radius-control);
-  border: 1px solid var(--color-control-border);
-  padding: 12px;
-  background: var(--color-surface);
-  color: var(--color-text)
-}
+.leagueIdentity { position:relative; min-width:0; flex:1 1 22rem }
+.leagueSwitcher { position:relative; max-width:34rem }
+.leagueSwitcher summary { display:grid; grid-template-columns:minmax(0,1fr) 28px; align-items:center; gap:12px; min-height:52px; margin:-7px 0 0 -12px; padding:7px 10px 7px 12px; border-radius:var(--radius-control); cursor:pointer; list-style:none; transition:background .18s ease }
+.leagueSwitcher summary::-webkit-details-marker { display:none }
+.leagueSwitcher summary:hover,.leagueSwitcher[open] summary { background:var(--color-brand-soft) }
+.leagueSwitcher summary span { overflow:hidden; color:var(--color-text); font:600 var(--page-title)/1.08 var(--font-ui); letter-spacing:-.035em; text-overflow:ellipsis; white-space:nowrap }
+.leagueSwitcher summary i { display:grid; place-items:center; width:28px; height:28px; border-radius:50%; background:var(--color-brand-soft); color:var(--color-brand-text); font-style:normal; transition:transform .18s ease }
+.leagueSwitcher[open] summary i { transform:rotate(180deg) }
+.leagueMenu { position:absolute; z-index:6; top:calc(100% + 8px); left:0; display:grid; width:min(100%,34rem); overflow:hidden; border:1px solid var(--color-border); border-radius:var(--radius-panel); background:var(--color-surface); box-shadow:var(--shadow-panel); animation:league-menu-in .16s ease-out }
+.leagueMenu button { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:16px; align-items:center; min-height:58px; padding:10px 14px; border:0; border-bottom:1px solid var(--color-border); background:transparent; color:var(--color-text); text-align:left; cursor:pointer }
+.leagueMenu button:last-child { border-bottom:0 }
+.leagueMenu button:hover,.leagueMenu button[aria-selected="true"] { background:var(--color-brand-soft) }
+.leagueMenu button[aria-selected="true"] { box-shadow:inset 3px 0 var(--color-brand) }
+.leagueMenu button span { overflow:hidden; font-weight:750; text-overflow:ellipsis; white-space:nowrap }
+.leagueMenu button small { color:var(--color-text-muted); white-space:nowrap }
+@keyframes league-menu-in { from { opacity:0; transform:translateY(-5px) } to { opacity:1; transform:translateY(0) } }
 .members {
   padding-bottom: .4rem;
   color: var(--color-text-muted);
@@ -464,7 +461,7 @@
 .sectionHead {
   align-items: start
 }
-.header h1,.header select {
+.header h1,.leagueSwitcher summary span {
   color: var(--color-text);
   font: 600 var(--page-title)/1.2 var(--font-ui)
 }
@@ -495,7 +492,7 @@
 .actions {
   grid-template-columns: minmax(0,1fr)
 }
-.header h1, .header select {
+.header h1, .leagueSwitcher summary span {
   font-size: var(--page-title)
 }
 .section, .summary, .ranking, .settings, .managers, .leagueAccess {

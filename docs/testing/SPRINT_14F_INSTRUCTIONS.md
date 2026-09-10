@@ -168,6 +168,8 @@ node scripts/test-data-gate.mjs teardown-isolation
 
 La suite reproduce persistencia, calendario, economía, roster, alineación, estados de jornada, publicación, corrección, precios y aislamiento de liga. Las carreras concurrentes reales deben ejecutarse contra las APIs de dominio en un entorno con sesiones sintéticas; no deben simularse mediante inserts paralelos. FAB permanece mockeado y no se realizan peticiones de red.
 
+El perfil ejecutable `stress` concentra 288 jugadores, 24 equipos reales, 20 managers (el máximo contractual de una liga) y 46 jornadas en una liga. Sirve para detectar costes y timeouts del procesamiento derivado por volumen de jugadores. La prueba de contención con 200 managers debe distribuirlos entre varias ligas y queda fuera de este run puntual; nunca se aumenta `member_limit` por encima de 20 para acomodar datos de carga.
+
 ## 12. Usuarios Supabase para pruebas visuales
 
 Para poder iniciar sesión y navegar por los escenarios, crea **21 usuarios de QA** mediante Supabase Auth. Este número cubre el perfil `realistic`: el usuario `00` queda reservado para probar onboarding sin liga y los usuarios `01`–`20` representan managers de liga.

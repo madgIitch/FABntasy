@@ -3,7 +3,7 @@
   "profiles": {
     "small": { "realTeams": 4, "players": 40, "managers": 3, "rounds": 2 },
     "realistic": { "realTeams": 12, "players": 144, "managers": 20, "rounds": 22 },
-    "stress": { "realTeams": 24, "players": 288, "managers": 200, "rounds": 46 }
+    "stress": { "realTeams": 24, "players": 288, "managers": 20, "rounds": 46 }
   },
   "transitions": [
     "T0_USER_WITHOUT_LEAGUE",

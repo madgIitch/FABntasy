@@ -1004,7 +1004,7 @@
       "id": "sprint-14c-user-profile-account",
       "name": "Sprint 14c - User Profile and Account",
       "title": "Sprint 14c - User Profile and Account",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.5.3",
       "dependencies": [

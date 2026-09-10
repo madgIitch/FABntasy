@@ -319,3 +319,16 @@ Contexto: se aprobó el spec `sprint-14g-fab-credential-resilience` (Sprint 14G 
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-16-pwa-install-and-notifications -->
+## 2026-09-10 · sprint-16-pwa-install-and-notifications aprobado
+
+Contexto: se aprobó el spec `sprint-16-pwa-install-and-notifications` (Sprint 16 - PWA Install and Notifications).
+
+Decisiones registradas:
+
+- **auth_secrets:** VAPID private key y cualquier secreto viven exclusivamente en servidor; endpoints de usuario derivan identidad de la sesión.
+- **rollback_compat:** Migraciones aditivas; retirar Push no afecta autenticación, shell, mercado ni datos deportivos.
+- **tests:** Contratos de manifest/SW, autorización, preferencias, deduplicación, expiración, cutoff, payload y estados UI se prueban sin enviar Push real.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

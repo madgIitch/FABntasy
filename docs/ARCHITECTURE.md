@@ -475,3 +475,25 @@ Originado por el incidente documentado en docs/operations/INCIDENT_2026-09-10_FA
   - `.env.example`
   - `spec.json`
 
+<!-- harness:sprint-16-pwa-install-and-notifications -->
+## sprint-16-pwa-install-and-notifications · Sprint 16 - PWA Install and Notifications
+
+
+
+### Scope aprobado
+
+  - `apps/web/**`
+  - `prisma/**`
+  - `packages/domain/**`
+  - `tests/**`
+  - `docs/**`
+  - `.env.example`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** Añade suscripciones Web Push, preferencias por intención y entregas auditables/deduplicadas, siempre vinculadas al usuario.
+- **external_contracts:** Usa estándares Manifest, Service Worker, Push API y Notifications API; el proveedor Web Push queda detrás de un adaptador sustituible.
+- **edge_cases:** Cubre varias suscripciones por usuario, rotación de endpoint, logout, revocación del navegador, reinstalación, duplicados de jornada y cutoff vencido.
+- **ui_states:** Instalación y notificaciones se gestionan desde Perfil con copy específico por plataforma y sin bloquear la app cuando no hay soporte.
+

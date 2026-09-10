@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { closeSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 
@@ -42,6 +42,39 @@ export function assertSafeRunId(value) {
     throw new Error("run-id debe tener 6-64 caracteres [a-z0-9_-]");
   }
   return value;
+}
+
+export function acquireRunLock(runId, lockRoot = resolve(root, ".local/test-data-locks")) {
+  assertSafeRunId(runId);
+  mkdirSync(lockRoot, { recursive: true });
+  const path = resolve(lockRoot, `${runId}.lock`);
+  try {
+    const descriptor = openSync(path, "wx");
+    try { writeFileSync(descriptor, JSON.stringify({ pid: process.pid, runId, createdAt: new Date().toISOString() })); }
+    finally { closeSync(descriptor); }
+  } catch (error) {
+    if (!(error instanceof Error) || !("code" in error) || error.code !== "EEXIST") throw error;
+    let owner = null;
+    try { owner = JSON.parse(readFileSync(path, "utf8")); } catch { /* Conserva locks ilegibles para evitar una limpieza insegura. */ }
+    if (owner && Number.isSafeInteger(owner.pid) && !processExists(owner.pid)) {
+      unlinkSync(path);
+      return acquireRunLock(runId, lockRoot);
+    }
+    const detail = owner?.pid ? ` (pid ${owner.pid})` : "";
+    throw new Error(`run-id ${runId} ya está siendo ejecutado${detail}`);
+  }
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    try { unlinkSync(path); }
+    catch (error) { if (!(error instanceof Error) || !("code" in error) || error.code !== "ENOENT") throw error; }
+  };
+}
+
+function processExists(pid) {
+  try { process.kill(pid, 0); return true; }
+  catch (error) { return error instanceof Error && "code" in error && error.code === "EPERM"; }
 }
 
 export function assertClock(value) {

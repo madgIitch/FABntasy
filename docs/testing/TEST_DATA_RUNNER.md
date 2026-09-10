@@ -2,6 +2,8 @@
 
 El runner de Sprint 14F prepara escenarios reproducibles sin inferir nunca una base desde `DATABASE_URL`.
 
+Cada comando que modifica datos adquiere además un lock atómico en `.local/test-data-locks/<run_id>.lock`. Una segunda ejecución con el mismo `run_id` se rechaza antes de abrir la base, evitando que dos ciclos intercalen checkpoints. El lock se libera también cuando una fase falla; si el proceso terminó abruptamente, el runner detecta su PID huérfano y recupera el lock en la siguiente ejecución.
+
 ## Catálogo y validación
 
 ```powershell

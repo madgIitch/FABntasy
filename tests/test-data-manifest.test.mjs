@@ -1,7 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
+  acquireRunLock,
   assertClock,
   assertSafeRunId,
   assertTestDatabase,
@@ -10,6 +14,17 @@ import {
   sqlLiteral,
   validateManifest
 } from "../scripts/test-data-lib.mjs";
+
+test("el lock impide dos runners simultáneos con el mismo run-id", () => {
+  const directory = mkdtempSync(join(tmpdir(), "canastio-lock-test-"));
+  try {
+    const release = acquireRunLock("run_lock_test", directory);
+    assert.throws(() => acquireRunLock("run_lock_test", directory), /ya está siendo ejecutado/);
+    release();
+    const releaseAgain = acquireRunLock("run_lock_test", directory);
+    releaseAgain();
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
 
 test("el catálogo 14F contiene 15 escenarios válidos", () => {
   const manifest = loadManifest();

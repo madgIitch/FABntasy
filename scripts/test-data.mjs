@@ -8,6 +8,7 @@ import {
   assertClock,
   assertSafeRunId,
   assertTestDatabase,
+  acquireRunLock,
   loadManifest,
   parseArgs,
   renderSql,
@@ -128,44 +129,48 @@ try {
       keepOnFail: options["keep-on-fail"] === "true",
       identityMode: identities.length ? "supabase" : "generated"
     };
-    process.stdout.write(JSON.stringify(runManifest, null, 2) + "\n");
-    if (command === "bootstrap") executeSql("seeding/bootstrap/supabase.sql", ctx);
-    if (command === "foundation") {
-      executeSql("seeding/foundation/sports.sql", ctx);
-      executeSql("seeding/foundation/fantasy.sql", ctx);
-    }
-    if (command === "run") {
-      executeSql("seeding/foundation/sports.sql", ctx);
-      executeSql("seeding/foundation/fantasy.sql", ctx);
-      executeSql("seeding/scenarios/apply.sql", ctx);
-      executeSql("seeding/assertions/sports.sql", ctx);
-      executeSql("seeding/assertions/economy.sql", ctx);
-      executeSql("seeding/assertions/domain.sql", ctx);
-    }
-    if (command === "cycle") {
-      executeSql("seeding/foundation/sports.sql", ctx);
-      executeSql("seeding/foundation/fantasy.sql", ctx);
-      const cycle = ["market.empty-roster", "market.operations", "lineup.draft", "lineup.locked", "round.live", "round.finished", "round.published", "pricing.history", "league.activity", "round.corrected"];
-      for (const id of cycle) {
-        const stage = manifest.scenarios.find((item) => item.id === id) ?? (id === "round.finished" ? { id, checkpoint: "T8", tags: ["round", "scoring"] } : null);
-        if (!stage) throw new Error(`checkpoint sin escenario: ${id}`);
-        const stageContext = { ...ctx, scenario: stage };
-        process.stdout.write(`${stage.checkpoint} ${stage.id}\n`);
-        executeSql("seeding/scenarios/apply.sql", stageContext);
-        executeSql("seeding/assertions/sports.sql", stageContext);
-        executeSql("seeding/assertions/economy.sql", stageContext);
-        executeSql("seeding/assertions/domain.sql", stageContext);
+    const mutating = ["bootstrap", "foundation", "run", "cycle", "teardown"].includes(command);
+    const releaseLock = mutating ? acquireRunLock(runId) : () => {};
+    try {
+      process.stdout.write(JSON.stringify(runManifest, null, 2) + "\n");
+      if (command === "bootstrap") executeSql("seeding/bootstrap/supabase.sql", ctx);
+      if (command === "foundation") {
+        executeSql("seeding/foundation/sports.sql", ctx);
+        executeSql("seeding/foundation/fantasy.sql", ctx);
       }
-    }
-    if (command === "assert") {
-      executeSql("seeding/assertions/sports.sql", ctx);
-      executeSql("seeding/assertions/economy.sql", ctx);
-      executeSql("seeding/assertions/domain.sql", ctx);
-    }
-    if (command === "teardown") {
-      executeSql("seeding/teardown/fantasy.sql", ctx);
-      executeSql("seeding/teardown/run.sql", ctx);
-    }
+      if (command === "run") {
+        executeSql("seeding/foundation/sports.sql", ctx);
+        executeSql("seeding/foundation/fantasy.sql", ctx);
+        executeSql("seeding/scenarios/apply.sql", ctx);
+        executeSql("seeding/assertions/sports.sql", ctx);
+        executeSql("seeding/assertions/economy.sql", ctx);
+        executeSql("seeding/assertions/domain.sql", ctx);
+      }
+      if (command === "cycle") {
+        executeSql("seeding/foundation/sports.sql", ctx);
+        executeSql("seeding/foundation/fantasy.sql", ctx);
+        const cycle = ["market.empty-roster", "market.operations", "lineup.draft", "lineup.locked", "round.live", "round.finished", "round.published", "pricing.history", "league.activity", "round.corrected"];
+        for (const id of cycle) {
+          const stage = manifest.scenarios.find((item) => item.id === id) ?? (id === "round.finished" ? { id, checkpoint: "T8", tags: ["round", "scoring"] } : null);
+          if (!stage) throw new Error(`checkpoint sin escenario: ${id}`);
+          const stageContext = { ...ctx, scenario: stage };
+          process.stdout.write(`${stage.checkpoint} ${stage.id}\n`);
+          executeSql("seeding/scenarios/apply.sql", stageContext);
+          executeSql("seeding/assertions/sports.sql", stageContext);
+          executeSql("seeding/assertions/economy.sql", stageContext);
+          executeSql("seeding/assertions/domain.sql", stageContext);
+        }
+      }
+      if (command === "assert") {
+        executeSql("seeding/assertions/sports.sql", ctx);
+        executeSql("seeding/assertions/economy.sql", ctx);
+        executeSql("seeding/assertions/domain.sql", ctx);
+      }
+      if (command === "teardown") {
+        executeSql("seeding/teardown/fantasy.sql", ctx);
+        executeSql("seeding/teardown/run.sql", ctx);
+      }
+    } finally { releaseLock(); }
   } else throw new Error(`comando desconocido: ${command}`);
 } catch (error) {
   fail(error instanceof Error ? error.message : String(error));

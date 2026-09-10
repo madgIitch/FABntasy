@@ -44,7 +44,7 @@ try {
     invoke("assert",sentinelRun);
     invoke("teardown",sentinelRun);
   } else {
-    for (let i = 0; i < selected.repeats; i += 1) invoke("run");
+    for (let i = 0; i < selected.repeats; i += 1) invoke(kind === "realistic-cycle" ? "cycle" : "run");
     invoke("assert");
   }
 } finally {

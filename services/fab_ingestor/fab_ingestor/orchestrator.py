@@ -15,6 +15,7 @@ import psycopg
 from .boxscore import BoxscoreContractError, sync_competition_stats
 from .client import FabCancelledError, FabClient, FabResponseError, FabTransportError
 from .discovery import CompetitionDiscoveryError, sync_competition_teams
+from .fantasy_lifecycle import FantasyLifecycleTransportError
 from .repository import SportsRepository
 from .schedule import ScheduleContractError, sync_competition_games
 
@@ -90,6 +91,7 @@ class IngestionOrchestrator:
         breaker: CircuitBreaker | None = None,
         sleeper: Callable[[float], None] = time.sleep,
         clock: Callable[[], float] = time.monotonic,
+        fantasy_lifecycle: Callable[[Any], Any] | None = None,
     ) -> None:
         self.client = client
         self.repository = repository
@@ -97,6 +99,7 @@ class IngestionOrchestrator:
         self.breaker = breaker or CircuitBreaker()
         self.sleeper = sleeper
         self.clock = clock
+        self.fantasy_lifecycle = fantasy_lifecycle
 
     def sync_all(self, *, force_stats: bool = False, stop_event: Event | None = None) -> OrchestratorSummary:
         summary = OrchestratorSummary()
@@ -110,7 +113,7 @@ class IngestionOrchestrator:
                     summary = _add(summary, skipped_locked=1)
                     continue
                 phase_ok = phase_failed = 0
-                for name, operation in (
+                phases = [
                     (
                         "competition",
                         lambda category_id=category_id: sync_competition_teams(
@@ -136,7 +139,13 @@ class IngestionOrchestrator:
                             force=force_stats,
                         ),
                     ),
-                ):
+                ]
+                if self.fantasy_lifecycle:
+                    phases.append((
+                        "fantasy_lifecycle",
+                        lambda competition_season_id=competition_season_id: self.fantasy_lifecycle(competition_season_id),
+                    ))
+                for name, operation in phases:
                     if stop_event is not None and stop_event.is_set():
                         break
                     if self._run_phase(name, competition_season_id, operation):
@@ -185,7 +194,7 @@ class IngestionOrchestrator:
             self.breaker.before_call(self.clock())
             try:
                 result = operation()
-            except (FabTransportError, psycopg.OperationalError) as error:
+            except (FabTransportError, FantasyLifecycleTransportError, psycopg.OperationalError) as error:
                 last_error = error
                 self.breaker.failed(self.clock())
                 if attempt + 1 >= self.retry_policy.attempts:
@@ -285,6 +294,8 @@ def _error_code(error: Exception) -> str:
         return "CIRCUIT_OPEN"
     if isinstance(error, FabTransportError):
         return "FAB_TRANSPORT"
+    if isinstance(error, FantasyLifecycleTransportError):
+        return "FANTASY_LIFECYCLE_TRANSPORT"
     if isinstance(error, FabResponseError):
         return "FAB_RESPONSE"
     if isinstance(

@@ -19,6 +19,8 @@ class Settings:
     retry_max_delay_seconds: float
     circuit_failure_threshold: int
     circuit_recovery_seconds: float
+    fantasy_lifecycle_url: str | None
+    internal_job_secret: str | None
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -43,6 +45,10 @@ class Settings:
         retry_max_delay = float(os.getenv("FAB_RETRY_MAX_DELAY_SECONDS", "8"))
         circuit_threshold = int(os.getenv("FAB_CIRCUIT_FAILURE_THRESHOLD", "3"))
         circuit_recovery = float(os.getenv("FAB_CIRCUIT_RECOVERY_SECONDS", "300"))
+        fantasy_lifecycle_url = os.getenv("CANASTIO_FANTASY_LIFECYCLE_URL") or None
+        internal_job_secret = os.getenv("CANASTIO_INTERNAL_JOB_SECRET") or None
+        if bool(fantasy_lifecycle_url) != bool(internal_job_secret):
+            raise ValueError("CANASTIO_FANTASY_LIFECYCLE_URL and CANASTIO_INTERNAL_JOB_SECRET must be configured together")
         if not 60 <= idle_minutes <= 180:
             raise ValueError("FAB_SCHEDULER_IDLE_MINUTES must be between 60 and 180")
         if not 5 <= active_minutes <= 15:
@@ -72,4 +78,6 @@ class Settings:
             retry_max_delay,
             circuit_threshold,
             circuit_recovery,
+            fantasy_lifecycle_url,
+            internal_job_secret,
         )

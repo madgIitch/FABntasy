@@ -30,6 +30,7 @@ function printHelp() {
     `  bootstrap --scenario <id> --profile <name> --seed <int> --clock <iso> --run-id <id>\n` +
     `  foundation --scenario <id> --profile <name> --seed <int> --clock <iso> --run-id <id>\n` +
     `  run --scenario <id> --profile <name> --seed <int> --clock <iso> --run-id <id> [--identity-map <json>]\n` +
+    `  cycle --profile <name> --seed <int> --clock <iso> --run-id <id> [--identity-map <json>]\n` +
     `  assert --scenario <id> --profile <name> --seed <int> --clock <iso> --run-id <id>\n` +
     `  teardown --scenario <id> --profile <name> --seed <int> --clock <iso> --run-id <id>\n\n` +
     `Los comandos que muten datos exigirán CANASTIO_TEST_DATABASE=1 y TEST_DATABASE_URL.\n`);
@@ -109,8 +110,9 @@ try {
   } else if (command === "list") {
     if (errors.length) throw new Error(errors.join("; "));
     for (const scenario of manifest.scenarios) process.stdout.write(`${scenario.id}\t${scenario.checkpoint}\t${scenario.tags.join(",")}\n`);
-  } else if (["preflight", "bootstrap", "foundation", "run", "assert", "teardown"].includes(command)) {
+  } else if (["preflight", "bootstrap", "foundation", "run", "cycle", "assert", "teardown"].includes(command)) {
     if (errors.length) throw new Error(errors.join("; "));
+    if (command === "cycle" && !options.scenario) options.scenario = "onboarding.no-league";
     const ctx = context(manifest, options);
     const { scenario, profile, seed, clock, runId, databaseUrl, identities } = ctx;
     const target = new URL(databaseUrl);
@@ -139,6 +141,21 @@ try {
       executeSql("seeding/assertions/sports.sql", ctx);
       executeSql("seeding/assertions/economy.sql", ctx);
       executeSql("seeding/assertions/domain.sql", ctx);
+    }
+    if (command === "cycle") {
+      executeSql("seeding/foundation/sports.sql", ctx);
+      executeSql("seeding/foundation/fantasy.sql", ctx);
+      const cycle = ["market.empty-roster", "market.operations", "lineup.draft", "lineup.locked", "round.live", "round.finished", "round.published", "pricing.history", "league.activity", "round.corrected"];
+      for (const id of cycle) {
+        const stage = manifest.scenarios.find((item) => item.id === id) ?? (id === "round.finished" ? { id, checkpoint: "T8", tags: ["round", "scoring"] } : null);
+        if (!stage) throw new Error(`checkpoint sin escenario: ${id}`);
+        const stageContext = { ...ctx, scenario: stage };
+        process.stdout.write(`${stage.checkpoint} ${stage.id}\n`);
+        executeSql("seeding/scenarios/apply.sql", stageContext);
+        executeSql("seeding/assertions/sports.sql", stageContext);
+        executeSql("seeding/assertions/economy.sql", stageContext);
+        executeSql("seeding/assertions/domain.sql", stageContext);
+      }
     }
     if (command === "assert") {
       executeSql("seeding/assertions/sports.sql", ctx);

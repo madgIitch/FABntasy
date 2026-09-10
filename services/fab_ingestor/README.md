@@ -28,6 +28,10 @@ Configuración opcional:
 | `FAB_RETRY_MAX_DELAY_SECONDS` | `8` | entre el inicial y 60 |
 | `FAB_CIRCUIT_FAILURE_THRESHOLD` | `3` | entre 1 y 10 |
 | `FAB_CIRCUIT_RECOVERY_SECONDS` | `300` | entre 30 y 3600 |
+| `CANASTIO_FANTASY_LIFECYCLE_URL` | — | endpoint interno `/api/internal/fantasy/lifecycle` de la web |
+| `CANASTIO_INTERNAL_JOB_SECRET` | — | secreto compartido server-side con la web |
+
+Cuando las dos variables `CANASTIO_*` están configuradas, cada `sync-all` correcto añade una fase final que publica scoring/ranking y recalcula precios de las jornadas completamente sincronizadas. Configurar solo una de las dos aborta el arranque.
 
 Para volver a descargar boxscores ya definitivos:
 

@@ -427,7 +427,7 @@
     {
       "id": "sprint-6-ingestion-orchestrator",
       "name": "Sprint 6 - Ingestion Orchestrator",
-      "status": "done",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.1.1",
       "dependencies": [
@@ -457,10 +457,14 @@
         "AC5: Fallos transitorios usan retries/backoff acotado y circuit breaker configurable; nunca borran datos previamente confirmados y el siguiente ciclo queda reintentable.",
         "AC6: Stats solo consulta partidos terminados elegibles cuyo estado no sea `stats_final`, salvo resync explícito mediante `--force-stats`.",
         "AC7: SIGINT/SIGTERM detiene nuevas fases, deja terminar o revierte la fase transaccional activa dentro del timeout configurado y no deja locks persistentes.",
-        "AC8: Tests sin red cubren calendario, DST, locks, retries, circuit breaker, filtrado `stats_final`, redacción y shutdown; integración PostgreSQL prueba exclusión e `ingestion_runs`."
+        "AC8: Tests sin red cubren calendario, DST, locks, retries, circuit breaker, filtrado `stats_final`, redacción y shutdown; integración PostgreSQL prueba exclusión e `ingestion_runs`.",
+        "AC9: Tras una fase stats correcta, sync-all invoca un endpoint interno autenticado que detecta jornadas completamente finalizadas y ejecuta idempotentemente scoring, ranking y pricing en ese orden.",
+        "AC10: Una reejecución sin nuevos inputs no duplica scores ni eventos de precio; una corrección versionada recalcula y conserva la revisión anterior auditable."
       ],
       "scope": [
         "services/fab_ingestor/**",
+        "apps/web/src/server/**",
+        "apps/web/src/app/api/internal/**",
         "prisma/**",
         "infrastructure/**",
         "tests/**",
@@ -1261,6 +1265,60 @@
       "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
       "approved_by": "peorr",
       "approved_at": "2026-09-09T00:07:01.071Z"
+    },
+    {
+      "id": "sprint-14g-fab-credential-resilience",
+      "name": "Sprint 14G - FAB Credential Resilience",
+      "title": "Sprint 14G - Resiliencia de credenciales FAB",
+      "status": "spec_ready",
+      "sdd": true,
+      "milestone": "0.5.7",
+      "dependencies": [
+        "sprint-1-fab-client",
+        "sprint-6-ingestion-orchestrator",
+        "sprint-14f-production-simulation-suite"
+      ],
+      "objective": "Permitir que el ingestor desatendido sobreviva a la rotación de key y a la caducidad completa de la identidad de dispositivo FAB sin bucles, pérdida de diagnóstico ni exposición de secretos.",
+      "description": "Originado por el incidente documentado en docs/operations/INCIDENT_2026-09-10_FAB_DEVICE_EXPIRY.md. Spec detallada en spec/sprint-14g-fab-credential-resilience-Sprint 14G - FAB Credential Resilience/.",
+      "user_stories": [
+        {
+          "id": "HU14G.1",
+          "story": "Como operador quiero que el ingestor renueve de forma segura una identidad FAB caducada para que el ciclo no requiera intervención manual rutinaria."
+        },
+        {
+          "id": "HU14G.2",
+          "story": "Como mantenedor quiero distinguir un rechazo de autenticación de un cambio de contrato para no ocultar regresiones externas."
+        }
+      ],
+      "tasks": [
+        "Capturar fixtures saneadas de rotación y caducidad.",
+        "Clasificar errores FAB con códigos estables.",
+        "Validar una sonda autenticada mínima.",
+        "Implementar renovación coordinada y persistencia atómica.",
+        "Reproducir una sola vez operaciones de lectura seguras.",
+        "Validar almacenamiento escribible en modo live.",
+        "Cubrir concurrencia, redacción y fallos persistentes.",
+        "Documentar operación local y despliegue futuro."
+      ],
+      "deliverable": "FabClient recupera de forma acotada y observable una identidad caducada, conserva la rotación ordinaria y diferencia fallos de autenticación, contrato y transporte.",
+      "acceptance": [
+        "Una key rotada se persiste atómicamente y sobrevive al reinicio del contenedor.",
+        "Una identidad caducada confirmada provoca como máximo un registro y un replay seguro.",
+        "Errores de contrato, 429, 5xx y timeouts no provocan registro de dispositivo.",
+        "Dos workers concurrentes convergen en una única identidad válida sin corrupción.",
+        "Un almacén no escribible falla al arrancar en modo live con diagnóstico saneado.",
+        "ingestion_runs distingue expiración, fallo de renovación, contrato y respuesta sin secretos.",
+        "El ciclo completo vuelve a ser idempotente después de una renovación.",
+        "Tests sin red y un smoke live opt-in demuestran rotación, recuperación, replay único y redacción."
+      ],
+      "scope": [
+        "services/fab_ingestor/**",
+        "tests/**",
+        "docs/**",
+        ".env.example",
+        "spec.json"
+      ],
+      "spec_approved": false
     },
     {
       "id": "sprint-15-home-dashboard",

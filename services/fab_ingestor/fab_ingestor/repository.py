@@ -422,6 +422,14 @@ class SportsRepository:
 
 def _psycopg_url(database_url: str) -> str:
     """Remove Prisma-only URL options without logging connection secrets."""
+    database_url = database_url.strip()
+    if (
+        len(database_url) >= 2
+        and database_url[0] == database_url[-1]
+        and database_url[0] in {"'", '"'}
+    ):
+        # Docker's --env-file keeps surrounding quotes, unlike dotenv loaders.
+        database_url = database_url[1:-1]
     parts = urlsplit(database_url)
     query = urlencode(
         [

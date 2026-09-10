@@ -69,6 +69,34 @@ def test_sync_all_runs_each_phase_and_records_only_counters(monkeypatch):
     ]
 
 
+def test_sync_all_advances_fantasy_only_after_successful_stats(monkeypatch):
+    repository = Repository()
+    calls = []
+    monkeypatch.setattr("fab_ingestor.orchestrator.sync_competition_teams", lambda *_, **__: {})
+    monkeypatch.setattr("fab_ingestor.orchestrator.sync_competition_games", lambda *_, **__: {})
+    monkeypatch.setattr("fab_ingestor.orchestrator.sync_competition_stats", lambda *_, **__: calls.append("stats") or {})
+
+    summary = IngestionOrchestrator(
+        object(), repository, fantasy_lifecycle=lambda season: calls.append(("fantasy", season)) or {"rounds": 1}
+    ).sync_all()
+
+    assert calls == ["stats", ("fantasy", "season")]
+    assert summary.phases_succeeded == 4
+
+
+def test_sync_all_does_not_advance_fantasy_when_stats_fails(monkeypatch):
+    repository = Repository()
+    monkeypatch.setattr("fab_ingestor.orchestrator.sync_competition_teams", lambda *_, **__: {})
+    monkeypatch.setattr("fab_ingestor.orchestrator.sync_competition_games", lambda *_, **__: {})
+    monkeypatch.setattr("fab_ingestor.orchestrator.sync_competition_stats", lambda *_, **__: (_ for _ in ()).throw(ValueError("bad stats")))
+
+    summary = IngestionOrchestrator(
+        object(), repository, fantasy_lifecycle=lambda _: pytest.fail("must not run")
+    ).sync_all()
+
+    assert summary.phases_failed == 1
+
+
 def test_locked_sync_is_skipped_without_running_phases(monkeypatch):
     repository = Repository(acquired=False)
     monkeypatch.setattr(

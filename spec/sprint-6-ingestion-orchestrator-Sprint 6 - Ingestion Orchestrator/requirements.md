@@ -17,6 +17,8 @@ R5. AC5: Fallos transitorios usan retries/backoff acotado y circuit breaker conf
 R6. AC6: Stats solo consulta partidos terminados elegibles cuyo estado no sea `stats_final`, salvo resync explícito mediante `--force-stats`.
 R7. AC7: SIGINT/SIGTERM detiene nuevas fases, deja terminar o revierte la fase transaccional activa dentro del timeout configurado y no deja locks persistentes.
 R8. AC8: Tests sin red cubren calendario, DST, locks, retries, circuit breaker, filtrado `stats_final`, redacción y shutdown; integración PostgreSQL prueba exclusión e `ingestion_runs`.
+R9. AC9: Tras una fase stats correcta, `sync-all` invoca un endpoint interno autenticado que detecta jornadas completamente finalizadas y ejecuta idempotentemente scoring, ranking y pricing en ese orden.
+R10. AC10: Una reejecución sin nuevos inputs no duplica scores ni eventos de precio; una corrección versionada recalcula y conserva la revisión anterior auditable.
 
 ## Restricciones
 

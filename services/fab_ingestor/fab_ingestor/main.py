@@ -8,6 +8,7 @@ from .boxscore import sync_competition_stats, sync_game_stats
 from .client import Credentials, FabClient
 from .config import Settings
 from .discovery import discover_categories, select_competition, sync_competition_teams
+from .fantasy_lifecycle import FantasyLifecycleClient
 from .orchestrator import (
     CircuitBreaker,
     IngestionOrchestrator,
@@ -76,6 +77,11 @@ def main() -> None:
                     failure_threshold=settings.circuit_failure_threshold,
                     recovery_seconds=settings.circuit_recovery_seconds,
                 ),
+                fantasy_lifecycle=(FantasyLifecycleClient(
+                    settings.fantasy_lifecycle_url,
+                    settings.internal_job_secret,
+                    timeout=settings.request_timeout_seconds,
+                ).advance if settings.fantasy_lifecycle_url and settings.internal_job_secret else None),
             )
             if args.command == "sync-all":
                 summary = orchestrator.sync_all(

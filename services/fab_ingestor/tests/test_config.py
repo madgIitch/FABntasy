@@ -1,3 +1,5 @@
+import pytest
+
 from fab_ingestor.config import Settings
 
 
@@ -54,3 +56,11 @@ def test_scheduler_defaults_and_ranges(monkeypatch):
         assert "IDLE" in str(error)
     else:
         raise AssertionError("invalid idle scheduler interval was accepted")
+
+
+def test_fantasy_lifecycle_configuration_must_be_complete(monkeypatch):
+    monkeypatch.setenv("INGESTOR_MODE", "mock")
+    monkeypatch.setenv("CANASTIO_FANTASY_LIFECYCLE_URL", "https://canastio.test/api/internal/fantasy/lifecycle")
+    monkeypatch.delenv("CANASTIO_INTERNAL_JOB_SECRET", raising=False)
+    with pytest.raises(ValueError, match="configured together"):
+        Settings.from_env()

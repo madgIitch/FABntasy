@@ -310,3 +310,12 @@ Contexto: se aprobó el spec `sprint-14f-production-simulation-suite` (Sprint 14
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-14g-fab-credential-resilience -->
+## 2026-09-10 · sprint-14g-fab-credential-resilience aprobado
+
+Contexto: se aprobó el spec `sprint-14g-fab-credential-resilience` (Sprint 14G - Resiliencia de credenciales FAB).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

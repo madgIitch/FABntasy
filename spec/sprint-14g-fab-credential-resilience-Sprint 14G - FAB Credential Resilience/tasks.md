@@ -1,14 +1,13 @@
-# Sprint 14G - FAB Credential Resilience · Tareas
+# sprint-14g-fab-credential-resilience · Sprint 14G - Resiliencia de credenciales FAB — Tareas
 
-- [ ] T1: Capturar y sanear fixtures de identidad válida, rotación de `key` e identidad caducada.
-- [ ] T2: Definir códigos y clasificador de fallos FAB sin heurísticas basadas únicamente en texto libre.
-- [ ] T3: Validar una sonda autenticada mínima contra FAB real y documentar su contrato.
-- [ ] T4: Implementar coordinador de renovación con lock, recarga y persistencia atómica.
-- [ ] T5: Añadir replay único solo para operaciones de lectura declaradas seguras.
-- [ ] T6: Separar presupuesto de recuperación de autenticación y retries de transporte/circuit breaker.
-- [ ] T7: Validar almacenamiento escribible en modo live y documentar Docker local y despliegue futuro.
-- [ ] T8: Propagar códigos saneados a `ingestion_runs` y logs estructurados.
-- [ ] T9: Añadir tests unitarios, concurrencia multiproceso y prueba live opt-in.
-- [ ] T10: Ejecutar smoke `competition → schedule → stats → lifecycle` y probar caducidad inducida sin duplicar datos.
-- [ ] T11: Actualizar runbook de recuperación manual y automática.
+Checklist de implementación. El agente marca [x] al completar; los gates verifican.
 
+- [ ] (T1) Una key rotada se persiste atómicamente y sobrevive al reinicio del contenedor.  ↔ R1
+- [ ] (T2) Una identidad caducada confirmada provoca como máximo un registro y un replay seguro.  ↔ R2
+- [ ] (T3) Errores de contrato, 429, 5xx y timeouts no provocan registro de dispositivo.  ↔ R3
+- [ ] (T4) Dos workers concurrentes convergen en una única identidad válida sin corrupción.  ↔ R4
+- [ ] (T5) Un almacén no escribible falla al arrancar en modo live con diagnóstico saneado.  ↔ R5
+- [ ] (T6) ingestion_runs distingue expiración, fallo de renovación, contrato y respuesta sin secretos.  ↔ R6
+- [ ] (T7) El ciclo completo vuelve a ser idempotente después de una renovación.  ↔ R7
+- [ ] (T8) Tests sin red y un smoke live opt-in demuestran rotación, recuperación, replay único y redacción.  ↔ R8
+- [ ] Tests que cubran los criterios de aceptación

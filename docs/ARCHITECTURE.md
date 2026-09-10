@@ -462,3 +462,16 @@ Spec detallada: docs/testing/SPRINT_14F_SPEC.md. Separa foundation, escenarios, 
   - `package.json`
   - `spec.json`
 
+<!-- harness:sprint-14g-fab-credential-resilience -->
+## sprint-14g-fab-credential-resilience · Sprint 14G - Resiliencia de credenciales FAB
+
+Originado por el incidente documentado en docs/operations/INCIDENT_2026-09-10_FAB_DEVICE_EXPIRY.md. Spec detallada en spec/sprint-14g-fab-credential-resilience-Sprint 14G - FAB Credential Resilience/.
+
+### Scope aprobado
+
+  - `services/fab_ingestor/**`
+  - `tests/**`
+  - `docs/**`
+  - `.env.example`
+  - `spec.json`
+

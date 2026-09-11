@@ -28,6 +28,8 @@ describe("sports explorer contract", () => {
     expect(source).toContain('label: "Visitante"');
     expect(source).toContain("statsByTeam(game.homeTeam.id)");
     expect(source).toContain("statsByTeam(game.awayTeam.id)");
+    expect(source).toContain("maximumFractionDigits: 1");
+    expect(source).toContain("formatMinutes(stat.minutesPlayed)");
   });
 
   it("refreshes live match data without requiring a manual reload", () => {

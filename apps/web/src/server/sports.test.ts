@@ -22,5 +22,6 @@ describe("sports explorer contract", () => {
     const source = readFileSync(resolve(process.cwd(), "app/app/partidos/[id]/page.tsx"), "utf8");
     expect(source).toContain("Sin estadísticas disponibles");
     expect(source).toContain("!game.hasStatistics || !game.playerStats.length");
+    expect(source).toContain("date.format(new Date(value))");
   });
 });

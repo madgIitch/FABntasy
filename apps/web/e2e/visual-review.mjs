@@ -35,7 +35,18 @@ await new Promise(resolve=>server.listen(4178,'127.0.0.1',resolve));
 const browser=await chromium.launch({executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true});
 const page=await browser.newPage();
 const results=[];const errors=[];page.on('pageerror',e=>errors.push(e.message));
-await page.route('**/api/**',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({data:[]})}));
+let correctionApplyMode='success';let reversalApplyCalls=0;
+await page.route('**/api/**',route=>{
+ const request=route.request(),url=new URL(request.url());
+ if(request.method()==='POST'&&url.pathname==='/api/admin/revisions')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({revision:{id:'preview-1',fieldName:'homeScore',sourceType:'SOURCE_CORRECTION'},label:'Partido · homeScore',diff:{before:70,after:71},impact:{roundNumber:3,recomputes:['scores','rankings','prices']}})});
+ if(request.method()==='POST'&&url.pathname==='/api/admin/revisions/rev1/revert')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({revision:{id:'rev-revert',fieldName:'points'},diff:{before:18,after:16}})});
+ if(request.method()==='POST'&&url.pathname.endsWith('/apply')){
+  if(url.pathname.includes('rev-revert'))reversalApplyCalls++;
+  if(correctionApplyMode==='conflict')return route.fulfill({status:409,contentType:'application/json',body:JSON.stringify({error:'REVISION_CONFLICT'})});
+  return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({replayed:false})});
+ }
+ return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({data:[]})});
+});
 try{
  for(const width of [320,375,430,768,1440]){
   await page.setViewportSize({width,height:900});
@@ -70,9 +81,21 @@ try{
  await page.goto('http://127.0.0.1:4178/?case=team');await page.getByRole('button',{name:'Puntos',exact:true}).click();await page.screenshot({path:path.join(capture,'team-points-375.png'),fullPage:true});
  await page.goto('http://127.0.0.1:4178/?case=profile');await page.locator('.profile-logout > .logout-button').click();await page.getByRole('dialog').waitFor();await page.keyboard.press('Escape');
  await page.goto('http://127.0.0.1:4178/?case=league-member');await page.getByRole('button',{name:'Mi liga',exact:true}).click();await page.getByRole('button',{name:'Abandonar liga',exact:true}).click();await page.getByRole('dialog').waitFor();await page.getByRole('button',{name:'Cancelar',exact:true}).click();if(await page.getByRole('dialog').isVisible())throw Error('League cancel failed');
+ await page.goto('http://127.0.0.1:4178/?case=corrections');
+ await page.getByPlaceholder('UUID').fill('11111111-1111-4111-8111-111111111111');
+ await page.getByLabel('Campo').selectOption('homeScore');await page.getByLabel('Nuevo valor').fill('71');await page.getByLabel('Motivo interno').fill('Marcador confirmado con el acta');
+ await page.getByRole('button',{name:'Preparar vista previa'}).click();await page.getByText('Confirmación pendiente').waitFor();
+ if(!await page.getByText('Jornada 3 · scores, rankings, prices').isVisible())throw Error('Correction impact preview missing');
+ page.once('dialog',dialog=>dialog.dismiss());await page.getByRole('button',{name:'Confirmar y aplicar'}).click();
+ correctionApplyMode='conflict';page.once('dialog',dialog=>dialog.accept());await page.getByRole('button',{name:'Confirmar y aplicar'}).click();
+ await page.getByText('REVISION_CONFLICT').waitFor();
+ correctionApplyMode='success';await page.goto('http://127.0.0.1:4178/?case=corrections');
+ page.on('dialog',dialog=>dialog.type()==='prompt'?dialog.accept('Reversión verificada en smoke'):dialog.accept());
+ await Promise.all([page.waitForResponse(response=>response.url().includes('/rev-revert/apply')&&response.request().method()==='POST'),page.getByRole('button',{name:'Preparar reversión'}).click()]);
+ if(reversalApplyCalls!==1)throw Error('Correction reversal was not previewed and applied');
  await page.emulateMedia({reducedMotion:'reduce'});await page.goto('http://127.0.0.1:4178/?case=home');
  const animation=await page.locator('main').evaluate(el=>getComputedStyle(el).animationName);if(animation!=='none')throw Error('Reduced motion failed');
  await page.setViewportSize({width:768,height:900});await page.goto('http://127.0.0.1:4178/?case=onboarding');await page.evaluate(()=>document.body.style.zoom='2');await page.screenshot({path:path.join(capture,'onboarding-zoom200.png'),fullPage:true});
- fs.writeFileSync(path.join(capture,'results.json'),JSON.stringify({results,errors,smoke:'username required/validity/focus, onboarding navigation gate, five destinations/current section, market dialog/Escape/focus restoration/filter, team tabs, profile dialog, league leave cancellation, reduced motion, zoom'},null,2));
+ fs.writeFileSync(path.join(capture,'results.json'),JSON.stringify({results,errors,smoke:'username required/validity/focus, onboarding navigation gate, five destinations/current section, market dialog/Escape/focus restoration/filter, team tabs, profile dialog, league leave cancellation, correction preview/cancel/conflict/reversal, reduced motion, zoom'},null,2));
  console.log(JSON.stringify({overflows:results.filter(r=>r.overflow),errors,captures:results.length}));
 }finally{await browser.close();server.close();}

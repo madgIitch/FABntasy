@@ -24,6 +24,10 @@ describe("sports explorer contract", () => {
     expect(source).toContain("!game.hasStatistics || !game.playerStats.length");
     expect(source).toContain("date.format(new Date(value))");
     expect(source).toContain('<LiveGameRefresher active={game.status === "live"} />');
+    expect(source).toContain('label: "Local"');
+    expect(source).toContain('label: "Visitante"');
+    expect(source).toContain("statsByTeam(game.homeTeam.id)");
+    expect(source).toContain("statsByTeam(game.awayTeam.id)");
   });
 
   it("refreshes live match data without requiring a manual reload", () => {

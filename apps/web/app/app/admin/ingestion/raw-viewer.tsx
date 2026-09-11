@@ -1,0 +1,3 @@
+"use client";
+import { useState } from "react";
+export function RawViewer({id}:{id:string}){const [content,setContent]=useState<string|null>(null),[busy,setBusy]=useState(false);async function load(){setBusy(true);try{const response=await fetch(`/api/admin/ingestion/raw/${encodeURIComponent(id)}`),body=await response.json();setContent(response.ok?JSON.stringify(body.data.payload,null,2):"No se pudo cargar el payload.")}finally{setBusy(false)}}return <div className="raw-viewer">{content?<pre>{content}</pre>:<button onClick={load} disabled={busy}>{busy?"Redactando…":"Ver RAW redactado"}</button>}</div>}

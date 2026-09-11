@@ -1453,7 +1453,7 @@
     {
       "id": "sprint-17-ingestion-admin",
       "name": "Sprint 17 - Ingestion Admin",
-      "status": "spec_ready",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.7.0",
       "dependencies": [

@@ -32,6 +32,7 @@ def sync_competition_games(
     repository: SportsRepository,
     *,
     category_competition_id: str,
+    round_number: int | None = None,
 ) -> ScheduleSyncSummary:
     competition_season_id, opaque_category_id = repository.resolve_competition_selection(
         category_competition_id
@@ -58,6 +59,8 @@ def sync_competition_games(
         )
         for matchday in matchdays:
             number = _required_int(matchday, "NumeroJornada", "matchday")
+            if round_number is not None and number != round_number:
+                continue
             _required_text(matchday, "IdJornada", "matchday")
             matchdays_seen.add((external_group_id, number))
 
@@ -78,6 +81,8 @@ def sync_competition_games(
                 skipped_byes += 1
                 continue
             number = _required_int(match, "NumeroJornada", "match")
+            if round_number is not None and number != round_number:
+                continue
             if (external_group_id, number) not in matchdays_seen:
                 raise ScheduleContractError("FAB match references an unknown matchday")
             external_game_id = _required_text(match, "IdPartido", "match")
@@ -155,7 +160,7 @@ def sync_competition_games(
         # exposes active games. Preserve known games and retry on the next run.
         stale = (
             repository.mark_missing_games_stale(competition_season_id, seen_internal_ids)
-            if matchdays_seen
+            if matchdays_seen and round_number is None
             else 0
         )
 

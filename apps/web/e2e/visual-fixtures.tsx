@@ -12,6 +12,7 @@ import { Navigation } from "../src/components/ui/navigation";
 import { AccountAvatar, LogoutControl } from "../app/app/account-controls";
 import { AuthForm } from "../app/auth/auth-form";
 import ProfilePage from "../app/app/perfil/page";
+import IngestionAdminPage from "../app/app/admin/ingestion/page";
 import "../app/globals.css";
 
 const names = ["Pablo Rodríguez Fernández", "Javier Martín", "Álvaro García", "Manuel Sánchez", "Daniel López", "Antonio Ruiz", "Carlos Medina"];
@@ -38,6 +39,7 @@ async function boot(){let view:ReactNode;
  case "league":view=<LeagueHub initialLeagues={leagues} seasons={seasons} authUserId="demo"/>;break;
  case "league-member":view=<LeagueHub initialLeagues={leagues.map(l=>({...l,memberships:l.memberships.map(m=>({...m,role:"MEMBER"}))}))} seasons={seasons} authUserId="demo"/>;break;
  case "profile":view=await ProfilePage();break;
+ case "admin":view=await IngestionAdminPage({searchParams:Promise.resolve({})});break;
  case "sports":view=<Sports/>;break;
  case "states":view=<main className="app-main"><header className="workspace-header"><h1>Sin conexión</h1></header><p className="form-message error" role="alert">No se pudo guardar. Comprueba tu conexión.</p><div className="data-section"><h2>Jornada pendiente</h2><p>No hay resultados publicados.</p><div className="loading-line"/><div className="loading-block"/></div><LogoutControl/></main>;break;
  default:view=<JourneyLive data={null}/>;

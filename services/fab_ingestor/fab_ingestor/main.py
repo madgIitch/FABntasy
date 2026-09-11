@@ -3,6 +3,7 @@ import json
 import os
 from threading import Event
 
+from .admin_jobs import run_worker
 from .auth import FileCredentialStore
 from .boxscore import sync_competition_stats, sync_game_stats
 from .client import Credentials, FabClient
@@ -38,6 +39,8 @@ def main() -> None:
             "sync-competition-stats",
             "sync-all",
             "run-scheduler",
+            "run-admin-worker",
+            "grant-ingestion-admin",
         ),
         default="status",
     )
@@ -45,6 +48,8 @@ def main() -> None:
     parser.add_argument("--category-id")
     parser.add_argument("--game-id")
     parser.add_argument("--force-stats", action="store_true")
+    parser.add_argument("--once", action="store_true", help="process at most one queued admin job")
+    parser.add_argument("--auth-user-id", help="Supabase auth UUID to grant ingestion administration")
     parser.add_argument("--season", default=os.getenv("FAB_ACTIVE_SEASON", "2026/2027"))
     parser.add_argument("--role", choices=("validation", "primary"), default="validation")
     parser.add_argument(
@@ -63,7 +68,24 @@ def main() -> None:
         if store.load() is None and settings.device_id is not None and settings.key is not None:
             store.replace(Credentials(settings.device_id, settings.key))
 
-    if args.command in {"sync-all", "run-scheduler"}:
+    if args.command == "grant-ingestion-admin":
+        if not settings.database_url or not args.auth_user_id:
+            parser.error("grant-ingestion-admin requires DATABASE_URL and --auth-user-id")
+        with SportsRepository.connect(settings.database_url) as repository:
+            row = repository.connection.execute(
+                """INSERT INTO admin_grants (id, user_profile_id, role, granted_at, revoked_at)
+                SELECT gen_random_uuid(), id, 'INGESTION_ADMIN', CURRENT_TIMESTAMP, NULL
+                FROM user_profiles WHERE auth_user_id=%s::uuid
+                ON CONFLICT (user_profile_id, role) DO UPDATE SET revoked_at=NULL, granted_at=CURRENT_TIMESTAMP
+                RETURNING id""",
+                (args.auth_user_id,),
+            ).fetchone()
+        if row is None:
+            raise SystemExit("No user profile exists for that auth UUID")
+        print("INGESTION_ADMIN grant active")
+        return
+
+    if args.command in {"sync-all", "run-scheduler", "run-admin-worker"}:
         if not settings.database_url:
             raise SystemExit("DATABASE_URL is required to run ingestion")
         stop_event = Event()
@@ -92,7 +114,21 @@ def main() -> None:
                     timeout=settings.request_timeout_seconds,
                 ).advance if settings.fantasy_lifecycle_url and settings.internal_job_secret else None),
             )
-            if args.command == "sync-all":
+            if args.command == "run-admin-worker":
+                print("FAB admin job worker started")
+                run_worker(
+                    FabClient(
+                        store,
+                        timeout=settings.request_timeout_seconds,
+                        cancellation_check=stop_event.is_set,
+                        auto_refresh_credentials=settings.auto_refresh_credentials,
+                    ),
+                    repository,
+                    once=args.once,
+                    stop_event=stop_event,
+                )
+                print("FAB admin job worker stopped")
+            elif args.command == "sync-all":
                 summary = orchestrator.sync_all(
                     force_stats=args.force_stats, stop_event=stop_event
                 )

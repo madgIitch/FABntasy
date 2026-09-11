@@ -9,6 +9,7 @@
 - [Actividad de liga (propuesta futura)](design/FUTURE_LEAGUE_ACTIVITY_SPEC.md) — taxonomía, contrato y estados previstos para el feed cronológico.
 - [PWA y notificaciones](PWA_NOTIFICATIONS.md) — configuración VAPID, seguridad, caché y semántica de entrega.
 - [Administración de ingesta](INGESTION_ADMIN.md) — rol, cola, worker, RAW redactado y operación del panel.
+- [Spec de despliegue productivo del ingestor](operations/INGESTOR_PRODUCTION_DEPLOYMENT_SPEC.md) — infraestructura, secretos, persistencia, CI/CD, observabilidad y runbooks pendientes para Sprint 22B.
 
 - `ARCHITECTURE.md` — visión general, componentes, flujo de datos.
 - `DECISIONS.md` — registro de decisiones (ADR). El harness añade entradas al tomar decisiones relevantes.

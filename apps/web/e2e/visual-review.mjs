@@ -16,6 +16,7 @@ await esbuild.build({absWorkingDir:process.cwd(),entryPoints:['./e2e/visual-fixt
  build.onResolve({filter:/lib\/supabase\/server$/},()=>({path:'auth',namespace:'mock'}));
  build.onResolve({filter:/server\/user-profile$/},()=>({path:'profile',namespace:'mock'}));
  build.onResolve({filter:/server\/ingestion-admin$/},()=>({path:'ingestion-admin',namespace:'mock'}));
+ build.onResolve({filter:/server\/sports-data-revisions$/},()=>({path:'sports-data-revisions',namespace:'mock'}));
  build.onLoad({filter:/.*/,namespace:'mock'},a=>{
   const modules={
    'next/link':'import React from "react"; export default function Link({children,...p}){return React.createElement("a",p,children)}',
@@ -23,7 +24,8 @@ await esbuild.build({absWorkingDir:process.cwd(),entryPoints:['./e2e/visual-fixt
    actions:'export async function logout(){document.body.dataset.loggedOut="true";}',
    auth:'export async function createClient(){return {auth:{getUser:async()=>({data:{user:{id:"demo",email:"demo@example.test",email_confirmed_at:"2026-09-07"}}})}}}',
    profile:'export async function getUserProfileOverview(){return {username:"pepe_rodriguez",displayName:"Pepe Rodríguez Fernández",avatarPath:null,leagueCount:2,totalPoints:124.5,leagues:[{id:"demo",name:"Los del viernes",teamName:"Sevilla Supersonics",hasTeam:true,memberCount:12}]}}',
-   'ingestion-admin':'export class AdminError extends Error{};export async function requireIngestionAdmin(){return "admin"};const now=new Date("2026-09-11T12:00:00Z");export async function getIngestionDashboard(){return {health:"HEALTHY",heartbeat:{seenAt:now},lastSuccess:{finishedAt:now},jobs:[{id:"j1",type:"GAME",targetKey:"gameId:123",status:"RUNNING",effectiveStatus:"RUNNING",requestedAt:now,errorCode:null}],runs:[{id:"r1",jobName:"stats",status:"SUCCEEDED",startedAt:now,errorCategory:null}]}};export async function listRawPayloads(){return [{id:"raw1",entityType:"game_stats",externalId:"123",httpStatus:200,retrievedAt:now,endpoint:"/v2/envivo/estadisticas.ashx"}]}'
+   'ingestion-admin':'export class AdminError extends Error{};export async function requireIngestionAdmin(){return "admin"};const now=new Date("2026-09-11T12:00:00Z");export async function getIngestionDashboard(){return {health:"HEALTHY",heartbeat:{seenAt:now},lastSuccess:{finishedAt:now},jobs:[{id:"j1",type:"GAME",targetKey:"gameId:123",status:"RUNNING",effectiveStatus:"RUNNING",requestedAt:now,errorCode:null}],runs:[{id:"r1",jobName:"stats",status:"SUCCEEDED",startedAt:now,errorCategory:null}]}};export async function listRawPayloads(){return [{id:"raw1",entityType:"game_stats",externalId:"123",httpStatus:200,retrievedAt:now,endpoint:"/v2/envivo/estadisticas.ashx"}]}',
+   'sports-data-revisions':'export async function requireRevisionAdmin(){return "admin"};export async function listRevisions(){return [{id:"rev1",targetType:"PLAYER_GAME_STAT",fieldName:"points",status:"APPLIED",sourceType:"SOURCE_CORRECTION",recomputationStatus:"SUCCEEDED",revertsRevisionId:null,createdAt:new Date("2026-09-11T12:00:00Z")}]}'
   };return{contents:modules[a.path],loader:'jsx',resolveDir:process.cwd()};
  });
 }}]});
@@ -37,7 +39,7 @@ await page.route('**/api/**',route=>route.fulfill({status:200,contentType:'appli
 try{
  for(const width of [320,375,430,768,1440]){
   await page.setViewportSize({width,height:900});
-  for(const name of ['register','onboarding','home','market','team','journey','league','profile','admin','sports','states']){
+  for(const name of ['register','onboarding','home','market','team','journey','league','profile','admin','corrections','sports','states']){
    await page.goto('http://127.0.0.1:4178/?case='+name);await page.locator('main').waitFor();await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:path.join(capture,`${name}-${width}.png`),fullPage:true});
    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);
    results.push({name,width,overflow});

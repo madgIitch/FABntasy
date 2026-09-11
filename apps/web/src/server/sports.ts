@@ -70,7 +70,7 @@ export const getGame = unstable_cache(async (id: string) => db.game.findUnique({
     awayTeam: true,
     playerStats: { include: { playerRegistration: { include: { player: true, teamRegistration: { include: { team: true } } } } }, orderBy: [{ points: "desc" }] },
   },
-}), ["sports-game"], { revalidate: 60 });
+}), ["sports-game"], { revalidate: 10 });
 
 export async function listPlayers(page = 1, query = "") {
   const competition = await db.competitionSeason.findFirst({ where: { fantasyEnabled: true }, orderBy: { updatedAt: "desc" } });

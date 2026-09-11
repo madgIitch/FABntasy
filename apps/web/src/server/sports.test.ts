@@ -23,5 +23,13 @@ describe("sports explorer contract", () => {
     expect(source).toContain("Sin estadísticas disponibles");
     expect(source).toContain("!game.hasStatistics || !game.playerStats.length");
     expect(source).toContain("date.format(new Date(value))");
+    expect(source).toContain('<LiveGameRefresher active={game.status === "live"} />');
+  });
+
+  it("refreshes live match data without requiring a manual reload", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/components/live-game-refresher.tsx"), "utf8");
+    expect(source).toContain("30_000");
+    expect(source).toContain("router.refresh()");
+    expect(source).toContain('document.addEventListener("visibilitychange"');
   });
 });

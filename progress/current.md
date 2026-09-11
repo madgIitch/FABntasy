@@ -1,6 +1,6 @@
 # Sesión actual
 
-Feature: **sprint-18-data-corrections-audit · Sprint 18 - Data Corrections and Audit** — estado: `review_pending`.
+Feature: **sprint-18-data-corrections-audit · Sprint 18 - Data Corrections and Audit** — estado: `done`.
 
 - agente: codex
 - rama: `main`
@@ -8,10 +8,12 @@ Feature: **sprint-18-data-corrections-audit · Sprint 18 - Data Corrections and 
 
 ## Siguiente acción
 
-- Realizar el smoke humano del flujo de correcciones (preview, confirmación, conflicto y reversión); cerrar con `node .harness/spec.mjs done sprint-18-data-corrections-audit`.
+- Preparar el spec de `sprint-19-security-privacy-hardening`; no implementar hasta que tenga `spec_approved: true`.
 
 ## Último resultado
 
 | intento | resultado | gate fallido | tts(s) | coste |
 |--:|--|--|--:|--:|
 | 1 | OK | — | — | — |
+
+Smoke de cierre: preview, cancelación de confirmación, conflicto y reversión verificados en fixture aislado; 60 capturas responsive sin errores ni overflow.

@@ -1515,7 +1515,7 @@
     {
       "id": "sprint-18-data-corrections-audit",
       "name": "Sprint 18 - Data Corrections and Audit",
-      "status": "in_progress",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "0.7.1",
       "dependencies": [

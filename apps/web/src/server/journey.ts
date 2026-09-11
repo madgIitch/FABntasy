@@ -1,7 +1,7 @@
 import { db } from "./db";
 
 export type JourneyPlayerState = "UPCOMING" | "LIVE" | "FINAL" | "DNP" | "PENDING";
-export interface JourneyPlayer { id:string; name:string; fantasyPoints:string|null; points:number; assists:number; steals:number; state:JourneyPlayerState; stateLabel:string; }
+export interface JourneyPlayer { id:string; name:string; fantasyPoints:string|null; points:number|null; assists:number|null; steals:number|null; state:JourneyPlayerState; stateLabel:string; statsState:"NONE"|"PARTIAL"|"FINAL"; statsUpdatedAt:string|null; }
 export interface JourneyData { competition:string; league:string; roundNumber:number; roundDates?:string|null; rounds:number[]; state:"UPCOMING"|"LIVE"|"PROVISIONAL"|"FINAL"; stateLabel:string; totalPoints:string|null; revision:number|null; correction:{publishedAt:string;reason:string}|null; players:JourneyPlayer[]; cumulative:number[]; }
 
 type Contribution={playerRegistrationId:string;displayName:string;points:string|null;status:string};
@@ -24,7 +24,9 @@ export async function getJourney(authUserId:string,requestedRound?:number):Promi
  const players=slots.map((slot):JourneyPlayer=>{const own=stats.filter(stat=>stat.playerRegistrationId===slot.playerRegistrationId);const relatedGame=games.find(game=>game.roundNumber===roundNumber&&(game.homeTeamId===slot.realTeamIdSnapshot||game.awayTeamId===slot.realTeamIdSnapshot));const contribution=scoreByPlayer.get(slot.playerRegistrationId);let state:JourneyPlayerState="UPCOMING";
   if(contribution?.status==="DNP")state="DNP";else if(relatedGame?.status==="finished")state=contribution?.points===null?"PENDING":"FINAL";else if(["live","in_progress","playing"].some(word=>(relatedGame?.status??relatedGame?.sourceStatus??"").toLowerCase().includes(word)))state="LIVE";
   const labels={UPCOMING:"Por jugar",LIVE:"En juego",FINAL:"Finalizado",DNP:"No participó",PENDING:"Puntuación pendiente"};
-  return{id:slot.playerRegistrationId,name:slot.displayNameSnapshot,fantasyPoints:contribution?.points??null,points:own.reduce((sum,item)=>sum+(item.points??0),0),assists:own.reduce((sum,item)=>sum+(item.assists??0),0),steals:own.reduce((sum,item)=>sum+(item.steals??0),0),state,stateLabel:labels[state]};});
+  const hasStats=own.length>0;const statsFinal=hasStats&&own.every(item=>item.game.statsSyncStatus==="stats_final");const updated=hasStats?own.map(item=>item.game.statsSyncedAt).filter((date):date is Date=>date!==null).sort((a,b)=>b.getTime()-a.getTime())[0]:null;
+  const sum=(field:"points"|"assists"|"steals")=>hasStats?own.reduce((total,item)=>total+(item[field]??0),0):null;
+  return{id:slot.playerRegistrationId,name:slot.displayNameSnapshot,fantasyPoints:contribution?.points??null,points:sum("points"),assists:sum("assists"),steals:sum("steals"),state,stateLabel:labels[state],statsState:statsFinal?"FINAL":hasStats?"PARTIAL":"NONE",statsUpdatedAt:updated?.toISOString()??null};});
  const roundGames=games.filter(game=>game.roundNumber===roundNumber);const hasLive=players.some(player=>player.state==="LIVE");const allFinished=roundGames.length>0&&roundGames.every(game=>game.status==="finished");const state=roundScore?.status==="PUBLISHED"?"FINAL":hasLive?"LIVE":allFinished?"PROVISIONAL":"UPCOMING";const labels={UPCOMING:"Próxima jornada",LIVE:"Jornada en curso",PROVISIONAL:"Resultados provisionales",FINAL:"Jornada finalizada"};
  let running=0;const cumulative:number[]=[];for(const player of players){if(player.fantasyPoints!==null){running+=Number(player.fantasyPoints);cumulative.push(running)}}
  const dated=roundGames.map(game=>game.scheduledAt).filter((date):date is Date=>date!==null);const formatter=new Intl.DateTimeFormat("es-ES",{day:"numeric",month:"short"});const roundDates=dated.length?`${formatter.format(dated[0])}${dated.length>1?` – ${formatter.format(dated.at(-1)!)}`:""}`:null;

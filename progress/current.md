@@ -1,6 +1,6 @@
 # Sesión actual
 
-Feature: **sprint-18-data-corrections-audit · Sprint 18 - Data Corrections and Audit** — estado: `done`.
+Feature: **sprint-18b-live-game-score-ingestion · Sprint 18B - Live Game Score Ingestion** — estado: `in_progress`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-18-data-corrections-audit · Sprint 18 - Data Corrections and 
 
 ## Siguiente acción
 
-- Preparar el spec de `sprint-19-security-privacy-hardening`; no implementar hasta que tenga `spec_approved: true`.
+- Completar tests PostgreSQL de reconciliación/idempotencia, cerrar locks por partido y ejecutar los gates finales de `sprint-18b-live-game-score-ingestion`.
 
 ## Último resultado
 
@@ -16,4 +16,4 @@ Feature: **sprint-18-data-corrections-audit · Sprint 18 - Data Corrections and 
 |--:|--|--|--:|--:|
 | 1 | OK | — | — | — |
 
-Smoke de cierre: preview, cancelación de confirmación, conflicto y reversión verificados en fixture aislado; 60 capturas responsive sin errores ni overflow.
+Implementado el núcleo de marcador/parciales live, snapshots individuales parciales, estados de frescura en Jornada y lifecycle fantasy provisional sin actualización de precios.

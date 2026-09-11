@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { buildMarketMovers } from "./home-dashboard";
 
@@ -39,5 +40,10 @@ describe("home dashboard contract",()=>{
     expect(refresh).toContain("document.visibilityState");
     expect(refresh).toContain("45000");
     expect(refresh).toContain("refreshing.current");
+  });
+
+  it("keeps already-started live games in the home query",()=>{
+    const source=readFileSync(resolve(process.cwd(),"src/server/home-dashboard.ts"),"utf8");
+    expect(source).toContain('OR:[{status:{in:liveStatuses}},{scheduledAt:{gte:now}}]');
   });
 });

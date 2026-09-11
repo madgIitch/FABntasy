@@ -528,3 +528,20 @@ Originado por el incidente documentado en docs/operations/INCIDENT_2026-09-10_FA
   - `.env.example`
   - `spec.json`
 
+<!-- harness:sprint-18b-live-game-score-ingestion -->
+## sprint-18b-live-game-score-ingestion · Sprint 18B - Live Game Score Ingestion
+
+
+
+### Scope aprobado
+
+  - `services/fab_ingestor/**`
+  - `apps/web/src/server/**`
+  - `apps/web/src/app/**`
+  - `packages/domain/**`
+  - `prisma/**`
+  - `tests/**`
+  - `docs/**`
+  - `.env.example`
+  - `spec.json`
+

@@ -10,6 +10,14 @@ una decisión de arquitectura relevante durante implementación.
 
 <!-- Nuevas entradas debajo -->
 
+## 2026-09-11 · El marcador live y el boxscore individual progresan de forma independiente
+
+Contexto: FAB publicó un tanteo 21-24 y después 38-34 desde `estadisticas.ashx` mientras `buscarPartido` seguía en `-/-`; durante ese intervalo el array de jugadores permaneció vacío.
+
+Decisión: reconciliar estado, marcador y parciales independientemente de las filas individuales. Los jugadores presentes se guardan como snapshot parcial sin borrar ausencias ni validar sumas hasta el cierre. Los scores de jornada pueden ser provisionales, pero rankings publicados y precios solo avanzan con toda la cohorte en `stats_final`.
+
+Consecuencia: la aplicación degrada a marcador en vivo cuando FAB no ofrece boxscore, conserva nulls honestos y evita presentar datos incompletos como definitivos.
+
 ## 2026-09-06 · Las ligas privadas preceden al mercado entre usuarios
 
 Contexto: los clausulazos solo tienen sentido dentro de un ámbito competitivo compartido y necesitan identificar propietario, comprador, límites y jornada de una liga concreta.
@@ -346,6 +354,15 @@ Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
 ## 2026-09-11 · sprint-18-data-corrections-audit aprobado
 
 Contexto: se aprobó el spec `sprint-18-data-corrections-audit` (Sprint 18 - Data Corrections and Audit).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-18b-live-game-score-ingestion -->
+## 2026-09-11 · sprint-18b-live-game-score-ingestion aprobado
+
+Contexto: se aprobó el spec `sprint-18b-live-game-score-ingestion` (Sprint 18B - Live Game Score Ingestion).
 
 Decisión: implementar según el spec aprobado.
 

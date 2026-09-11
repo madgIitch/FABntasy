@@ -1579,6 +1579,80 @@
       "approved_at": "2026-09-11T14:01:05.191Z"
     },
     {
+      "id": "sprint-18b-live-game-score-ingestion",
+      "name": "Sprint 18B - Live Game Score Ingestion",
+      "status": "in_progress",
+      "sdd": true,
+      "milestone": "0.7.2",
+      "dependencies": [
+        "sprint-18-data-corrections-audit"
+      ],
+      "objective": "Mantener el estado, tanteo, parciales y estadísticas individuales provisionales de los partidos en curso usando el endpoint FAB de estadísticas en vivo cuando el calendario general vaya retrasado, degradando con seguridad cuando FAB solo publique el marcador.",
+      "user_stories": [
+        {
+          "id": "HU18B.1",
+          "story": "Como usuario quiero ver el tanteo actualizado de un partido en curso aunque el buscador general de FAB todavía muestre guiones."
+        },
+        {
+          "id": "HU18B.2",
+          "story": "Como operador quiero que el ingestor reconcilie de forma segura las dos vistas de FAB y deje trazabilidad de cuál aportó cada dato."
+        }
+      ],
+      "tasks": [
+        "Ampliar el flujo de sincronización para consultar estadísticas en vivo de partidos elegibles que estén comenzados o dentro de una ventana temporal activa.",
+        "Normalizar tanteo total, parciales, estado y fecha de actualización desde el objeto partido de /v2/envivo/estadisticas.ashx.",
+        "Ingerir snapshots individuales provisionales cuando FAB publique filas de jugadores, conservando nulls y sin exigir boxscore completo durante el partido.",
+        "Calcular y exponer puntuaciones fantasy provisionales únicamente desde snapshots individuales presentes, sin contaminar la publicación definitiva.",
+        "Definir precedencia por campo entre horariosJornadas/buscarPartido y estadísticas en vivo sin degradar datos más recientes o completos.",
+        "Persistir la procedencia y frescura del snapshot en vivo y conservar el RAW saneado para auditoría.",
+        "Integrar la actualización en sync-game-stats, sync-competition-stats, sync-all, scheduler y jobs administrativos sin duplicar llamadas.",
+        "Ajustar la cadencia durante ventanas activas con rate limiting, backoff, locks y corte explícito tras finalizar el partido.",
+        "Exponer desde la API propia el tanteo, parciales, estado y marca de última actualización persistidos, sin llamadas FAB desde la PWA.",
+        "Añadir fixtures y tests de desfase entre endpoints, progresión de parciales, correcciones, reintentos e idempotencia."
+      ],
+      "deliverable": "Un partido en curso conserva en PostgreSQL el último tanteo y parciales válidos publicados por FAB, aunque el endpoint general aún no muestre el resultado.",
+      "acceptance": [
+        "Si un partido está `Comenzado`/`live`, o su horario cae dentro de la ventana activa configurada, el ingestor puede consultar `/v2/envivo/estadisticas.ashx` mediante `FabClient` usando exclusivamente el `IdPartido` FAB persistido.",
+        "El mapper lee del objeto `partido` al menos `estado_partido`, `tanteo_local`, `tanteo_visitante`, `periodos` y `fechaultimaactualizacion`; no exige que existan todavía filas de jugadores para actualizar el marcador.",
+        "Un resultado `21-24` del endpoint en vivo sustituye los guiones o marcadores ausentes del endpoint general, pero una respuesta vacía, atrasada o menos completa nunca borra un tanteo o parcial válido ya persistido.",
+        "La precedencia se decide por campo y frescura: el snapshot con actualización FAB válida más reciente gana; a igualdad o sin timestamp se conserva el valor más completo y no se infiere `0-0` de campos ausentes.",
+        "Los parciales se persisten en orden de periodo y distinguen un periodo futuro todavía a cero de un dato ausente; prórrogas se admiten sin limitar el array a cuatro periodos.",
+        "La transición de `scheduled` a `live` y después a `finished` es monotónica salvo una corrección FAB explícitamente más reciente; un payload general retrasado no reabre ni retrocede un partido finalizado.",
+        "Actualizar el marcador en vivo no marca `stats_final`, no publica puntuación fantasy definitiva y no convierte estadísticas individuales ausentes en cero; los puntos fantasy live siguen el contrato provisional existente.",
+        "Cada respuesta utilizada se conserva como RAW saneado con endpoint, partido externo, timestamp y checksum, sin `key`, `id_dispositivo`, tokens ni secretos; el Game conserva metadatos suficientes para conocer fuente y frescura del marcador efectivo.",
+        "Repetir el mismo snapshot es idempotente: no duplica Game, RAW por checksum, revisiones ni derivados, y evita escrituras materiales cuando no cambia ningún campo efectivo.",
+        "`sync-game-stats`, `sync-competition-stats`, `sync-all`, scheduler y jobs GAME/ROUND/COMPETITION reutilizan un único flujo de reconciliación y respetan advisory locks para no consultar ni escribir concurrentemente el mismo partido.",
+        "La frecuencia activa permanece entre 5 y 15 minutos por defecto, aplica rate limiting y backoff existentes y deja de sondear con cadencia live cuando FAB confirma finalización; los fallos conservan el último marcador válido y generan un código de error seguro.",
+        "La API y la PWA leen exclusivamente PostgreSQL y exponen estado, marcador nullable, parciales, última actualización y una indicación de frescura; nunca llaman a FAB desde el navegador.",
+        "Tests sin red cubren el caso real observado `Estado=Comenzado` con resultado general `-/-` y endpoint live `21-24`, ausencia de jugadores, payload atrasado, corrección posterior, prórroga, respuesta parcial, error FAB e idempotencia.",
+        "Un test de integración PostgreSQL demuestra que una secuencia scheduled → live 21-24 → live 38-41 → finished persiste transiciones y tanteos correctos sin duplicados ni regresiones.",
+        "Cuando FAB publica filas individuales durante el encuentro, el ingestor actualiza `PlayerGameStat` como snapshot parcial con los campos realmente presentes; filas o campos ausentes no se borran ni se convierten en cero y un boxscore vacío sigue permitiendo actualizar el marcador.",
+        "La validación estricta de suma de puntos, completitud de ambos equipos y eliminación de jugadores ausentes solo se aplica al cierre definitivo; durante el directo las incoherencias se conservan como provisionales y nunca se corrigen mediante divisiones o inferencias.",
+        "Los fantasy scores derivados de estadísticas live se identifican como provisionales, pueden reemplazarse idempotentemente con cada snapshot y nunca publican el resultado de jornada, ranking o precio hasta disponer de estadísticas finales validadas.",
+        "La experiencia de jornada distingue jugador sin datos live, jugador con estadísticas provisionales y jugador con dato final, mostrando frescura y evitando presentar una cifra parcial como definitiva.",
+        "Tests cubren aparición tardía de jugadores, actualización acumulativa, desaparición temporal de una fila, campo individual ausente, incoherencia provisional entre puntos y marcador y sustitución final validada.",
+        "Se documentan el contrato confirmado, la política de precedencia, la cadencia, los estados de degradación y el procedimiento de diagnóstico cuando buscador, marcador live y estadísticas individuales discrepan."
+      ],
+      "scope": [
+        "services/fab_ingestor/**",
+        "apps/web/src/server/**",
+        "apps/web/src/app/**",
+        "packages/domain/**",
+        "prisma/**",
+        "tests/**",
+        "docs/**",
+        ".env.example",
+        "spec.json"
+      ],
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-09-11T18:31:04.061Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:e63344440eef74fd7ef0270114b2b8681bb0227922a2f5b27f075d7a1841be63",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-11T18:31:04.185Z"
+    },
+    {
       "id": "sprint-19-security-privacy-hardening",
       "visual_spec_reference": "sprint-14d-green-white-design-system (aprobado; adoptar al implementar): docs/design/CANASTIO_14D_VISUAL_DIRECTION.md",
       "name": "Sprint 19 - Security and Privacy Hardening",
@@ -1586,7 +1660,7 @@
       "sdd": true,
       "milestone": "0.8.0",
       "dependencies": [
-        "sprint-18-data-corrections-audit",
+        "sprint-18b-live-game-score-ingestion",
         "sprint-16-pwa-install-and-notifications"
       ],
       "objective": "Cerrar vectores de abuso, proteger datos de usuario y preparar el producto para beta pública.",

@@ -99,6 +99,20 @@ class SportsRepository:
                     entity_id=entity_id,
                 )
             else:
+                if entity_type == "game" and values.get("score_source") == "schedule":
+                    live = self.connection.execute(
+                        "SELECT live_score_updated_at FROM games WHERE id = %s", (entity_id,)
+                    ).fetchone()
+                    if live and live[0] is not None and values.get("status") != "finished":
+                        values = {
+                            key: value
+                            for key, value in values.items()
+                            if key not in {
+                                "status", "source_status", "home_score", "away_score",
+                                "score_by_period", "source_score", "score_source",
+                                "source_updated_at",
+                            }
+                        }
                 if entity_type in {"game", "player_game_stat"}:
                     protected = self.connection.execute(
                         """
@@ -118,10 +132,16 @@ class SportsRepository:
                     sql.SQL("{} = {}").format(sql.Identifier(column), sql.Placeholder())
                     for column in columns
                 )
-                query = sql.SQL("UPDATE {} SET {}, updated_at = CURRENT_TIMESTAMP WHERE id = {}").format(
-                    sql.Identifier(table), assignments, sql.Placeholder()
+                differences = sql.SQL(" OR ").join(
+                    sql.SQL("{} IS DISTINCT FROM {}").format(
+                        sql.Identifier(column), sql.Placeholder()
+                    )
+                    for column in columns
                 )
-                self.connection.execute(query, (*values.values(), entity_id))
+                query = sql.SQL("UPDATE {} SET {}, updated_at = CURRENT_TIMESTAMP WHERE id = {} AND ({})").format(
+                    sql.Identifier(table), assignments, sql.Placeholder(), differences
+                )
+                self.connection.execute(query, (*values.values(), entity_id, *values.values()))
             return entity_id
 
     def upsert_external_id(
@@ -209,6 +229,15 @@ class SportsRepository:
             ).fetchone()
             acquired = bool(row and row[0])
             yield acquired
+
+    @contextmanager
+    def advisory_game_lock(self, external_game_id: str):
+        with self.connection.transaction():
+            row = self.connection.execute(
+                "SELECT pg_try_advisory_xact_lock(hashtextextended(%s, 0))",
+                (f"fabntasy:live-game:{external_game_id}",),
+            ).fetchone()
+            yield bool(row and row[0])
 
     def start_ingestion_run(self, job_name: str, competition_season_id: UUID | None) -> UUID:
         run_id = uuid4()
@@ -316,14 +345,67 @@ class SportsRepository:
             FROM games g
             JOIN external_ids ids
               ON ids.entity_id = g.id AND ids.source = 'FAB' AND ids.entity_type = 'game'
-            WHERE g.competition_season_id = %s AND g.status = 'finished'
+            WHERE g.competition_season_id = %s
               AND g.has_statistics = true AND g.sync_status = 'active'
-              AND (%s OR g.stats_sync_status <> 'stats_final')
+              AND (
+                (g.status = 'finished' AND (%s OR g.stats_sync_status <> 'stats_final'))
+                OR g.status = 'live'
+                OR (g.status = 'scheduled' AND g.scheduled_at BETWEEN CURRENT_TIMESTAMP - INTERVAL '6 hours' AND CURRENT_TIMESTAMP + INTERVAL '1 hour')
+              )
             ORDER BY g.scheduled_at, g.id
             """,
             (competition_season_id, force),
         ).fetchall()
         return [row[0] for row in rows]
+
+    def reconcile_live_game(
+        self, game_id: UUID, *, status: str, source_status: str | None,
+        home_score: int | None, away_score: int | None, score_by_period: Any,
+        source_score: Any, updated_at: Any,
+    ) -> bool:
+        current = self.connection.execute(
+            """SELECT status, live_score_updated_at, source_status, home_score, away_score,
+                      score_by_period FROM games WHERE id = %s FOR UPDATE""", (game_id,)
+        ).fetchone()
+        if current is None:
+            raise ValueError("game does not exist")
+        if current[1] is not None and updated_at is not None and updated_at < current[1]:
+            return False
+        if current[0] == "finished" and status != "finished":
+            return False
+        if (
+            current[0] == status and current[2] == source_status
+            and (home_score is None or current[3] == home_score)
+            and (away_score is None or current[4] == away_score)
+            and (score_by_period is None or current[5] == score_by_period)
+            and (updated_at is None or current[1] == updated_at)
+        ):
+            return False
+        self.connection.execute(
+            """
+            UPDATE games SET
+              status = %s, source_status = COALESCE(%s, source_status),
+              home_score = COALESCE(%s, home_score), away_score = COALESCE(%s, away_score),
+              score_by_period = COALESCE(%s::jsonb, score_by_period),
+              source_score = COALESCE(%s::jsonb, source_score), score_source = 'live_stats',
+              live_score_updated_at = COALESCE(%s, live_score_updated_at),
+              source_updated_at = COALESCE(%s, source_updated_at), last_seen_at = CURRENT_TIMESTAMP,
+              updated_at = CURRENT_TIMESTAMP
+            WHERE id = %s
+            """,
+            (status, source_status, home_score, away_score,
+             json.dumps(score_by_period) if score_by_period is not None else None,
+             json.dumps(source_score) if source_score is not None else None,
+             updated_at, updated_at, game_id),
+        )
+        return True
+
+    def mark_game_stats_partial(self, game_id: UUID) -> None:
+        self.connection.execute(
+            """UPDATE games SET stats_sync_status = 'partial', stats_synced_at = CURRENT_TIMESTAMP,
+               updated_at = CURRENT_TIMESTAMP WHERE id = %s AND stats_sync_status <> 'stats_final'""",
+            (game_id,),
+        )
 
     def upsert_player_registration(
         self,

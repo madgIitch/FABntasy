@@ -558,6 +558,8 @@ model Game {
   awayScore           Int?                     @map("away_score")
   scoreByPeriod       Json?                    @map("score_by_period")
   sourceScore         Json?                    @map("source_score")
+  scoreSource         String?                  @map("score_source")
+  liveScoreUpdatedAt  DateTime?                @map("live_score_updated_at") @db.Timestamptz(3)
   recordType          String?                  @map("record_type")
   hasStatistics       Boolean                  @default(false) @map("has_statistics")
   sourceUpdatedAt     DateTime?                @map("source_updated_at") @db.Timestamptz(3)
@@ -579,6 +581,7 @@ model Game {
   @@index([competitionSeasonId, roundNumber])
   @@index([competitionSeasonId, syncStatus])
   @@index([scheduledAt])
+  @@index([status, scheduledAt])
   @@map("games")
 }
 

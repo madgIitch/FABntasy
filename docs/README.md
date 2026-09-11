@@ -9,6 +9,7 @@
 - [Actividad de liga (propuesta futura)](design/FUTURE_LEAGUE_ACTIVITY_SPEC.md) — taxonomía, contrato y estados previstos para el feed cronológico.
 - [PWA y notificaciones](PWA_NOTIFICATIONS.md) — configuración VAPID, seguridad, caché y semántica de entrega.
 - [Administración de ingesta](INGESTION_ADMIN.md) — rol, cola, worker, RAW redactado y operación del panel.
+- [Ingesta de partidos en directo](LIVE_GAME_INGESTION.md) — reconciliación de marcador, parciales y estadísticas individuales provisionales.
 - [Correcciones de datos](DATA_CORRECTIONS.md) — revisiones inmutables, diff, recálculo dirigido y reversión auditada.
 - [Spec de despliegue productivo del ingestor](operations/INGESTOR_PRODUCTION_DEPLOYMENT_SPEC.md) — infraestructura, secretos, persistencia, CI/CD, observabilidad y runbooks pendientes para Sprint 22B.
 

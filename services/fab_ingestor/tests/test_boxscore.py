@@ -34,6 +34,8 @@ class Repository:
         self.stats = {}
         self.raw = []
         self.final = False
+        self.partial = False
+        self.live = []
 
     def get_game_stats_context(self, external_game_id):
         return {
@@ -44,6 +46,9 @@ class Repository:
             "status": "finished",
             "has_statistics": True,
         }
+
+    def advisory_game_lock(self, external_game_id):
+        return nullcontext(True)
 
     def save_raw_payload(self, **values):
         self.raw.append(values)
@@ -60,6 +65,13 @@ class Repository:
 
     def mark_game_stats_final(self, game_id):
         self.final = True
+
+    def mark_game_stats_partial(self, game_id):
+        self.partial = True
+
+    def reconcile_live_game(self, game_id, **values):
+        self.live.append(values)
+        return True
 
     def delete_game_stats_except(self, game_id, registration_ids):
         self.stats = {
@@ -136,3 +148,54 @@ def test_player_totals_must_match_authoritative_scoreboard():
     assert len(repository.raw) == 1
     assert repository.stats == {}
     assert repository.final is False
+
+
+def test_live_score_is_persisted_without_player_rows():
+    payload = {
+        "resultado": "correcto",
+        "partido": {
+            "estado_partido": "COMENZADO",
+            "tanteo_local": 21,
+            "tanteo_visitante": 24,
+            "periodos": [{"periodo": 1, "tanteo_periodo_local": 21, "tanteo_periodo_visitante": 24}],
+            "fechaultimaactualizacion": "/Date(1789150665117)/",
+            "idlocal": "team-home",
+            "idvisitante": "team-away",
+        },
+        "estadisticas": {"estadisticasequipolocal": [], "estadisticasequipovisitante": []},
+    }
+    repository = Repository()
+    repository.get_game_stats_context = lambda _: {
+        "game_id": "game", "competition_season_id": "season",
+        "home_registration_id": "home-registration", "away_registration_id": "away-registration",
+        "status": "scheduled", "has_statistics": True,
+    }
+
+    result = sync_game_stats(Client(payload), repository, external_game_id="opaque-game")
+
+    assert result.games == 1
+    assert repository.live[-1]["status"] == "live"
+    assert (repository.live[-1]["home_score"], repository.live[-1]["away_score"]) == (21, 24)
+    assert repository.stats == {}
+    assert repository.final is repository.partial is False
+
+
+def test_live_player_rows_are_partial_and_do_not_delete_disappearing_players():
+    payload = json.loads(json.dumps(FIXTURE))
+    payload["partido"]["estado_partido"] = "COMENZADO"
+    payload["partido"]["fechaultimaactualizacion"] = "/Date(1789150665117)/"
+    payload["estadisticas"]["estadisticasequipovisitante"] = []
+    payload["estadisticas"]["estadisticasequipolocal"][0].pop("asistencias", None)
+    repository = Repository()
+    repository.get_game_stats_context = lambda _: {
+        "game_id": "game", "competition_season_id": "season",
+        "home_registration_id": "home-registration", "away_registration_id": "away-registration",
+        "status": "live", "has_statistics": True,
+    }
+
+    sync_game_stats(Client(payload), repository, external_game_id="opaque-game")
+
+    assert repository.partial is True
+    assert repository.final is False
+    stat = next(iter(repository.stats.values()))
+    assert "assists" not in stat

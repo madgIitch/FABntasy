@@ -30,7 +30,7 @@ export async function getHomeDashboard(authUserId:string, requestedLeagueId?:str
     if (!team) return {kind:"NO_TEAM" as const,displayName:profile.displayName,updatedAt};
     const now=new Date();
     const realTeamIds=[...new Set(team.rosterSlots.map((slot)=>slot.playerRegistration.teamRegistration.teamId))];
-    const gamesResult=await section(()=>db.game.findMany({where:{competitionSeasonId:team.competitionSeasonId,syncStatus:"active",scheduledAt:{gte:now},...(realTeamIds.length?{OR:[{homeTeamId:{in:realTeamIds}},{awayTeamId:{in:realTeamIds}}]}:{})},orderBy:[{scheduledAt:"asc"},{id:"asc"}],take:12,include:{homeTeam:true,awayTeam:true}}));
+    const gamesResult=await section(()=>db.game.findMany({where:{competitionSeasonId:team.competitionSeasonId,syncStatus:"active",AND:[{OR:[{status:{in:liveStatuses}},{scheduledAt:{gte:now}}]},...(realTeamIds.length?[{OR:[{homeTeamId:{in:realTeamIds}},{awayTeamId:{in:realTeamIds}}]}]:[])]},orderBy:[{scheduledAt:"asc"},{id:"asc"}],take:12,include:{homeTeam:true,awayTeam:true}}));
     const nextGame=gamesResult.data?.[0], nextRound=nextGame?.roundNumber??team.lineups[0]?.roundNumber??null, lineup=team.lineups.find((item)=>item.roundNumber===nextRound)??team.lineups[0];
     const starters=lineup?.slots.filter((slot)=>slot.role==="STARTER").length??0, locked=Boolean(lineup?.lockedAt)||Boolean(lineup&&lineup.cutoffAt<=now);
     const lineupState:"NO_CALENDAR"|"NOT_SAVED"|"LOCKED"|"READY"|"INCOMPLETE"=nextRound===null?"NO_CALENDAR":!lineup?"NOT_SAVED":locked?"LOCKED":starters===5?"READY":"INCOMPLETE";

@@ -142,6 +142,7 @@ def sync_competition_games(
                     "away_score": away_score,
                     "score_by_period": Jsonb(periods) if periods is not None else None,
                     "source_score": Jsonb(results) if isinstance(results, dict) else None,
+                    "score_source": "schedule",
                     "record_type": _optional_text(match.get("TipoActa")),
                     "has_statistics": _has_statistics(match.get("TipoActa")),
                     "source_updated_at": datetime.now(UTC),
@@ -213,7 +214,7 @@ def _normalize_status(value: str) -> str:
     normalized = _fold(value)
     if normalized in {"finalizado", "terminado"}:
         return "finished"
-    if normalized in {"en juego", "en directo"}:
+    if normalized in {"comenzado", "en juego", "en directo"}:
         return "live"
     if normalized in {"aplazado", "suspendido"}:
         return "postponed"

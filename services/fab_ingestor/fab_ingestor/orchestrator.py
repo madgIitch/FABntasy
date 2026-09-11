@@ -217,30 +217,34 @@ class Scheduler:
         orchestrator: IngestionOrchestrator,
         *,
         idle_minutes: int,
-        active_minutes: int,
+        active_seconds: int,
         windows: tuple[JourneyWindow, ...],
         timezone: str = "Europe/Madrid",
         now: Callable[[], datetime] | None = None,
+        monotonic: Callable[[], float] = time.monotonic,
     ) -> None:
         if not 60 <= idle_minutes <= 180:
             raise ValueError("idle interval must be between 60 and 180 minutes")
-        if not 5 <= active_minutes <= 15:
-            raise ValueError("active interval must be between 5 and 15 minutes")
+        if not 30 <= active_seconds <= 900:
+            raise ValueError("active interval must be between 30 and 900 seconds")
         self.orchestrator = orchestrator
         self.idle_minutes = idle_minutes
-        self.active_minutes = active_minutes
+        self.active_seconds = active_seconds
         self.windows = windows
         self.timezone = ZoneInfo(timezone)
         self.now = now or (lambda: datetime.now(self.timezone))
+        self.monotonic = monotonic
 
     def interval_seconds(self) -> int:
         active = any(window.contains(self.now().astimezone(self.timezone)) for window in self.windows)
-        return 60 * (self.active_minutes if active else self.idle_minutes)
+        return self.active_seconds if active else 60 * self.idle_minutes
 
     def run(self, stop_event: Event) -> None:
         while not stop_event.is_set():
+            cycle_started = self.monotonic()
             self.orchestrator.sync_all(stop_event=stop_event)
-            stop_event.wait(self.interval_seconds())
+            elapsed = self.monotonic() - cycle_started
+            stop_event.wait(max(0, self.interval_seconds() - elapsed))
 
 
 WEEKDAYS = {"MON": 0, "TUE": 1, "WED": 2, "THU": 3, "FRI": 4, "SAT": 5, "SUN": 6}

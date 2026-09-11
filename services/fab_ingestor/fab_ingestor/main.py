@@ -145,7 +145,7 @@ def main() -> None:
                 scheduler = Scheduler(
                     orchestrator,
                     idle_minutes=settings.scheduler_idle_minutes,
-                    active_minutes=settings.scheduler_active_minutes,
+                    active_seconds=settings.scheduler_active_seconds,
                     windows=parse_journey_windows(settings.journey_windows),
                 )
                 print("FAB ingestion scheduler started")

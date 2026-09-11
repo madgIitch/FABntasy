@@ -20,7 +20,7 @@ Configuración opcional:
 | Variable | Valor por defecto | Restricción |
 |---|---:|---|
 | `FAB_SCHEDULER_IDLE_MINUTES` | `120` | entre 60 y 180 |
-| `FAB_SCHEDULER_ACTIVE_MINUTES` | `10` | entre 5 y 15 |
+| `FAB_SCHEDULER_ACTIVE_SECONDS` | `30` | entre 30 y 900; solo dentro de las ventanas de jornada |
 | `FAB_JOURNEY_WINDOWS` | `FRI 18:00-23:59,SAT 08:00-23:59,SUN 08:00-23:00` | `DIA[+DIA] HH:MM-HH:MM`, zona `Europe/Madrid` |
 | `FAB_REQUEST_TIMEOUT_SECONDS` | `10` | entre 1 y 30 |
 | `FAB_RETRY_ATTEMPTS` | `3` | entre 1 y 5 |

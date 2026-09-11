@@ -38,10 +38,10 @@ def test_live_mode_accepts_persisted_credentials(monkeypatch, tmp_path):
 def test_scheduler_defaults_and_ranges(monkeypatch):
     monkeypatch.setenv("INGESTOR_MODE", "mock")
     monkeypatch.delenv("FAB_SCHEDULER_IDLE_MINUTES", raising=False)
-    monkeypatch.delenv("FAB_SCHEDULER_ACTIVE_MINUTES", raising=False)
+    monkeypatch.delenv("FAB_SCHEDULER_ACTIVE_SECONDS", raising=False)
     settings = Settings.from_env()
     assert settings.scheduler_idle_minutes == 120
-    assert settings.scheduler_active_minutes == 10
+    assert settings.scheduler_active_seconds == 30
     assert settings.request_timeout_seconds == 10
     assert settings.retry_attempts == 3
     assert settings.retry_initial_delay_seconds == 1
@@ -57,10 +57,22 @@ def test_scheduler_defaults_and_ranges(monkeypatch):
     else:
         raise AssertionError("invalid idle scheduler interval was accepted")
 
+    monkeypatch.setenv("FAB_SCHEDULER_IDLE_MINUTES", "120")
+    monkeypatch.setenv("FAB_SCHEDULER_ACTIVE_SECONDS", "29")
+    with pytest.raises(ValueError, match="ACTIVE_SECONDS"):
+        Settings.from_env()
+
 
 def test_fantasy_lifecycle_configuration_must_be_complete(monkeypatch):
     monkeypatch.setenv("INGESTOR_MODE", "mock")
     monkeypatch.setenv("CANASTIO_FANTASY_LIFECYCLE_URL", "https://canastio.test/api/internal/fantasy/lifecycle")
     monkeypatch.delenv("CANASTIO_INTERNAL_JOB_SECRET", raising=False)
-    with pytest.raises(ValueError, match="configured together"):
+    with pytest.raises(ValueError, match="INTERNAL_JOB_SECRET"):
         Settings.from_env()
+
+
+def test_shared_secret_can_exist_without_enabling_lifecycle(monkeypatch):
+    monkeypatch.setenv("INGESTOR_MODE", "mock")
+    monkeypatch.delenv("CANASTIO_FANTASY_LIFECYCLE_URL", raising=False)
+    monkeypatch.setenv("CANASTIO_INTERNAL_JOB_SECRET", "shared-secret")
+    assert Settings.from_env().fantasy_lifecycle_url is None

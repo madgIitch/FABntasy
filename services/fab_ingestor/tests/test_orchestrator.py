@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 from datetime import datetime
 from threading import Event
+from types import SimpleNamespace
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -180,14 +181,32 @@ def test_scheduler_uses_active_interval_and_stops_without_new_cycle():
     scheduler = Scheduler(
         object(),
         idle_minutes=120,
-        active_minutes=10,
+        active_seconds=30,
         windows=(JourneyWindow(frozenset({5}), datetime.min.time(), datetime.max.time()),),
         now=lambda: datetime(2026, 9, 5, 12, 0, tzinfo=timezone),
     )
-    assert scheduler.interval_seconds() == 600
+    assert scheduler.interval_seconds() == 30
     stopped = Event()
     stopped.set()
     scheduler.run(stopped)
+
+
+def test_scheduler_counts_active_interval_from_cycle_start(monkeypatch):
+    timezone = ZoneInfo("Europe/Madrid")
+    clock = iter((100.0, 112.0))
+    stopped = Event()
+    scheduler = Scheduler(
+        SimpleNamespace(sync_all=lambda **_: stopped.set()),
+        idle_minutes=120,
+        active_seconds=30,
+        windows=(JourneyWindow(frozenset({5}), datetime.min.time(), datetime.max.time()),),
+        now=lambda: datetime(2026, 9, 5, 12, 0, tzinfo=timezone),
+        monotonic=lambda: next(clock),
+    )
+    waits = []
+    monkeypatch.setattr(stopped, "wait", waits.append)
+    scheduler.run(stopped)
+    assert waits == [18]
 
 
 def test_signal_handlers_request_controlled_stop(monkeypatch):

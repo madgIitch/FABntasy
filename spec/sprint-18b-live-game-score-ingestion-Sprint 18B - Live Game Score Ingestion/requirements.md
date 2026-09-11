@@ -19,7 +19,7 @@ R7. Actualizar el marcador en vivo no marca `stats_final`, no publica puntuació
 R8. Cada respuesta utilizada se conserva como RAW saneado con endpoint, partido externo, timestamp y checksum, sin `key`, `id_dispositivo`, tokens ni secretos; el Game conserva metadatos suficientes para conocer fuente y frescura del marcador efectivo.
 R9. Repetir el mismo snapshot es idempotente: no duplica Game, RAW por checksum, revisiones ni derivados, y evita escrituras materiales cuando no cambia ningún campo efectivo.
 R10. `sync-game-stats`, `sync-competition-stats`, `sync-all`, scheduler y jobs GAME/ROUND/COMPETITION reutilizan un único flujo de reconciliación y respetan advisory locks para no consultar ni escribir concurrentemente el mismo partido.
-R11. La frecuencia activa permanece entre 5 y 15 minutos por defecto, aplica rate limiting y backoff existentes y deja de sondear con cadencia live cuando FAB confirma finalización; los fallos conservan el último marcador válido y generan un código de error seguro.
+R11. La frecuencia activa es de 30 segundos por defecto y configurable entre 30 y 900 segundos, aplica rate limiting y backoff existentes y deja de sondear con cadencia live fuera de las ventanas de jornada; los fallos conservan el último marcador válido y generan un código de error seguro.
 R12. La API y la PWA leen exclusivamente PostgreSQL y exponen estado, marcador nullable, parciales, última actualización y una indicación de frescura; nunca llaman a FAB desde el navegador.
 R13. Tests sin red cubren el caso real observado `Estado=Comenzado` con resultado general `-/-` y endpoint live `21-24`, ausencia de jugadores, payload atrasado, corrección posterior, prórroga, respuesta parcial, error FAB e idempotencia.
 R14. Un test de integración PostgreSQL demuestra que una secuencia scheduled → live 21-24 → live 38-41 → finished persiste transiciones y tanteos correctos sin duplicados ni regresiones.
@@ -29,4 +29,3 @@ R17. Los fantasy scores derivados de estadísticas live se identifican como prov
 R18. La experiencia de jornada distingue jugador sin datos live, jugador con estadísticas provisionales y jugador con dato final, mostrando frescura y evitando presentar una cifra parcial como definitiva.
 R19. Tests cubren aparición tardía de jugadores, actualización acumulativa, desaparición temporal de una fila, campo individual ausente, incoherencia provisional entre puntos y marcador y sustitución final validada.
 R20. Se documentan el contrato confirmado, la política de precedencia, la cadencia, los estados de degradación y el procedimiento de diagnóstico cuando buscador, marcador live y estadísticas individuales discrepan.
-

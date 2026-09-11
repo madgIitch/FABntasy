@@ -22,7 +22,7 @@ Las jornadas con estadísticas parciales pueden recalcular scores y resultados p
 
 ## Cadencia y degradación
 
-El scheduler reutiliza `FAB_SCHEDULER_ACTIVE_MINUTES` (5–15 minutos). Son elegibles los partidos `live` y los programados entre seis horas antes y una hora después del instante actual, para tolerar retrasos de estado. Un fallo de FAB conserva el último snapshot válido y el navegador nunca consulta FAB directamente.
+El scheduler usa `FAB_SCHEDULER_ACTIVE_SECONDS` (30 segundos por defecto, configurable entre 30 y 900) dentro de las ventanas de jornada. Fuera de ellas conserva `FAB_SCHEDULER_IDLE_MINUTES`. Son elegibles los partidos `live` y los programados entre seis horas antes y una hora después del instante actual, para tolerar retrasos de estado. El rate limiting, backoff y circuit breaker siguen activos; un fallo de FAB conserva el último snapshot válido y el navegador nunca consulta FAB directamente.
 
 ## Diagnóstico
 

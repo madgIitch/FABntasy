@@ -14,7 +14,7 @@ Debe completarse después de observabilidad y antes de la release candidate. La 
 
 - Imagen base en `services/fab_ingestor/Dockerfile`.
 - CLI `python -m fab_ingestor` con `sync-all`, `run-scheduler`, `run-admin-worker`, `register-device`, `probe-auth` y `grant-ingestion-admin`.
-- Scheduler con intervalos de 60–180 minutos en reposo y 5–15 minutos en ventana de jornada, usando `Europe/Madrid`.
+- Scheduler con intervalos de 60–180 minutos en reposo y 30–900 segundos en ventana de jornada, usando `Europe/Madrid`.
 - Cola administrativa PostgreSQL, claim mediante `FOR UPDATE SKIP LOCKED`, advisory locks, heartbeat y estados persistidos.
 - Reintentos, backoff, circuit breaker y clasificación estable de errores FAB.
 - Renovación automática de identidad FAB y sustitución atómica del fichero de credenciales.
@@ -49,7 +49,7 @@ Inventario mínimo para producción:
 | `FAB_AUTO_CREDENTIAL_REFRESH=true` | Ingestor | Configuración; permite renovación controlada |
 | `FAB_ACTIVE_SEASON` | Ingestor | Configuración operacional |
 | `FAB_SCHEDULER_IDLE_MINUTES` | Ingestor | Entre 60 y 180 |
-| `FAB_SCHEDULER_ACTIVE_MINUTES` | Ingestor | Entre 5 y 15 |
+| `FAB_SCHEDULER_ACTIVE_SECONDS` | Ingestor | Entre 30 y 900 |
 | `FAB_JOURNEY_WINDOWS` | Ingestor | Ventanas documentadas en `Europe/Madrid` |
 | `FAB_REQUEST_TIMEOUT_SECONDS` | Ingestor | Entre 1 y 30 |
 | `FAB_RETRY_ATTEMPTS` | Ingestor | Entre 1 y 5 |

@@ -33,7 +33,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     <aside className="side-nav">
       <Link className="wordmark" href="/app">Canastio</Link>
       <Navigation items={nav} />
-      {profile.adminGrants.length ? <Link className="admin-nav-link" href="/app/admin/ingestion">Administrar ingesta</Link> : null}
+      {profile.adminGrants.length ? <div className="admin-nav"><Link className="admin-nav-link" href="/app/admin/ingestion">Administrar ingesta</Link><Link className="admin-nav-link" href="/app/admin/correcciones">Correcciones</Link></div> : null}
       <div className="side-account"><AccountAvatar imageUrl={avatarUrl(profile?.avatarPath)} initial={profileInitial(profile?.username, profile?.displayName)} /><span>{profile?.username ? `@${profile.username}` : "Completa tu perfil"}</span></div>
       <LogoutControl />
     </aside>

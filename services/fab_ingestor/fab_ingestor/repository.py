@@ -81,8 +81,8 @@ class SportsRepository:
                 entity_type=entity_type,
                 external_id=external_id,
             )
-            columns = list(values)
             if entity_id is None:
+                columns = list(values)
                 entity_id = uuid4()
                 query = sql.SQL("INSERT INTO {} ({}) VALUES ({}, CURRENT_TIMESTAMP)").format(
                     sql.Identifier(table),
@@ -99,6 +99,21 @@ class SportsRepository:
                     entity_id=entity_id,
                 )
             else:
+                if entity_type in {"game", "player_game_stat"}:
+                    protected = self.connection.execute(
+                        """
+                        SELECT DISTINCT ON (field_name) field_name
+                        FROM sports_data_revisions
+                        WHERE target_id = %s AND source_type = 'MANUAL_OVERRIDE' AND status = 'APPLIED'
+                        ORDER BY field_name, applied_at DESC
+                        """,
+                        (entity_id,),
+                    ).fetchall()
+                    protected_fields = {row[0] for row in protected}
+                    values = {key: value for key, value in values.items() if key not in protected_fields}
+                    if not values:
+                        return entity_id
+                columns = list(values)
                 assignments = sql.SQL(", ").join(
                     sql.SQL("{} = {}").format(sql.Identifier(column), sql.Placeholder())
                     for column in columns

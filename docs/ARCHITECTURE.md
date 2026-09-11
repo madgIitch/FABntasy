@@ -512,3 +512,19 @@ Originado por el incidente documentado en docs/operations/INCIDENT_2026-09-10_FA
   - `.env.example`
   - `spec.json`
 
+<!-- harness:sprint-18-data-corrections-audit -->
+## sprint-18-data-corrections-audit · Sprint 18 - Data Corrections and Audit
+
+
+
+### Scope aprobado
+
+  - `apps/web/**`
+  - `services/fab_ingestor/**`
+  - `packages/domain/**`
+  - `prisma/**`
+  - `tests/**`
+  - `docs/**`
+  - `.env.example`
+  - `spec.json`
+

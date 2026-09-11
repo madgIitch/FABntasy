@@ -341,3 +341,12 @@ Contexto: se aprobó el spec `sprint-17-ingestion-admin` (Sprint 17 - Ingestion 
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-18-data-corrections-audit -->
+## 2026-09-11 · sprint-18-data-corrections-audit aprobado
+
+Contexto: se aprobó el spec `sprint-18-data-corrections-audit` (Sprint 18 - Data Corrections and Audit).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

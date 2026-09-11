@@ -1805,6 +1805,7 @@
         "Integrar heartbeat, logs, métricas y alertas sin secretos ni RAW.",
         "Probar graceful shutdown, caída de FAB/DB/lifecycle, recuperación, locks y presupuesto de conexiones.",
         "Ejecutar smoke real acotado de sync-all y jobs GAME, ROUND y COMPETITION, verificando idempotencia.",
+        "Ejecutar en PostgreSQL efímera la suite transaccional de correcciones: preview, apply, concurrencia, idempotencia, recomputación, reversión y protección ante UPSERT del ingestor.",
         "Documentar despliegue, rollback, reinicio, rotación, cola atascada, incidentes, costes y responsable operativo."
       ],
       "deliverable": "El ingestor permanece activo en producción fuera de Vercel, procesa ciclos y jobs con credenciales persistentes, alertas, rollback y operación documentada.",
@@ -1824,7 +1825,8 @@
         "AC13: Logs, métricas, CI y panel no contienen secretos, cookies, autorización ni payloads RAW.",
         "AC14: El pipeline despliega una imagen testeada por digest y permite rollback probado sin migraciones destructivas.",
         "AC15: Runbooks permiten a otro operador desplegar, diagnosticar, rotar secretos y recuperar el servicio.",
-        "AC16: Sprint 23 no comienza hasta disponer de evidencia fechada del smoke productivo y checklist operativo."
+        "AC16: La suite de correcciones pasa contra una PostgreSQL efímera creada desde cero y demuestra apply atómico, conflicto concurrente, idempotencia, reversión, reintento y protección de overrides, sin FAB ni credenciales reales y sin acceder a producción.",
+        "AC17: Sprint 23 no comienza hasta disponer de evidencia fechada del smoke productivo y checklist operativo."
       ],
       "scope": [
         "services/fab_ingestor/**",

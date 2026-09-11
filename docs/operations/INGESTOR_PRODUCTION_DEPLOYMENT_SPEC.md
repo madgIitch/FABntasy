@@ -81,6 +81,7 @@ Inventario mínimo para producción:
 15. Añadir CI/CD con build, análisis, publicación por digest, despliegue controlado y rollback a la imagen anterior.
 16. Crear runbooks de alta, despliegue, rollback, reinicio, rotación de secretos/FAB, cola atascada, caída de dependencias y restauración del volumen.
 17. Registrar costes y límites operativos, responsable, canal de alertas y frecuencia de revisión.
+18. Ejecutar la suite transaccional de correcciones sobre una PostgreSQL efímera con el esquema productivo: preview sin mutación, apply atómico, confirmaciones concurrentes, idempotencia, reversión compensatoria, fallo y reintento del recálculo y protección frente a un UPSERT posterior del ingestor.
 
 ## Criterios de aceptación
 
@@ -101,11 +102,13 @@ Inventario mínimo para producción:
 15. El pipeline despliega una imagen testeada por digest y permite rollback probado sin revertir migraciones destructivamente.
 16. Los runbooks permiten a otro operador desplegar, diagnosticar, rotar secretos y recuperar el servicio sin conocimiento tribal.
 17. La release candidate depende de este sprint y no puede comenzar hasta completar un smoke productivo documentado.
+18. La suite de correcciones pasa contra una PostgreSQL aislada creada desde cero y demuestra que ninguna prueba usa la base de producción, FAB real ni credenciales reales; conserva evidencia de migración, rollback transaccional, conflicto concurrente, reintento y limpieza del entorno efímero.
 
 ## Pruebas y evidencias requeridas
 
 - Tests unitarios Python y de configuración sin FAB real.
 - Test de integración PostgreSQL para locks, jobs, heartbeat y reconexión.
+- Test de integración PostgreSQL para el ciclo completo de revisiones deportivas: propuesta, aplicación, concurrencia, idempotencia, recomputación, reversión y protección de overrides frente al ingestor.
 - Build y escaneo de la imagen Docker.
 - Inspección automática de imagen y logs para detectar secretos.
 - Prueba de reinicio y redeploy conservando el volumen.

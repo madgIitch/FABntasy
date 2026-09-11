@@ -332,3 +332,12 @@ Decisiones registradas:
 - **tests:** Contratos de manifest/SW, autorización, preferencias, deduplicación, expiración, cutoff, payload y estados UI se prueban sin enviar Push real.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-17-ingestion-admin -->
+## 2026-09-11 · sprint-17-ingestion-admin aprobado
+
+Contexto: se aprobó el spec `sprint-17-ingestion-admin` (Sprint 17 - Ingestion Admin).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

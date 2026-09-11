@@ -497,3 +497,18 @@ Originado por el incidente documentado en docs/operations/INCIDENT_2026-09-10_FA
 - **edge_cases:** Cubre varias suscripciones por usuario, rotación de endpoint, logout, revocación del navegador, reinstalación, duplicados de jornada y cutoff vencido.
 - **ui_states:** Instalación y notificaciones se gestionan desde Perfil con copy específico por plataforma y sin bloquear la app cuando no hay soporte.
 
+<!-- harness:sprint-17-ingestion-admin -->
+## sprint-17-ingestion-admin · Sprint 17 - Ingestion Admin
+
+
+
+### Scope aprobado
+
+  - `apps/web/**`
+  - `services/fab_ingestor/**`
+  - `prisma/**`
+  - `tests/**`
+  - `docs/**`
+  - `.env.example`
+  - `spec.json`
+

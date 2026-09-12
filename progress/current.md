@@ -1,6 +1,6 @@
 # Sesión actual
 
-Feature: **sprint-18c-home-contextual-polish · Sprint 18C - Home Contextual Polish** — estado: `in_progress`.
+Feature: **sprint-18c-home-contextual-polish · Sprint 18C - Home Contextual Polish** — estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,8 +8,8 @@ Feature: **sprint-18c-home-contextual-polish · Sprint 18C - Home Contextual Pol
 
 ## Siguiente acción
 
-- Implementar máquina contextual, lenguaje de producto, frescura y QA responsive de Inicio.
+- Realizar smoke test humano de Inicio y cerrar con `node .harness/spec.mjs done sprint-18c-home-contextual-polish`.
 
 ## Último resultado
 
-Spec aprobado; Sprint 18B cerrado tras smoke test humano.
+Implementación y gates automáticos completados; pendiente revisión humana.

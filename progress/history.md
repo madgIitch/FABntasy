@@ -1,5 +1,8 @@
 # Historial de sesiones
 
+## 2026-09-12T11:40:00.000Z — #sprint-18c-home-contextual-polish Sprint 18C - Home Contextual Polish → review_pending
+- Implementación completada; gates automáticos aprobados y smoke test humano pendiente.
+
 
 ## 2026-09-04T21:56:32.075Z — #sprint-0-project-foundation Sprint 0 - Project Foundation → review_pending
 - 3 intento(s) · agente codex

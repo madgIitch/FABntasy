@@ -1,6 +1,6 @@
 # Sprint 18C — Pulido contextual de Inicio
 
-Estado: propuesta lista para aprobación (`spec_approved: false`). No autoriza implementación.
+Estado: implementado; pendiente de smoke test humano (`review_pending`, `spec_approved: true`).
 
 ## Objetivo
 

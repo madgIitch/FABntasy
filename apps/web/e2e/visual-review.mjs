@@ -48,9 +48,9 @@ await page.route('**/api/**',route=>{
  return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({data:[]})});
 });
 try{
- for(const width of [320,375,430,768,1440]){
+ for(const width of [320,375,400,430,768,1440]){
   await page.setViewportSize({width,height:900});
-  for(const name of ['register','onboarding','home','market','team','journey','league','profile','admin','corrections','sports','states']){
+  for(const name of ['register','onboarding','home','home-live','home-final','home-degraded','market','team','journey','league','profile','admin','corrections','sports','states']){
    await page.goto('http://127.0.0.1:4178/?case='+name);await page.locator('main').waitFor();await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:path.join(capture,`${name}-${width}.png`),fullPage:true});
    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);
    results.push({name,width,overflow});
@@ -95,6 +95,9 @@ try{
  if(reversalApplyCalls!==1)throw Error('Correction reversal was not previewed and applied');
  await page.emulateMedia({reducedMotion:'reduce'});await page.goto('http://127.0.0.1:4178/?case=home');
  const animation=await page.locator('main').evaluate(el=>getComputedStyle(el).animationName);if(animation!=='none')throw Error('Reduced motion failed');
+ await page.setViewportSize({width:400,height:900});await page.goto('http://127.0.0.1:4178/?case=home-degraded');await page.evaluate(()=>document.body.style.zoom='2');
+ if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1))throw Error('Home overflows at 200% zoom');
+ await page.screenshot({path:path.join(capture,'home-degraded-zoom200.png'),fullPage:true});
  await page.setViewportSize({width:768,height:900});await page.goto('http://127.0.0.1:4178/?case=onboarding');await page.evaluate(()=>document.body.style.zoom='2');await page.screenshot({path:path.join(capture,'onboarding-zoom200.png'),fullPage:true});
  fs.writeFileSync(path.join(capture,'results.json'),JSON.stringify({results,errors,smoke:'username required/validity/focus, onboarding navigation gate, five destinations/current section, market dialog/Escape/focus restoration/filter, team tabs, profile dialog, league leave cancellation, correction preview/cancel/conflict/reversal, reduced motion, zoom'},null,2));
  console.log(JSON.stringify({overflows:results.filter(r=>r.overflow),errors,captures:results.length}));

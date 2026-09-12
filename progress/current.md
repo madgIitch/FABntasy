@@ -1,6 +1,6 @@
 # Sesión actual
 
-Feature: **sprint-20-performance-reliability · Sprint 20 - Performance and Reliability** — estado: `review_pending`.
+Feature: **sprint-20-performance-reliability · Sprint 20 - Performance and Reliability** — estado: `done`.
 
 - agente: codex
 - rama: `main`
@@ -8,8 +8,8 @@ Feature: **sprint-20-performance-reliability · Sprint 20 - Performance and Reli
 
 ## Siguiente acción
 
-- Realizar el smoke test humano y cerrar el Sprint 20 con `node .harness/spec.mjs done sprint-20-performance-reliability`.
+- Preparar y aprobar la especificación del Sprint 21 antes de iniciar su implementación.
 
 ## Último resultado
 
-Gate de 20 clientes aprobado sobre PostgreSQL temporal con fixture realistic: cero errores; p95 frío máximo 181 ms, caliente máximo 102 ms, publicación 584 ms e interactivo durante publicación máximo 119 ms.
+Sprint 20 cerrado tras aprobar el gate de 20 clientes y comprobar el despliegue europeo en Vercel. El siguiente elemento de la cola es Sprint 21 - Accessibility and Responsive Polish.

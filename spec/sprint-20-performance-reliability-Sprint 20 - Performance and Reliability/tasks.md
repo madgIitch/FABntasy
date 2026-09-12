@@ -16,5 +16,5 @@ Checklist de implementación. El agente marca [x] al completar; los gates verifi
 - [x] (T12) Cachés y optimizaciones pueden desactivarse sin pérdida de datos ni cambio del contrato público; las migraciones son aditivas y existe ruta documentada de rollback.  ↔ R12
 - [x] (T13) La UI de home, mercado y ranking conserva estados de carga, error y reintento y, durante una recomputación, identifica la última revisión válida y su timestamp sin presentarla como nueva publicación.  ↔ R13
 - [x] (T14) Los tests de rendimiento usan únicamente una base de integración marcada y fixtures sintéticos; no llaman a FAB, Supabase, Web Push ni servicios externos reales.  ↔ R14
-- [ ] (T15) Typecheck, lint, tests, pytest, ruff, Prisma validate, diff-scope y el gate de rendimiento reproducible terminan con código cero.  ↔ R15
+- [x] (T15) Typecheck, lint, tests, pytest, ruff, Prisma validate, diff-scope y el gate de rendimiento reproducible terminan con código cero.  ↔ R15
 - [x] Tests que cubran los criterios de aceptación

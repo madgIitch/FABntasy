@@ -1,0 +1,409 @@
+{
+  "schemaVersion": "canastio-performance-report.v1",
+  "recordedAt": "2026-09-12T18:31:04.807Z",
+  "environment": {
+    "node": "v24.19.0",
+    "platform": "win32",
+    "ci": false,
+    "database": "integration-marked"
+  },
+  "dataset": {
+    "profile": "realistic",
+    "realTeams": 12,
+    "players": 144,
+    "managers": 20
+  },
+  "concurrency": 20,
+  "samples": 40,
+  "cold": [
+    {
+      "name": "home",
+      "samples": 40,
+      "concurrency": 20,
+      "p50Ms": 123.12350000000004,
+      "p95Ms": 180.8764,
+      "errors": 0,
+      "errorTypes": []
+    },
+    {
+      "name": "market",
+      "samples": 40,
+      "concurrency": 20,
+      "p50Ms": 109.16899999999987,
+      "p95Ms": 170.8834999999999,
+      "errors": 0,
+      "errorTypes": []
+    },
+    {
+      "name": "ranking",
+      "samples": 40,
+      "concurrency": 20,
+      "p50Ms": 46.16720000000009,
+      "p95Ms": 51.43220000000019,
+      "errors": 0,
+      "errorTypes": []
+    }
+  ],
+  "warm": [
+    {
+      "name": "home",
+      "samples": 40,
+      "concurrency": 20,
+      "p50Ms": 17.974099999999908,
+      "p95Ms": 74.2156,
+      "errors": 0,
+      "errorTypes": []
+    },
+    {
+      "name": "market",
+      "samples": 40,
+      "concurrency": 20,
+      "p50Ms": 58.52710000000002,
+      "p95Ms": 101.79110000000014,
+      "errors": 0,
+      "errorTypes": []
+    },
+    {
+      "name": "ranking",
+      "samples": 40,
+      "concurrency": 20,
+      "p50Ms": 20.751400000000103,
+      "p95Ms": 81.42990000000009,
+      "errors": 0,
+      "errorTypes": []
+    }
+  ],
+  "publication": {
+    "durationMs": 583.8106,
+    "result": {
+      "roundNumber": 1,
+      "teams": 20,
+      "published": 20,
+      "provisional": 0
+    },
+    "interactive": [
+      {
+        "name": "home",
+        "samples": 40,
+        "concurrency": 20,
+        "p50Ms": 22.319600000000037,
+        "p95Ms": 76.94290000000001,
+        "errors": 0,
+        "errorTypes": []
+      },
+      {
+        "name": "market",
+        "samples": 40,
+        "concurrency": 20,
+        "p50Ms": 67.8592000000001,
+        "p95Ms": 118.79060000000004,
+        "errors": 0,
+        "errorTypes": []
+      },
+      {
+        "name": "ranking",
+        "samples": 40,
+        "concurrency": 20,
+        "p50Ms": 23.393299999999954,
+        "p95Ms": 86.51390000000015,
+        "errors": 0,
+        "errorTypes": []
+      }
+    ]
+  },
+  "explainPlans": {
+    "home": [
+      {
+        "QUERY PLAN": [
+          {
+            "Plan": {
+              "Node Type": "Limit",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 0.14,
+              "Total Cost": 8.16,
+              "Plan Rows": 1,
+              "Plan Width": 472,
+              "Actual Startup Time": 0.042,
+              "Actual Total Time": 0.058,
+              "Actual Rows": 20,
+              "Actual Loops": 1,
+              "Shared Hit Blocks": 5,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Plans": [
+                {
+                  "Node Type": "Index Scan",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Scan Direction": "Backward",
+                  "Index Name": "fantasy_round_scores_league_idx",
+                  "Relation Name": "fantasy_round_scores",
+                  "Alias": "fantasy_round_scores",
+                  "Startup Cost": 0.14,
+                  "Total Cost": 8.16,
+                  "Plan Rows": 1,
+                  "Plan Width": 472,
+                  "Actual Startup Time": 0.041,
+                  "Actual Total Time": 0.055,
+                  "Actual Rows": 20,
+                  "Actual Loops": 1,
+                  "Index Cond": "((league_id = '0cede139-e0a6-36a4-b0ad-743ed123609b'::uuid) AND (superseded_at IS NULL))",
+                  "Rows Removed by Index Recheck": 0,
+                  "Shared Hit Blocks": 5,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0
+                }
+              ]
+            },
+            "Planning": {
+              "Shared Hit Blocks": 212,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning Time": 0.643,
+            "Triggers": [],
+            "Execution Time": 0.106
+          }
+        ]
+      }
+    ],
+    "market": [
+      {
+        "QUERY PLAN": [
+          {
+            "Plan": {
+              "Node Type": "Seq Scan",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Relation Name": "fantasy_roster_slots",
+              "Alias": "fantasy_roster_slots",
+              "Startup Cost": 0,
+              "Total Cost": 3.75,
+              "Plan Rows": 140,
+              "Plan Width": 80,
+              "Actual Startup Time": 0.018,
+              "Actual Total Time": 0.046,
+              "Actual Rows": 140,
+              "Actual Loops": 1,
+              "Filter": "(league_id = '0cede139-e0a6-36a4-b0ad-743ed123609b'::uuid)",
+              "Rows Removed by Filter": 0,
+              "Shared Hit Blocks": 2,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning": {
+              "Shared Hit Blocks": 96,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning Time": 0.367,
+            "Triggers": [],
+            "Execution Time": 0.062
+          }
+        ]
+      }
+    ],
+    "ranking": [
+      {
+        "QUERY PLAN": [
+          {
+            "Plan": {
+              "Node Type": "Sort",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 2.68,
+              "Total Cost": 2.73,
+              "Plan Rows": 20,
+              "Plan Width": 107,
+              "Actual Startup Time": 0.085,
+              "Actual Total Time": 0.087,
+              "Actual Rows": 20,
+              "Actual Loops": 1,
+              "Sort Key": [
+                "league_position"
+              ],
+              "Sort Method": "quicksort",
+              "Sort Space Used": 27,
+              "Sort Space Type": "Memory",
+              "Shared Hit Blocks": 5,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Plans": [
+                {
+                  "Node Type": "Seq Scan",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Relation Name": "fantasy_team_totals",
+                  "Alias": "fantasy_team_totals",
+                  "Startup Cost": 0,
+                  "Total Cost": 2.25,
+                  "Plan Rows": 20,
+                  "Plan Width": 107,
+                  "Actual Startup Time": 0.008,
+                  "Actual Total Time": 0.023,
+                  "Actual Rows": 20,
+                  "Actual Loops": 1,
+                  "Filter": "(league_id = '0cede139-e0a6-36a4-b0ad-743ed123609b'::uuid)",
+                  "Rows Removed by Filter": 0,
+                  "Shared Hit Blocks": 2,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0
+                }
+              ]
+            },
+            "Planning": {
+              "Shared Hit Blocks": 97,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning Time": 0.352,
+            "Triggers": [],
+            "Execution Time": 0.112
+          }
+        ]
+      }
+    ],
+    "publication": [
+      {
+        "QUERY PLAN": [
+          {
+            "Plan": {
+              "Node Type": "Aggregate",
+              "Strategy": "Sorted",
+              "Partial Mode": "Simple",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 0.14,
+              "Total Cost": 8.18,
+              "Plan Rows": 1,
+              "Plan Width": 48,
+              "Actual Startup Time": 0.026,
+              "Actual Total Time": 0.057,
+              "Actual Rows": 20,
+              "Actual Loops": 1,
+              "Group Key": [
+                "fantasy_team_id"
+              ],
+              "Shared Hit Blocks": 17,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Plans": [
+                {
+                  "Node Type": "Index Scan",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Scan Direction": "Forward",
+                  "Index Name": "fantasy_round_scores_current_team_round_idx",
+                  "Relation Name": "fantasy_round_scores",
+                  "Alias": "fantasy_round_scores",
+                  "Startup Cost": 0.14,
+                  "Total Cost": 8.16,
+                  "Plan Rows": 1,
+                  "Plan Width": 36,
+                  "Actual Startup Time": 0.014,
+                  "Actual Total Time": 0.032,
+                  "Actual Rows": 20,
+                  "Actual Loops": 1,
+                  "Filter": "((competition_season_id = 'da4d1c11-ad3a-eda5-7e18-e8cf7fa7960f'::uuid) AND (status = 'PUBLISHED'::text))",
+                  "Rows Removed by Filter": 0,
+                  "Shared Hit Blocks": 17,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0
+                }
+              ]
+            },
+            "Planning": {
+              "Shared Hit Blocks": 13,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning Time": 0.213,
+            "Triggers": [],
+            "Execution Time": 0.077
+          }
+        ]
+      }
+    ]
+  }
+}

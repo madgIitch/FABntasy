@@ -1,5 +1,11 @@
 # Historial de sesiones
 
+## 2026-09-12T20:31:05.000+02:00 — #sprint-20-performance-reliability → review_pending
+- Gate realistic ejecutado con 20 clientes concurrentes y 40 muestras por operación sobre PostgreSQL temporal aislado.
+- P95 frío: home 180,88 ms; mercado 170,88 ms; ranking 51,43 ms. P95 caliente: 74,22/101,79/81,43 ms.
+- Publicación completa: 583,81 ms; p95 interactivo máximo durante publicación: 118,79 ms; cero errores.
+- Contenedor temporal eliminado tras guardar `progress/performance-report.json`.
+
 ## 2026-09-12T17:01:00.000+02:00 — #sprint-20-performance-reliability navegación interna optimizada
 - La sesión Supabase se deduplica por request entre layout, páginas y servicios HTTP.
 - Las pestañas principales se precargan y señalan de inmediato el destino pendiente; mercado solapa sus tres cargas pesadas.

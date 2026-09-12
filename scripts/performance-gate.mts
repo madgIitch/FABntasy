@@ -5,13 +5,19 @@ import { assertTestDatabase } from "./test-data-lib.mjs";
 
 const databaseUrl = assertTestDatabase();
 process.env.DATABASE_URL = databaseUrl;
-const [{ db }, { getHomeDashboard }, { getMarketContext }, { getRanking, recomputeRoundRankings }, { clearPerformanceCache }] = await Promise.all([
+const loadedModules = await Promise.all([
   import("../apps/web/src/server/db"),
   import("../apps/web/src/server/home-dashboard"),
   import("../apps/web/src/server/fantasy-market"),
   import("../apps/web/src/server/round-rankings"),
   import("../apps/web/src/server/performance"),
 ]);
+const interop = <T extends object>(module: T) => ((module as T & { default?: T }).default ?? module);
+const { db } = interop(loadedModules[0]);
+const { getHomeDashboard } = interop(loadedModules[1]);
+const { getMarketContext } = interop(loadedModules[2]);
+const { getRanking, recomputeRoundRankings } = interop(loadedModules[3]);
+const { clearPerformanceCache } = interop(loadedModules[4]);
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const concurrency = 20;
@@ -19,7 +25,7 @@ const samples = Number(process.env.CANASTIO_PERF_SAMPLES ?? 40);
 const percentile = (values: number[], p: number) => values.slice().sort((a, b) => a - b)[Math.max(0, Math.ceil(values.length * p) - 1)] ?? 0;
 type Result = { name: string; samples: number; concurrency: number; p50Ms: number; p95Ms: number; errors: number; errorTypes: string[] };
 
-const league = await db.league.findFirst({ where: { name: { startsWith: "Liga Sintética perf-realistic" } }, include: { ownerProfile: true }, orderBy: { createdAt: "desc" } });
+const league = await db.fantasyLeague.findFirst({ where: { name: { startsWith: "Liga Sintética perf-realistic" } }, include: { ownerProfile: true }, orderBy: { createdAt: "desc" } });
 if (!league) throw new Error("fixture realistic perf-realistic no encontrado; ejecuta test-data cycle primero");
 const round = await db.game.findFirst({ where: { competitionSeasonId: league.competitionSeasonId }, orderBy: { roundNumber: "asc" }, select: { roundNumber: true } });
 if (!round?.roundNumber) throw new Error("fixture realistic sin jornada");

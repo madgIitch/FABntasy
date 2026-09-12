@@ -1,6 +1,6 @@
 # Sesión actual
 
-Feature: **sprint-20-performance-reliability · Sprint 20 - Performance and Reliability** — estado: `in_progress`.
+Feature: **sprint-20-performance-reliability · Sprint 20 - Performance and Reliability** — estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,8 +8,8 @@ Feature: **sprint-20-performance-reliability · Sprint 20 - Performance and Reli
 
 ## Siguiente acción
 
-- Ejecutar el gate `corepack pnpm test:performance` contra PostgreSQL de integración con `CANASTIO_TEST_DATABASE=1` y `TEST_DATABASE_URL`; después marcar T15 y pasar a `review_pending`.
+- Realizar el smoke test humano y cerrar el Sprint 20 con `node .harness/spec.mjs done sprint-20-performance-reliability`.
 
 ## Último resultado
 
-Implementación y gates locales completados. La navegación interna ahora precarga destinos, muestra transición inmediata, deduplica la validación de sesión por request y paraleliza la carga del mercado. El gate reproducible sigue pendiente porque este entorno no tiene `TEST_DATABASE_URL` ni Docker activo.
+Gate de 20 clientes aprobado sobre PostgreSQL temporal con fixture realistic: cero errores; p95 frío máximo 181 ms, caliente máximo 102 ms, publicación 584 ms e interactivo durante publicación máximo 119 ms.

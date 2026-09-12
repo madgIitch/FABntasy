@@ -2,10 +2,11 @@
 
 ## Resultado
 
-- 90 capturas generadas: 15 estados/superficies × 6 anchos (320, 375, 400, 430, 768 y 1440 px).
+- 105 capturas generadas: 15 estados/superficies × 7 anchos (320, 375, 400, 430, 440, 768 y 1440 px).
 - Inicio se verificó en estados ordinario, live, final reciente y degradado con mercado vacío, error aislado y nombres largos.
 - No se detectaron errores de página ni overflow horizontal.
 - El caso degradado de Inicio tampoco presenta overflow con zoom del 200 %.
+- La navegación inferior se comprueba visible, anclada a los cuatro bordes útiles del viewport y por encima del contenido en cada ancho móvil.
 - `prefers-reduced-motion` elimina la animación de entrada.
 - Evidencia local generada en `.local/14e-qa/captures/`.
 

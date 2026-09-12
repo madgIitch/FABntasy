@@ -38,6 +38,6 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       <LogoutControl />
     </aside>
     <div className="workspace"><div className="mobile-account"><Link className="wordmark" href="/app">Canastio</Link><AccountAvatar imageUrl={avatarUrl(profile?.avatarPath)} initial={profileInitial(profile?.username, profile?.displayName)} /></div>{children}</div>
-    <Navigation items={nav} mobile />
+    <div className="mobile-navigation-shell"><Navigation items={nav} mobile /></div>
   </div>;
 }

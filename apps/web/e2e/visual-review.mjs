@@ -48,10 +48,11 @@ await page.route('**/api/**',route=>{
  return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({data:[]})});
 });
 try{
- for(const width of [320,375,400,430,768,1440]){
+ for(const width of [320,375,400,430,440,768,1440]){
   await page.setViewportSize({width,height:900});
   for(const name of ['register','onboarding','home','home-live','home-final','home-degraded','market','team','journey','league','profile','admin','corrections','sports','states']){
    await page.goto('http://127.0.0.1:4178/?case='+name);await page.locator('main').waitFor();await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:path.join(capture,`${name}-${width}.png`),fullPage:true});
+   if(name==='home'&&width<=720){const nav=page.locator('.bottom-nav');if(!await nav.isVisible())throw Error(`Mobile navigation hidden at ${width}px`);const pinned=await nav.evaluate(el=>{const rect=el.parentElement.getBoundingClientRect();return Math.abs(rect.bottom-innerHeight)<2&&rect.left===0&&Math.abs(rect.right-innerWidth)<2});if(!pinned)throw Error(`Mobile navigation is not pinned at ${width}px`);}
    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);
    results.push({name,width,overflow});
   }

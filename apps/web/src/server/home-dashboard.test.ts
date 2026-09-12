@@ -44,8 +44,11 @@ describe("home dashboard contract",()=>{
 
   it("keeps the mobile navigation fixed and visible through 720px",()=>{
     const css=readFileSync(resolve(process.cwd(),"app/globals.css"),"utf8").replace(/\s+/g,"");
+    const layout=readFileSync(resolve(process.cwd(),"app/app/layout.tsx"),"utf8");
     expect(css).toContain("@media(max-width:720px)");
-    expect(css).toContain(".bottom-nav{position:fixed;z-index:50;right:0;bottom:0;left:0;width:100%;display:grid");
+    expect(css).toContain(".mobile-navigation-shell{position:fixed;z-index:1000;right:0;bottom:0;left:0;display:block;width:100%");
+    expect(css).toContain(".bottom-nav{display:grid;width:100%");
+    expect(layout).toContain('className="mobile-navigation-shell"');
   });
 
   it("keeps already-started live games in the home query",()=>{

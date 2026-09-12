@@ -1,6 +1,6 @@
 # Sesión actual
 
-Feature: **sprint-20-performance-reliability · Sprint 20 - Performance and Reliability** — estado: `done`.
+Feature: **sprint-21-accessibility-responsive-polish · Sprint 21 - Accessibility and Responsive Polish** — estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,8 +8,10 @@ Feature: **sprint-20-performance-reliability · Sprint 20 - Performance and Reli
 
 ## Siguiente acción
 
-- Preparar y aprobar la especificación del Sprint 21 antes de iniciar su implementación.
+- Revisar el diff del commit `feat(Sprint 21 - Accessibility and Responsive Polish)` y cerrar con `node .harness/spec.mjs done sprint-21-accessibility-responsive-polish` (o `git revert` para descartarlo).
 
 ## Último resultado
 
-Sprint 20 cerrado tras aprobar el gate de 20 clientes y comprobar el despliegue europeo en Vercel. El siguiente elemento de la cola es Sprint 21 - Accessibility and Responsive Polish.
+| intento | resultado | gate fallido | tts(s) | coste |
+|--:|--|--|--:|--:|
+| 1 | OK | — | 582.3 | — |

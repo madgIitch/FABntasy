@@ -150,6 +150,28 @@ def test_player_totals_must_match_authoritative_scoreboard():
     assert repository.final is False
 
 
+def test_fab_totals_rows_are_excluded_before_validation_and_persistence():
+    payload = json.loads(json.dumps(FIXTURE))
+    for key in ("estadisticasequipolocal", "estadisticasequipovisitante"):
+        player_rows = payload["estadisticas"][key]
+        totals = json.loads(json.dumps(player_rows[0]))
+        totals.update(
+            nombre="  TOTALES  ",
+            componente_id="aggregate-totals",
+            dorsal=None,
+            puntos=sum(int(row.get("puntos") or 0) for row in player_rows),
+        )
+        player_rows.append(totals)
+
+    repository = Repository()
+    result = sync_game_stats(Client(payload), repository, external_game_id="opaque-game")
+
+    assert result.players_created == 2
+    assert len(repository.players) == len(repository.stats) == 2
+    assert all(player["display_name"].strip().casefold() != "totales" for player in repository.players.values())
+    assert repository.final is True
+
+
 def test_live_score_is_persisted_without_player_rows():
     payload = {
         "resultado": "correcto",

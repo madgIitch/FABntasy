@@ -11,6 +11,7 @@
 - [Administración de ingesta](INGESTION_ADMIN.md) — rol, cola, worker, RAW redactado y operación del panel.
 - [Ingesta de partidos en directo](LIVE_GAME_INGESTION.md) — reconciliación de marcador, parciales y estadísticas individuales provisionales.
 - [Correcciones de datos](DATA_CORRECTIONS.md) — revisiones inmutables, diff, recálculo dirigido y reversión auditada.
+- [Referencias reales de equilibrado](BALANCING_BASELINES.md) — instantáneas de partidos reales y señales empíricas para calibrar reglas futuras.
 - [Spec de despliegue productivo del ingestor](operations/INGESTOR_PRODUCTION_DEPLOYMENT_SPEC.md) — infraestructura, secretos, persistencia, CI/CD, observabilidad y runbooks pendientes para Sprint 22B.
 
 - `ARCHITECTURE.md` — visión general, componentes, flujo de datos.

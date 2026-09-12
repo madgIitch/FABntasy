@@ -16,7 +16,7 @@ En Copa Delegación 2026 se confirmó que `buscarPartido` puede devolver `Estado
 
 Si FAB publica jugadores durante el partido, se actualizan las filas presentes como `partial`. Los campos ausentes permanecen sin modificar y una desaparición temporal no elimina al jugador. En directo no se exige que ambos equipos estén completos ni que la suma de puntos coincida con el marcador.
 
-Al finalizar se recupera el contrato estricto: ambos equipos deben tener filas, la suma de puntos debe coincidir con el tanteo y solo entonces se eliminan ausencias, se marca `stats_final` y la jornada puede publicarse. No se dividen ni corrigen cifras incoherentes por inferencia.
+Al finalizar se recupera el contrato estricto: ambos equipos deben tener filas, la suma de puntos debe coincidir con el tanteo y solo entonces se eliminan ausencias, se marca `stats_final` y la jornada puede publicarse. La fila agregada `TOTALES` que FAB incluye junto a los jugadores se excluye antes de validar o persistir; no representa una actuación individual. No se dividen ni corrigen cifras incoherentes por inferencia.
 
 Las jornadas con estadísticas parciales pueden recalcular scores y resultados provisionales. Precios y publicación definitiva continúan bloqueados hasta que toda la cohorte esté finalizada y validada.
 

@@ -46,4 +46,15 @@ describe("home dashboard contract",()=>{
     const source=readFileSync(resolve(process.cwd(),"src/server/home-dashboard.ts"),"utf8");
     expect(source).toContain('OR:[{status:{in:liveStatuses}},{scheduledAt:{gte:now}}]');
   });
+
+  it("shows the four latest finished games for roster teams with their scores",()=>{
+    const source=readFileSync(resolve(process.cwd(),"src/server/home-dashboard.ts"),"utf8");
+    const component=readFileSync(resolve(process.cwd(),"src/components/home-dashboard.tsx"),"utf8");
+    expect(source).toContain('status:"finished"');
+    expect(source).toContain('orderBy:[{scheduledAt:"desc"},{id:"desc"}],take:4');
+    expect(source).toContain('homeScore:game.homeScore,awayScore:game.awayScore');
+    expect(component).toContain('title="Partidos jugados"');
+    expect(component).toContain('game.homeScore??"—"');
+    expect(component).toContain('game.awayScore??"—"');
+  });
 });

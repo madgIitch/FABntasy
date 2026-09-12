@@ -101,13 +101,13 @@ def _sync_game_stats_unlocked(
     sides = (
         (
             "home",
-            _stats_rows(stats, "estadisticasequipolocal", "estadisticasEquipoLocal"),
+            _player_rows(stats, "estadisticasequipolocal", "estadisticasEquipoLocal"),
             context["home_registration_id"],
             _text(game_payload.get("idlocal")),
         ),
         (
             "away",
-            _stats_rows(stats, "estadisticasequipovisitante", "estadisticasEquipoVisitante"),
+            _player_rows(stats, "estadisticasequipovisitante", "estadisticasEquipoVisitante"),
             context["away_registration_id"],
             _text(game_payload.get("idvisitante")),
         ),
@@ -246,6 +246,18 @@ def _stats_rows(stats: dict[str, Any], *keys: str) -> list[Any]:
         if isinstance(value, list):
             return value
     return []
+
+
+def _player_rows(stats: dict[str, Any], *keys: str) -> list[Any]:
+    """Return individual performances, excluding FAB's aggregate totals row."""
+    return [
+        row
+        for row in _stats_rows(stats, *keys)
+        if not (
+            isinstance(row, dict)
+            and (_text(row.get("nombre")) or "").casefold() == "totales"
+        )
+    ]
 
 
 def _optional_int(value: Any, field: str) -> int | None:

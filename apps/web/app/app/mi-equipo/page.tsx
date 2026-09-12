@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation";
 import { FantasyTeamManager } from "../../../src/components/fantasy-team-manager";
-import { createClient } from "../../../src/lib/supabase/server";
+import { getServerUser } from "../../../src/lib/supabase/server";
 import { db } from "../../../src/server/db";
 import { FantasyTeamServiceError, getFantasyTeam } from "../../../src/server/fantasy-team";
 
 export default async function MyTeamPage() {
-  const { data: { user } } = await (await createClient()).auth.getUser();
+  const user = await getServerUser();
   if (!user) redirect("/login");
 
   const profile = await db.userProfile.findUnique({ where: { authUserId: user.id }, select: { id: true } });

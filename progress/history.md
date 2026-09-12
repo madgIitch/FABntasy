@@ -1,5 +1,10 @@
 # Historial de sesiones
 
+## 2026-09-12T17:01:00.000+02:00 — #sprint-20-performance-reliability navegación interna optimizada
+- La sesión Supabase se deduplica por request entre layout, páginas y servicios HTTP.
+- Las pestañas principales se precargan y señalan de inmediato el destino pendiente; mercado solapa sus tres cargas pesadas.
+- Typecheck, lint y 111 tests web pasan.
+
 ## 2026-09-12T16:53:00.000+02:00 — #sprint-20-performance-reliability Sprint 20 - Performance and Reliability → in_progress
 - Caché privada e invalidación, índices, métricas, UI de revisión válida y gate realista implementados.
 - Typecheck, lint, 111 tests web, 71 tests Python, ruff, Prisma validate, seed manifest y diff-check pasan.

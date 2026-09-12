@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { createClient } from "../../src/lib/supabase/server";
+import { getServerUser } from "../../src/lib/supabase/server";
 import { db } from "../../src/server/db";
 import { avatarUrl, profileInitial } from "../../src/lib/avatar";
 import { AccountAvatar, LogoutControl } from "./account-controls";
@@ -18,7 +18,7 @@ const nav = [
 ];
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
-  const { data: { user } } = await (await createClient()).auth.getUser();
+  const user = await getServerUser();
   if (!user) redirect("/login");
   let profile = await db.userProfile.findUnique({ where: { authUserId: user.id }, select: { username: true, displayName: true, avatarPath: true, adminGrants: { where: { role: "INGESTION_ADMIN", revokedAt: null }, take: 1, select: { id: true } }, leagueMemberships: { where: { status: "ACTIVE", league: { status: "ACTIVE", legacyTeamId: null } }, take: 1, select: { id: true } } } });
   if (profile && !profile.username) {

@@ -22,7 +22,8 @@ describe("home dashboard contract",()=>{
   it("keeps identity server-side and isolates optional section failures",()=>{
     const page=readFileSync(new URL("../../app/app/page.tsx",import.meta.url),"utf8");
     const service=readFileSync(new URL("./home-dashboard.ts",import.meta.url),"utf8");
-    expect(page).toContain("auth.getUser()");
+    expect(page).toContain("getServerUser()");
+    expect(readFileSync(new URL("../lib/supabase/server.ts",import.meta.url),"utf8")).toContain("auth.getUser()");
     expect(page).toContain("getHomeDashboard(user.id, league)");
     expect(service).toContain("LEAGUE_NOT_AVAILABLE");
     expect(service).toContain("[home-dashboard] section_failed");

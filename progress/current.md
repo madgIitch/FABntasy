@@ -12,4 +12,4 @@ Feature: **sprint-20-performance-reliability · Sprint 20 - Performance and Reli
 
 ## Último resultado
 
-Implementación y gates locales completados. El gate reproducible usa servicios reales y queda pendiente porque este entorno no tiene `TEST_DATABASE_URL` ni Docker activo.
+Implementación y gates locales completados. La navegación interna ahora precarga destinos, muestra transición inmediata, deduplica la validación de sesión por request y paraleliza la carga del mercado. El gate reproducible sigue pendiente porque este entorno no tiene `TEST_DATABASE_URL` ni Docker activo.

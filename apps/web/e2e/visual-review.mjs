@@ -26,7 +26,7 @@ await esbuild.build({absWorkingDir:webRoot,stdin:{contents:'import "./e2e/visual
  build.onLoad({filter:/.*/,namespace:'mock'},a=>{
   const modules={
    'next/link':'import React from "react"; export default function Link({children,...p}){return React.createElement("a",p,children)}',
-   'next/navigation':'export const usePathname=()=>({home:"/app",market:"/app/mercado",team:"/app/mi-equipo",journey:"/app/jornada",league:"/app/ligas",admin:"/app/admin/ingestion"}[new URLSearchParams(location.search).get("case")]||"/app/perfil"); export const useRouter=()=>({refresh(){}});export const redirect=()=>{};export const notFound=()=>{};',
+   'next/navigation':'export const usePathname=()=>({home:"/app",market:"/app/mercado",team:"/app/mi-equipo",journey:"/app/jornada",league:"/app/ligas",admin:"/app/admin/ingestion"}[new URLSearchParams(location.search).get("case")]||"/app/perfil"); export const useRouter=()=>({refresh(){},prefetch(){}});export const redirect=()=>{};export const notFound=()=>{};',
    actions:'export async function logout(){document.body.dataset.loggedOut="true";}',
    auth:'export async function createClient(){return {auth:{getUser:async()=>({data:{user:{id:"demo",email:"demo@example.test",email_confirmed_at:"2026-09-07"}}})}}}',
    profile:'export async function getUserProfileOverview(){return {username:"pepe_rodriguez",displayName:"Pepe Rodríguez Fernández",avatarPath:null,leagueCount:2,totalPoints:124.5,leagues:[{id:"demo",name:"Los del viernes",teamName:"Sevilla Supersonics",hasTeam:true,memberCount:12}]}}',
@@ -37,7 +37,7 @@ await esbuild.build({absWorkingDir:webRoot,stdin:{contents:'import "./e2e/visual
  });
 }}]});
 const css=style.join('\n');
-const server=http.createServer((r,res)=>{const url=new URL(r.url,'http://localhost');if(url.pathname==='/app.js'){res.setHeader('content-type','text/javascript');res.end(fs.readFileSync(path.join(out,'app.js')));}else if(url.pathname.startsWith('/fonts/')){res.end(fs.readFileSync(path.join(webRoot,'public',url.pathname)));}else{res.setHeader('content-type','text/html');res.end('<!doctype html><html lang="es"><meta name="viewport" content="width=device-width, initial-scale=1"><style>'+css+'</style><div id="root"></div><script src="/app.js"></script></html>');}});
+const server=http.createServer((r,res)=>{const url=new URL(r.url,'http://localhost');if(url.pathname==='/app.js'){res.setHeader('content-type','text/javascript');res.end(fs.readFileSync(path.join(out,'app.js')));}else if(url.pathname.startsWith('/fonts/')){res.end(fs.readFileSync(path.join(webRoot,'public',url.pathname)));}else{res.setHeader('content-type','text/html');res.end('<!doctype html><html lang="es"><head><title>Canastio · revisión visual</title><meta name="viewport" content="width=device-width, initial-scale=1"><style>'+css+'</style></head><body><div id="root"></div><script src="/app.js"></script></body></html>');}});
 await new Promise(resolve=>server.listen(4178,'127.0.0.1',resolve));
 const edge='C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
 const browser=await chromium.launch({...(fs.existsSync(edge)?{executablePath:edge}:{}),headless:true});
@@ -58,14 +58,14 @@ await page.route('**/api/**',route=>{
 try{
  for(const width of [320,375,768,1024,1440]){
   await page.setViewportSize({width,height:900});
-  for(const name of ['register','onboarding','home','home-live','home-final','home-degraded','market','team','journey','league','profile','admin','corrections','sports','states']){
-   await page.goto('http://127.0.0.1:4178/?case='+name);await page.locator('main').waitFor();await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:path.join(capture,`${name}-${width}.png`),fullPage:true});
+  for(const name of ['register','onboarding','home','home-live','home-final','home-degraded','market','team','journey','league','profile','preferences','admin','corrections','sports','states']){
+   await page.goto('http://127.0.0.1:4178/?case='+name);await page.locator('main').waitFor({timeout:30000}).catch(error=>{throw new Error(`${name} failed to render at ${width}px: ${error.message}; page errors: ${errors.join(' | ')}`)});await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:path.join(capture,`${name}-${width}.png`),fullPage:true});
    if(name==='home'&&width<=720){const nav=page.locator('.bottom-nav');if(!await nav.isVisible())throw Error(`Mobile navigation hidden at ${width}px`);const pinned=await nav.evaluate(el=>{const rect=el.parentElement.getBoundingClientRect();return Math.abs(rect.bottom-innerHeight)<2&&rect.left===0&&Math.abs(rect.right-innerWidth)<2});if(!pinned)throw Error(`Mobile navigation is not pinned at ${width}px`);}
    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);
    results.push({name,width,overflow});
    if(overflow)throw Error(`${name} has horizontal overflow at ${width}px`);
    await page.addScriptTag({content:axeSource});
-   const violations=await page.evaluate(async()=>{const result=await globalThis.axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa','wcag22aa']}});return result.violations.filter(item=>item.impact==='critical'||item.impact==='serious').map(item=>item.id)});
+   const violations=await page.evaluate(async()=>{const result=await globalThis.axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa','wcag22aa']}});return result.violations.filter(item=>item.impact==='critical'||item.impact==='serious').map(item=>`${item.id}: ${item.nodes.slice(0,3).flatMap(node=>node.target).join(' | ')}`)});
    if(violations.length)throw Error(`${name} has serious axe violations at ${width}px: ${violations.join(', ')}`);
   }
  }
@@ -88,13 +88,13 @@ try{
  if(await page.locator('.bottom-nav [aria-current="page"]').getAttribute('href')!=='/app/mercado')throw Error('Active section missing');
  await page.getByRole('button',{name:'Comprar',exact:true}).first().click();
  await page.getByRole('dialog').waitFor();await page.screenshot({path:path.join(capture,'market-dialog-375.png'),fullPage:true});
+ const dialogTargets=await page.getByRole('dialog').locator('button:not([disabled]),input:not([disabled]),select:not([disabled])').count();if(dialogTargets<2)throw Error('Dialog focus order is incomplete');
  await page.keyboard.press('Escape');if(await page.getByRole('dialog').isVisible())throw Error('Escape failed');
  if(!await page.getByRole('button',{name:'Comprar',exact:true}).first().evaluate(el=>el===document.activeElement))throw Error('Dialog failed to restore focus');
- const dialogTargets=await page.getByRole('dialog').locator('button:not([disabled]),input:not([disabled]),select:not([disabled])').count();if(dialogTargets<2)throw Error('Dialog focus order is incomplete');
  await page.getByPlaceholder('Jugador o equipo…').fill('Nadie coincide');if(!await page.getByText('No hay jugadores para este filtro.').isVisible())throw Error('Filtering failed');
  await page.goto('http://127.0.0.1:4178/?case=team');await page.getByRole('button',{name:'Puntos',exact:true}).click();await page.screenshot({path:path.join(capture,'team-points-375.png'),fullPage:true});
  await page.goto('http://127.0.0.1:4178/?case=profile');await page.locator('.profile-logout > .logout-button').click();await page.getByRole('dialog').waitFor();await page.keyboard.press('Escape');
- await page.getByLabel('Claro').check();if(await page.evaluate(()=>document.documentElement.dataset.theme)!=='light')throw Error('Light theme did not apply');
+ await page.goto('http://127.0.0.1:4178/?case=preferences');await page.getByLabel('Claro').check();if(await page.evaluate(()=>document.documentElement.dataset.theme)!=='light')throw Error('Light theme did not apply');
  if(await page.evaluate(()=>localStorage.getItem('canastio-theme'))!=='light')throw Error('Theme preference did not persist');
  await page.reload();await page.waitForFunction(()=>document.documentElement.dataset.theme==='light');
  await page.goto('http://127.0.0.1:4178/?case=league-member');await page.getByRole('button',{name:'Mi liga',exact:true}).click();await page.getByRole('button',{name:'Abandonar liga',exact:true}).click();await page.getByRole('dialog').waitFor();await page.getByRole('button',{name:'Cancelar',exact:true}).click();if(await page.getByRole('dialog').isVisible())throw Error('League cancel failed');

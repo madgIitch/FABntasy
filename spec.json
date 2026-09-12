@@ -1896,7 +1896,13 @@
         "AC9: Solo se ofrece español mientras no exista una traducción completa; precios, puntos, fechas y horas siguen una configuración efectiva única y documentada.",
         "AC10: Skeletons, estados vacíos, error y offline mantienen jerarquía, espacio estable y acciones de recuperación coherentes en todos los viewports objetivo.",
         "AC11: Las pruebas automáticas cubren axe, teclado, foco, cambio de tema, ausencia de destello y overflow en la matriz de viewports aprobada.",
-        "AC12: Typecheck, lint, tests, Playwright de accesibilidad/responsive y diff-scope terminan con código cero."
+        "AC12: Typecheck, lint, tests, Playwright de accesibilidad/responsive y diff-scope terminan con código cero.",
+        "AC13: /app/perfil es un hub breve con accesos a Cuenta, Apariencia e idioma, Notificaciones, Seguridad y Privacidad y datos.",
+        "AC14: Correo, contraseña y sesiones viven en subrutas con navegación de retorno y no se muestra MFA hasta que sea funcional.",
+        "AC15: Notificaciones distingue capacidad, permiso y registro del dispositivo antes de las preferencias individuales.",
+        "AC16: La instalación PWA solo aparece cuando existe un prompt útil o instrucciones manuales reales para iOS no instalado.",
+        "AC17: Privacidad muestra un switch de encontrabilidad con persistencia inmediata y la exportación como fila descargable.",
+        "AC18: Eliminar la cuenta requiere abrir una confirmación, escribir manualmente el username y aportar la contraseña."
       ],
       "scope": [
         "apps/web/**",

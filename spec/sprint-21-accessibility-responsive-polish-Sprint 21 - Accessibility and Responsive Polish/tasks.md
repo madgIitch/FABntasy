@@ -13,5 +13,15 @@ Checklist de implementación. El agente marca [x] al completar; los gates verifi
 - [x] (T9) AC9: Solo se ofrece español mientras no exista una traducción completa; precios, puntos, fechas y horas siguen una configuración efectiva única y documentada.  ↔ R9
 - [x] (T10) AC10: Skeletons, estados vacíos, error y offline mantienen jerarquía, espacio estable y acciones de recuperación coherentes en todos los viewports objetivo.  ↔ R10
 - [x] (T11) AC11: Las pruebas automáticas cubren axe, teclado, foco, cambio de tema, ausencia de destello y overflow en la matriz de viewports aprobada.  ↔ R11
-- [ ] (T12) AC12: Typecheck, lint, tests, Playwright de accesibilidad/responsive y diff-scope terminan con código cero.  ↔ R12
+- [x] (T12) AC12: Typecheck, lint, tests, Playwright de accesibilidad/responsive y diff-scope terminan con código cero.  ↔ R12
+- [x] (T13) Convertir Perfil en hub y trasladar ajustes a subrutas. ↔ R13
+- [x] (T14) Separar correo, contraseña y sesiones; ocultar MFA no disponible. ↔ R14
+- [x] (T15) Mostrar capacidad, permiso y registro real del dispositivo en Notificaciones. ↔ R15
+- [x] (T16) Hacer contextual la instalación PWA. ↔ R16
+- [x] (T17) Convertir encontrabilidad en switch persistido y exportación en fila. ↔ R17
+- [x] (T18) Exigir confirmación manual y modal para eliminar la cuenta. ↔ R18
 - [x] Tests que cubran los criterios de aceptación
+- [ ] (T13) Convertir Perfil en hub compacto y crear las subrutas de ajustes. ↔ R13, R14
+- [ ] (T14) Añadir estado global de notificaciones y separar instalación contextual. ↔ R15, R16
+- [ ] (T15) Hacer inequívoca la privacidad y reforzar la eliminación con confirmación manual y modal. ↔ R17, R18
+- [ ] (T16) Validar las nuevas rutas a 320 px, teclado, foco y navegación inferior. ↔ R19

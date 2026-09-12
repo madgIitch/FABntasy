@@ -10,6 +10,22 @@ una decisión de arquitectura relevante durante implementación.
 
 <!-- Nuevas entradas debajo -->
 
+## 2026-09-12 · Perfil como hub de configuración
+
+Contexto: Perfil acumulaba identidad, preferencias, notificaciones, seguridad y privacidad en un único scroll móvil de más de seis viewports.
+
+Decisión: `/app/perfil` conserva identidad, ligas y filas de acceso; las tareas de configuración se separan por subrutas. Los formularios transaccionales tienen una pantalla dedicada y la eliminación requiere confirmación modal con username no precargado.
+
+Consecuencia: la navegación inferior mantiene sus cinco destinos y las nuevas opciones de cuenta se incorporan como subrutas, no como destinos globales ni bloques permanentes en Perfil.
+
+## 2026-09-12 · Perfil como hub de ajustes
+
+Contexto: Perfil acumulaba identidad, preferencias, notificaciones, seguridad, sesiones, privacidad y eliminación en un único scroll móvil.
+
+Decisión: mantener `/app/perfil` como hub breve y distribuir los ajustes en subrutas por responsabilidad, sin añadir destinos a la navegación principal. Las operaciones sensibles se aíslan y la eliminación conserva una confirmación final adicional.
+
+Consecuencia: las nuevas opciones de cuenta deben incorporarse a la subruta correspondiente y no alargar el hub principal.
+
 ## 2026-09-12 · Tema previo al pintado y configuración regional única
 
 Contexto: la PWA necesita tema Sistema/Claro/Oscuro sin destello de hidratación y formatos coherentes mientras solo existe la interfaz española.

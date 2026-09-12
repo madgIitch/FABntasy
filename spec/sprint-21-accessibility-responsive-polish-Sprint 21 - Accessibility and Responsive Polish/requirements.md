@@ -21,4 +21,10 @@ R9. AC9: Solo se ofrece español mientras no exista una traducción completa; pr
 R10. AC10: Skeletons, estados vacíos, error y offline mantienen jerarquía, espacio estable y acciones de recuperación coherentes en todos los viewports objetivo.
 R11. AC11: Las pruebas automáticas cubren axe, teclado, foco, cambio de tema, ausencia de destello y overflow en la matriz de viewports aprobada.
 R12. AC12: Typecheck, lint, tests, Playwright de accesibilidad/responsive y diff-scope terminan con código cero.
-
+R13. AC13: `/app/perfil` funciona como hub breve y enlaza Cuenta, Apariencia e idioma, Notificaciones, Seguridad y Privacidad y datos sin incrustar sus formularios.
+R14. AC14: Correo, contraseña y sesiones viven en subrutas con encabezado de retorno; no se muestra funcionalidad MFA mientras no esté disponible.
+R15. AC15: Notificaciones muestra por separado capacidad, permiso del navegador y registro del dispositivo antes de los interruptores, con errores accionables.
+R16. AC16: La instalación PWA solo aparece cuando existe una acción útil: prompt instalable o instrucciones manuales reales para iOS no instalado.
+R17. AC17: Privacidad muestra el estado de encontrabilidad mediante un switch que se persiste al cambiar y la exportación como fila descargable.
+R18. AC18: La eliminación exige escribir manualmente el username, contraseña válida, habilita la acción solo al completar ambos requisitos y presenta una confirmación modal final.
+R19. AC19: El hub y todas sus subrutas son utilizables a 320 px sin overflow ni solapamiento con la navegación inferior.

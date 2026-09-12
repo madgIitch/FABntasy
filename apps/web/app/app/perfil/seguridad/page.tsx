@@ -1,0 +1,4 @@
+import Link from "next/link";
+import { SettingsPage } from "../settings-header";
+function Row({href,title,detail}:{href:string;title:string;detail:string}){return <Link className="setting-row settings-link" href={href}><span><strong>{title}</strong><small>{detail}</small></span><b aria-hidden="true">›</b></Link>}
+export default function SecurityPage(){return <SettingsPage title="Seguridad"><section className="profile-group"><div className="profile-list settings-list"><Row href="/app/perfil/seguridad/correo" title="Correo electrónico" detail="Cambiar la dirección de acceso"/><Row href="/app/perfil/seguridad/contrasena" title="Contraseña" detail="Actualizar tu contraseña"/><Row href="/app/perfil/seguridad/sesiones" title="Sesiones activas" detail="Revisar y revocar accesos"/></div></section></SettingsPage>}

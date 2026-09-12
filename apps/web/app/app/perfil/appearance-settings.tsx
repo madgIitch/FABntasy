@@ -13,7 +13,7 @@ function applyTheme(preference: ThemePreference) {
   document.documentElement.style.colorScheme = resolved;
 }
 
-export function AppearanceSettings() {
+export function AppearanceSettings({ compact = false }: { compact?: boolean }) {
   const [theme, setTheme] = useState<ThemePreference>("system");
   const [storageAvailable, setStorageAvailable] = useState(true);
 
@@ -37,11 +37,11 @@ export function AppearanceSettings() {
   }
 
   return <section className="profile-group" aria-labelledby="appearance-title">
-    <div className="profile-group-heading"><h2 id="appearance-title">Apariencia e idioma</h2></div>
+    {compact ? <h2 className="settings-section-title" id="appearance-title">Tema</h2> : <div className="profile-group-heading"><h2 id="appearance-title">Apariencia e idioma</h2></div>}
     <fieldset className="theme-picker"><legend>Tema</legend>
       {(["system", "light", "dark"] as const).map(value => <label key={value}><input type="radio" name="theme" value={value} checked={theme === value} onChange={() => choose(value)} /><span>{labels[value]}</span></label>)}
     </fieldset>
-    <p className="settings-help">Sistema sigue el tema del dispositivo. Idioma: Español (España). Fechas y horas: Europe/Madrid.</p>
+    <p className="settings-help">Sistema sigue el tema del dispositivo.</p><dl className="preference-metadata"><div><dt>Idioma</dt><dd>Español (España)</dd></div><div><dt>Fecha y hora</dt><dd>Madrid</dd></div></dl>
     {!storageAvailable ? <p className="settings-status" role="status">No se puede guardar la preferencia en este navegador; usamos Sistema durante esta sesión.</p> : null}
   </section>;
 }

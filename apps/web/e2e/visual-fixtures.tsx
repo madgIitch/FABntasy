@@ -12,6 +12,7 @@ import { Navigation } from "../src/components/ui/navigation";
 import { AccountAvatar, LogoutControl } from "../app/app/account-controls";
 import { AuthForm } from "../app/auth/auth-form";
 import ProfilePage from "../app/app/perfil/page";
+import { AppearanceSettings } from "../app/app/perfil/appearance-settings";
 import IngestionAdminPage from "../app/app/admin/ingestion/page";
 import CorrectionsPage from "../app/app/admin/correcciones/page";
 import "../app/globals.css";
@@ -36,6 +37,7 @@ const key=new URLSearchParams(location.search).get("case")||"home";
 async function boot(){let view:ReactNode;
  switch(key){
  case "register":view=<AuthForm mode="register" action={async()=>({status:"error",message:"El nombre de usuario ya está ocupado."})}/>;break;
+ case "preferences":view=<main className="app-main profile-page"><AppearanceSettings compact /></main>;break;
  case "onboarding":view=<LeagueOnboarding seasons={seasons}/>;break;
  case "home":view=<HomeDashboard data={home}/>;break;
  case "home-live":view=<HomeDashboard data={homeLive}/>;break;

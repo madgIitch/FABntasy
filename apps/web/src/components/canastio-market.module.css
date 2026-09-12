@@ -37,7 +37,7 @@
 .rank { color:var(--color-text-muted); font-size:.72rem; font-variant-numeric:tabular-nums }
 .avatar { display:grid; place-items:center; width:44px; aspect-ratio:1; border-radius:50%; background:var(--color-brand-soft); color:var(--color-brand-text); font-size:.72rem; font-weight:600 }
 .identity { display:grid; min-width:0 }
-.identity a { overflow-wrap:anywhere; font-size:.9rem; font-weight:650; line-height:1.35 }
+.identity a { display:flex;align-items:center;height:44px;min-width:44px;overflow-wrap:anywhere;font-size:.9rem;font-weight:650;line-height:1.35 }
 .identity small,.identity em,.form small,.form i { color:var(--color-text-muted); font-size:.72rem; font-style:normal }
 .identity em { display:none }
 .identity .protection { display:block; color:var(--color-warning); font-weight:700; font-variant-numeric:tabular-nums }
@@ -79,7 +79,7 @@
 .transactionActions button { min-height:44px }
 @keyframes marketToast { from { opacity:0; transform:translate(-50%,8px) } }
 .empty button { min-height:44px; border:0; background:transparent; color:var(--color-brand-text); font-weight:700; cursor:pointer }
-@media(max-width:850px) {
+@media(max-width:1100px) {
  .advancedFilters { grid-template-columns:1fr 1fr }
  .resultBar { display:none }
  .list li { grid-template-columns:44px minmax(0,1fr) 8rem auto }
@@ -107,7 +107,7 @@
  .identity small { overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
  .quote { grid-column:3; grid-row:1; align-self:end }
  .marketActions { grid-column:3; grid-row:2; align-self:start }
- .marketActions button { min-height:40px; padding:0 9px }
+ .marketActions button { min-height:44px; padding:0 9px }
  .transactionActions { display:grid; grid-template-columns:auto 1fr }
  .transactionActions .primary-action { width:100%; justify-content:center }
  .toast { max-width:calc(100% - 32px); overflow:hidden; text-overflow:ellipsis }

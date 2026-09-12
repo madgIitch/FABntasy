@@ -387,6 +387,13 @@ Decisión: implementar según el spec aprobado.
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
 
 <!-- harness:sprint-20-performance-reliability -->
+## 2026-09-12 · Caché de lecturas e invalidación de Sprint 20
+
+Las lecturas privadas de home, mercado y ranking usan una caché server-side prescindible y de corta duración. Sus claves contienen hashes no reversibles del actor y la liga resueltos por autorización, más revisión y variante; nunca datos de sesión ni PII. Las mutaciones invalidan por etiquetas de liga/jornada únicamente después del commit. La publicación continúa siendo una transacción serializable y los rankings persistidos siguen siendo la autoridad.
+
+Consecuencia: `CANASTIO_SERVER_CACHE_ENABLED=false` restaura lecturas directas sin cambiar datos ni contrato. Cualquier caché distribuida futura deberá conservar la misma composición, invalidación posterior al commit y métricas de cardinalidad acotada.
+
+<!-- harness:sprint-20-performance-reliability -->
 ## 2026-09-12 · sprint-20-performance-reliability aprobado
 
 Contexto: se aprobó el spec `sprint-20-performance-reliability` (Sprint 20 - Performance and Reliability).

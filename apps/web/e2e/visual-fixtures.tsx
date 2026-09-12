@@ -46,7 +46,7 @@ async function boot(){let view:ReactNode;
  case "journey":view=<JourneyLive data={journey}/>;break;
  case "league":view=<LeagueHub initialLeagues={leagues} seasons={seasons} authUserId="demo"/>;break;
  case "league-member":view=<LeagueHub initialLeagues={leagues.map(l=>({...l,memberships:l.memberships.map(m=>({...m,role:"MEMBER"}))}))} seasons={seasons} authUserId="demo"/>;break;
- case "profile":view=await ProfilePage();break;
+ case "profile":view=await ProfilePage({searchParams:Promise.resolve({})});break;
  case "admin":view=await IngestionAdminPage({searchParams:Promise.resolve({})});break;
  case "corrections":view=await CorrectionsPage();break;
  case "sports":view=<Sports/>;break;

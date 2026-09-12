@@ -1795,7 +1795,7 @@
     {
       "id": "sprint-20-performance-reliability",
       "name": "Sprint 20 - Performance and Reliability",
-      "status": "spec_ready",
+      "status": "in_progress",
       "sdd": true,
       "milestone": "0.8.1",
       "dependencies": [

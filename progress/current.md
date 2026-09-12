@@ -1,6 +1,6 @@
 # Sesión actual
 
-Feature: **sprint-19-security-privacy-hardening · Sprint 19 - Security and Privacy Hardening** — estado: `done`.
+Feature: **sprint-20-performance-reliability · Sprint 20 - Performance and Reliability** — estado: `in_progress`.
 
 - agente: codex
 - rama: `main`
@@ -8,8 +8,8 @@ Feature: **sprint-19-security-privacy-hardening · Sprint 19 - Security and Priv
 
 ## Siguiente acción
 
-- Preparar y aprobar la especificación del Sprint 20 antes de iniciar su implementación.
+- Ejecutar el gate `corepack pnpm test:performance` contra PostgreSQL de integración con `CANASTIO_TEST_DATABASE=1` y `TEST_DATABASE_URL`; después marcar T15 y pasar a `review_pending`.
 
 ## Último resultado
 
-Sprint 19 cerrado tras la revisión; el siguiente elemento de la cola es Sprint 20 - Performance and Reliability.
+Implementación y gates locales completados. El gate reproducible usa servicios reales y queda pendiente porque este entorno no tiene `TEST_DATABASE_URL` ni Docker activo.

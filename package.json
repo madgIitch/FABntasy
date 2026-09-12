@@ -19,10 +19,12 @@
     "test:data:teardown": "node scripts/test-data.mjs teardown",
     "test:data:gate": "node scripts/test-data-gate.mjs",
     "test:data:provision-users": "node scripts/provision-qa-users.mjs",
+    "test:performance": "tsx scripts/performance-gate.mts",
     "prisma": "prisma"
   },
   "devDependencies": {
     "@prisma/client": "^6.0.0",
-    "prisma": "^6.0.0"
+    "prisma": "^6.0.0",
+    "tsx": "^4.20.5"
   }
 }

@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { calculateRoundScore, rankTeams, type PlayerScoreStatus } from "../../../../packages/domain/round-scoring";
 import { db } from "./db";
+import { cached, cacheTags, invalidateCache, measured, privateCacheKey } from "./performance";
 
 export const ROUND_RANKING_SCHEMA_VERSION = "fantasy-round-ranking-api.v1";
 export class RoundRankingError extends Error { constructor(public code: string, public status = 409) { super(code); } }
@@ -9,7 +10,7 @@ const enabled = () => process.env.FANTASY_ROUND_SCORING_ENABLED !== "false";
 export async function recomputeRoundRankings(competitionSeasonId: string, roundNumber: number) {
   if (!enabled()) throw new RoundRankingError("FEATURE_DISABLED");
   if (!competitionSeasonId || !Number.isInteger(roundNumber) || roundNumber < 1) throw new RoundRankingError("INVALID_INPUT", 422);
-  return db.$transaction(async (tx) => {
+  return measured("publish", () => db.$transaction(async (tx) => {
     const ruleSet = await tx.fantasyScoringRuleSet.findFirst({ where: { competitionSeasonId, status: "ACTIVE" }, orderBy: { publishedAt: "desc" } });
     if (!ruleSet) throw new RoundRankingError("RULESET_UNAVAILABLE");
     const games = await tx.game.findMany({ where: { competitionSeasonId, roundNumber, syncStatus: "active" }, select: { id: true, status: true } });
@@ -38,12 +39,12 @@ export async function recomputeRoundRankings(competitionSeasonId: string, roundN
       if (status === "PUBLISHED") published++; else provisional++;
     }
     await rebuildTotals(tx, competitionSeasonId);
-    return { roundNumber, teams: lineups.length, published, provisional };
+    return { roundNumber, teams: lineups.length, published, provisional, affectedLeagueIds: [...new Set(lineups.map((lineup) => lineup.fantasyTeam.leagueId))] };
   }, {
     isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
     maxWait: 10_000,
     timeout: 30_000,
-  });
+  })).then(({ affectedLeagueIds, ...result }) => { for (const leagueId of affectedLeagueIds) invalidateCache(cacheTags({ leagueId, roundNumber })); invalidateCache(cacheTags({ leagueId: competitionSeasonId, roundNumber })); return result; });
 }
 
 type Tx = Prisma.TransactionClient;
@@ -75,7 +76,7 @@ async function rebuildTotals(tx: Tx, competitionSeasonId: string) {
       previousLeaguePosition, globalPosition, leaguePosition } }); }
 }
 
-export async function getRanking(actorAuthUserId: string, params: { competitionSeasonId: string; leagueId?: string; roundNumber?: number }) {
+async function loadRanking(actorAuthUserId: string, params: { competitionSeasonId: string; leagueId?: string; roundNumber?: number }) {
   if (!params.competitionSeasonId) throw new RoundRankingError("COMPETITION_SEASON_REQUIRED", 400);
   const profile = await db.userProfile.findUnique({ where: { authUserId: actorAuthUserId }, select: { id: true } });
   if (!profile) throw new RoundRankingError("AUTH_REQUIRED", 401);
@@ -91,5 +92,18 @@ export async function getRanking(actorAuthUserId: string, params: { competitionS
     const previous = params.leagueId ? total.previousLeaguePosition : total.previousGlobalPosition;
     return { fantasyTeamId: total.fantasyTeamId, username: total.fantasyTeam.userProfile.username, displayName: total.fantasyTeam.userProfile.displayName, isMe: total.fantasyTeam.userProfileId === profile.id, totalPoints: total.totalPoints.toString(),
       position, variation: position && previous ? previous - position : null, lastRoundNumber: total.lastRoundNumber,
+      lastValidRevisionAt: total.updatedAt.toISOString(), isRecomputing: round?.status === "PROVISIONAL",
       round: round ? { revision: round.revision, status: round.status, points: round.points?.toString() ?? null, breakdown: round.breakdown } : null }; });
+}
+
+export async function getRanking(actorAuthUserId: string, params: { competitionSeasonId: string; leagueId?: string; roundNumber?: number }) {
+  if (!params.competitionSeasonId) throw new RoundRankingError("COMPETITION_SEASON_REQUIRED", 400);
+  const profile = await db.userProfile.findUnique({ where: { authUserId: actorAuthUserId }, select: { id: true } });
+  if (!profile) throw new RoundRankingError("AUTH_REQUIRED", 401);
+  if (params.leagueId) {
+    const member = await db.leagueMembership.findFirst({ where: { leagueId: params.leagueId, userProfileId: profile.id, status: "ACTIVE" }, select: { leagueId: true } });
+    if (!member) throw new RoundRankingError("LEAGUE_NOT_FOUND", 404);
+  }
+  const leagueScope=params.leagueId??params.competitionSeasonId;
+  return cached("ranking",privateCacheKey("ranking",{actorAuthUserId,leagueId:leagueScope,revision:params.roundNumber??"latest",variant:params.competitionSeasonId}),cacheTags({leagueId:leagueScope,roundNumber:params.roundNumber}),()=>loadRanking(actorAuthUserId,params));
 }

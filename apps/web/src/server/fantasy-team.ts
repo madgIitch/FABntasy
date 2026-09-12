@@ -2,6 +2,7 @@ import { Prisma, type PrismaClient } from "@prisma/client";
 import { COLD_START_RULES, FantasyTeamRuleError, isCutoffClosed, validateLineup, validateRoster } from "../../../../packages/domain/fantasy-team";
 import { createLeagueCode } from "../../../../packages/domain/private-league";
 import { db } from "./db";
+import { cacheTags, invalidateCache } from "./performance";
 
 type Client = PrismaClient | Prisma.TransactionClient;
 export type TeamActor = Readonly<{ authUserId: string }>;
@@ -93,7 +94,7 @@ export async function putRoster(actor: TeamActor, competitionSeasonId: string, i
   if (!featureEnabled()) fail("FEATURE_DISABLED");
   if (!Array.isArray(input.playerRegistrationIds) || input.playerRegistrationIds.some((x) => typeof x !== "string")) fail("INVALID_INPUT", 422);
   try {
-    return await db.$transaction(async (tx) => {
+    const result = await db.$transaction(async (tx) => {
       const owner = await profileId(tx, actor, true);
       const rules = await activeRules(tx, competitionSeasonId);
       const registrations = await tx.playerRegistration.findMany({ where: { id: { in: [...input.playerRegistrationIds] }, competitionSeasonId }, include: {
@@ -125,6 +126,9 @@ export async function putRoster(actor: TeamActor, competitionSeasonId: string, i
       await tx.fantasyRosterSlot.createMany({ data: input.playerRegistrationIds.map((playerRegistrationId) => ({ fantasyTeamId: team!.id, leagueId: team!.leagueId, playerRegistrationId, acquisitionPrice: acquisitionPrices.get(playerRegistrationId)! })) });
       return { created, team: await serializeTeam(tx, team.id) };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    const changedTeam = await db.fantasyTeam.findUnique({ where: { id: result.team.teamId }, select: { leagueId: true } });
+    if (changedTeam) invalidateCache(cacheTags({ leagueId: changedTeam.leagueId }));
+    return result;
   } catch (error) { mapPrisma(error); }
 }
 
@@ -132,7 +136,7 @@ export async function putLineup(actor: TeamActor, competitionSeasonId: string, r
   if (!featureEnabled()) fail("FEATURE_DISABLED");
   if (!Number.isInteger(roundNumber) || roundNumber < 1 || !Array.isArray(input.starterPlayerRegistrationIds) || !Array.isArray(input.substitutePlayerRegistrationIds) || !Number.isInteger(input.expectedVersion)) fail("INVALID_INPUT", 422);
   try {
-    return await db.$transaction(async (tx) => {
+    const result = await db.$transaction(async (tx) => {
       const owner = await profileId(tx, actor, true);
       const team = await tx.fantasyTeam.findFirst({ where: { userProfileId: owner, competitionSeasonId, league: { status: "ACTIVE" } }, orderBy: { updatedAt: "desc" }, include: { rosterRuleSet: true, rosterSlots: { select: playerSelect } } });
       if (!team) fail("TEAM_NOT_FOUND", 404);
@@ -165,6 +169,9 @@ export async function putLineup(actor: TeamActor, competitionSeasonId: string, r
       await tx.fantasyTeam.update({ where: { id: team.id, version: input.expectedVersion }, data: { version: { increment: 1 } } });
       return serializeTeam(tx, team.id, roundNumber);
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    const changedTeam = await db.fantasyTeam.findUnique({ where: { id: result.teamId }, select: { leagueId: true } });
+    if (changedTeam) invalidateCache(cacheTags({ leagueId: changedTeam.leagueId, roundNumber }));
+    return result;
   } catch (error) { mapPrisma(error); }
 }
 

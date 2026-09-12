@@ -12,7 +12,7 @@ import { SecuritySettings } from "./security-settings";
 const points = new Intl.NumberFormat("es-ES", { maximumFractionDigits: 1 });
 
 const accountMessages: Record<string, string> = { "reauth-failed": "No se pudo confirmar tu identidad.", "email-pending": "Revisa ambos correos para completar el cambio.", "password-changed": "Contraseña actualizada.", "privacy-saved": "Preferencia de privacidad guardada.", "sessions-revoked": "Las demás sesiones han sido revocadas.", "delete-failed": "El borrado no pudo completarse; vuelve a intentarlo." };
-export default async function ProfilePage({ searchParams = Promise.resolve({}) }: { searchParams?: Promise<{ account?: string }> } = {}) {
+export default async function ProfilePage({ searchParams }: { searchParams: Promise<{ account?: string }> }) {
   const { data: { user } } = await (await createClient()).auth.getUser();
   if (!user) redirect("/login");
   const profile = await getUserProfileOverview(user.id);

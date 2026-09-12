@@ -1729,7 +1729,7 @@
       "id": "sprint-19-security-privacy-hardening",
       "visual_spec_reference": "sprint-14d-green-white-design-system (aprobado; adoptar al implementar): docs/design/CANASTIO_14D_VISUAL_DIRECTION.md",
       "name": "Sprint 19 - Security and Privacy Hardening",
-      "status": "in_progress",
+      "status": "done",
       "sdd": true,
       "milestone": "0.8.0",
       "dependencies": [

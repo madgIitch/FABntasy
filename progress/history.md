@@ -1,5 +1,8 @@
 # Historial de sesiones
 
+## 2026-09-12T12:00:00.000Z — #sprint-19-security-privacy-hardening Sprint 19 - Security and Privacy Hardening → done
+- Revisión completada y cierre confirmado al solicitar el siguiente sprint.
+
 ## 2026-09-12T11:40:00.000Z — #sprint-18c-home-contextual-polish Sprint 18C - Home Contextual Polish → review_pending
 - Implementación completada; gates automáticos aprobados y smoke test humano pendiente.
 

@@ -1,6 +1,6 @@
 # Sesión actual
 
-Feature: **sprint-19-security-privacy-hardening · Sprint 19 - Security and Privacy Hardening** — estado: `in_progress`.
+Feature: **sprint-19-security-privacy-hardening · Sprint 19 - Security and Privacy Hardening** — estado: `done`.
 
 - agente: codex
 - rama: `main`
@@ -8,8 +8,8 @@ Feature: **sprint-19-security-privacy-hardening · Sprint 19 - Security and Priv
 
 ## Siguiente acción
 
-- Continuar la implementación del Sprint 19 y repetir typecheck, lint, tests, auditoría de dependencias y build antes de pasarlo a revisión.
+- Preparar y aprobar la especificación del Sprint 20 antes de iniciar su implementación.
 
 ## Último resultado
 
-Sprint 18C cerrado. Spec del Sprint 19 aprobado y primera pasada de implementación iniciada; el runner agotó el tiempo durante la validación y el trabajo permanece en curso.
+Sprint 19 cerrado tras la revisión; el siguiente elemento de la cola es Sprint 20 - Performance and Reliability.

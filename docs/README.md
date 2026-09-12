@@ -3,6 +3,7 @@
 - [Dirección visual 14D](design/CANASTIO_14D_VISUAL_DIRECTION.md) — análisis del vídeo, componentes y adaptación verde/blanco para Canastio (propuesta).
 - [Spec 14D](design/SPRINT_14D_SPEC.md) — rediseño integral verde y blanco completado.
 - [Spec 14E](design/SPRINT_14E_SPEC.md) — reskin global bosque oscuro, blanco roto y lima completado.
+- [Spec 18C](design/SPRINT_18C_SPEC.md) — propuesta de pulido contextual de Inicio: prioridad estable, lenguaje humano, frescura y feed deportivo.
 - [Spec 14F](testing/SPRINT_14F_SPEC.md) — propuesta de simulación productiva, escenarios SQL y ciclo de datos del harness.
 - [Operación de la suite 14F](testing/SPRINT_14F_INSTRUCTIONS.md) — preparación de PostgreSQL, ejecución, assertions, diagnóstico, gates y teardown seguro.
 - [Runner de datos 14F](testing/TEST_DATA_RUNNER.md) — catálogo, preflight y guardas para bases sintéticas.

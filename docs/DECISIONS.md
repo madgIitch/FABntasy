@@ -367,3 +367,12 @@ Contexto: se aprobó el spec `sprint-18b-live-game-score-ingestion` (Sprint 18B 
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-18c-home-contextual-polish -->
+## 2026-09-12 · sprint-18c-home-contextual-polish aprobado
+
+Contexto: se aprobó el spec `sprint-18c-home-contextual-polish` (Sprint 18C - Home Contextual Polish).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

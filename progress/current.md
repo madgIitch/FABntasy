@@ -1,6 +1,6 @@
 # Sesión actual
 
-Feature: **sprint-18b-live-game-score-ingestion · Sprint 18B - Live Game Score Ingestion** — estado: `in_progress`.
+Feature: **sprint-18c-home-contextual-polish · Sprint 18C - Home Contextual Polish** — estado: `in_progress`.
 
 - agente: codex
 - rama: `main`
@@ -8,12 +8,8 @@ Feature: **sprint-18b-live-game-score-ingestion · Sprint 18B - Live Game Score 
 
 ## Siguiente acción
 
-- Completar tests PostgreSQL de reconciliación/idempotencia, cerrar locks por partido y ejecutar los gates finales de `sprint-18b-live-game-score-ingestion`.
+- Implementar máquina contextual, lenguaje de producto, frescura y QA responsive de Inicio.
 
 ## Último resultado
 
-| intento | resultado | gate fallido | tts(s) | coste |
-|--:|--|--|--:|--:|
-| 1 | OK | — | — | — |
-
-Implementado el núcleo de marcador/parciales live, snapshots individuales parciales, estados de frescura en Jornada y lifecycle fantasy provisional sin actualización de precios.
+Spec aprobado; Sprint 18B cerrado tras smoke test humano.

@@ -545,3 +545,16 @@ Originado por el incidente documentado en docs/operations/INCIDENT_2026-09-10_FA
   - `.env.example`
   - `spec.json`
 
+<!-- harness:sprint-18c-home-contextual-polish -->
+## sprint-18c-home-contextual-polish · Sprint 18C - Home Contextual Polish
+
+
+
+### Scope aprobado
+
+  - `apps/web/**`
+  - `packages/domain/**`
+  - `tests/**`
+  - `docs/**`
+  - `spec.json`
+

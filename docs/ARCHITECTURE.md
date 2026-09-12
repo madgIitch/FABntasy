@@ -601,3 +601,15 @@ Originado por el incidente documentado en docs/operations/INCIDENT_2026-09-10_FA
 - **edge_cases:** carga, invalidación, recomputación e ingestor caído cubiertos.
 - **ui_states:** carga, error, revisión vigente y datos en recomputación definidos.
 
+<!-- harness:sprint-21-accessibility-responsive-polish -->
+## sprint-21-accessibility-responsive-polish · Sprint 21 - Accessibility and Responsive Polish
+
+
+
+### Scope aprobado
+
+  - `apps/web/**`
+  - `tests/**`
+  - `docs/**`
+  - `spec.json`
+

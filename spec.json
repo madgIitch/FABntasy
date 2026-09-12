@@ -1860,7 +1860,7 @@
       "id": "sprint-21-accessibility-responsive-polish",
       "visual_spec_reference": "sprint-14d-green-white-design-system (aprobado; adoptar al implementar): docs/design/CANASTIO_14D_VISUAL_DIRECTION.md; extender tokens al tema oscuro sin restaurar el acento lima",
       "name": "Sprint 21 - Accessibility and Responsive Polish",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.9.0",
       "dependencies": [
@@ -1885,15 +1885,18 @@
       ],
       "deliverable": "La PWA es utilizable y coherente en los navegadores objetivo.",
       "acceptance": [
-        "AC1: Las acciones críticas pueden completarse solo con teclado en desktop.",
-        "AC2: Los controles táctiles principales respetan tamaño mínimo accesible.",
-        "AC3: Estados loading, empty, offline y error son distinguibles por texto, no solo color.",
-        "AC4: El orden de foco de diálogos de compra, venta, invitación y lineup es determinista.",
-        "AC5: Las páginas principales superan la suite de accesibilidad automática aprobada.",
-        "AC6: No aparecen scrolls horizontales involuntarios en anchos móviles objetivo.",
-        "AC7: El usuario puede elegir tema Sistema, Claro u Oscuro; Sistema reacciona a prefers-color-scheme y todos los temas mantienen contraste y estados de foco equivalentes.",
-        "AC8: La preferencia de tema se aplica antes de pintar la interfaz para evitar destellos y se conserva entre sesiones sin impedir el renderizado cuando el almacenamiento local no está disponible.",
-        "AC9: Mientras solo exista contenido completo en español, el selector de idioma no ofrece idiomas parcialmente traducidos; el formato numérico muestra precios y puntos según la configuración efectiva documentada."
+        "AC1: Las acciones críticas pueden completarse solo con teclado en desktop, con foco visible y orden determinista.",
+        "AC2: Los controles táctiles principales miden al menos 44 × 44 CSS px o disponen de un área de activación equivalente sin solapamientos.",
+        "AC3: Los estados loading, empty, offline y error se distinguen mediante texto y semántica accesible, no solo color.",
+        "AC4: Los diálogos de compra, venta, invitación y lineup contienen el foco, responden a Escape cuando procede y restauran el foco al disparador.",
+        "AC5: Inicio, Mercado, Mi equipo, Jornada, Liga y Perfil no presentan infracciones axe critical o serious en los estados cubiertos.",
+        "AC6: No existe scroll horizontal involuntario a 320, 375, 768, 1024 y 1440 px; contenido, tablas, navegación y diálogos siguen siendo utilizables.",
+        "AC7: El usuario puede elegir Sistema, Claro u Oscuro; Sistema responde a `prefers-color-scheme` y todos los temas conservan contraste WCAG 2.2 AA y foco equivalente.",
+        "AC8: El tema se aplica antes del primer pintado, persiste entre sesiones y degrada a Sistema si localStorage no está disponible o contiene un valor inválido.",
+        "AC9: Solo se ofrece español mientras no exista una traducción completa; precios, puntos, fechas y horas siguen una configuración efectiva única y documentada.",
+        "AC10: Skeletons, estados vacíos, error y offline mantienen jerarquía, espacio estable y acciones de recuperación coherentes en todos los viewports objetivo.",
+        "AC11: Las pruebas automáticas cubren axe, teclado, foco, cambio de tema, ausencia de destello y overflow en la matriz de viewports aprobada.",
+        "AC12: Typecheck, lint, tests, Playwright de accesibilidad/responsive y diff-scope terminan con código cero."
       ],
       "scope": [
         "apps/web/**",
@@ -1901,7 +1904,13 @@
         "docs/**",
         "spec.json"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-09-12T18:42:36.444Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-12T18:42:36.584Z"
     },
     {
       "id": "sprint-22-beta-observability",

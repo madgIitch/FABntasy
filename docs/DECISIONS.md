@@ -405,3 +405,12 @@ Decisiones registradas:
 - **tests:** dataset, concurrencia y umbrales exactos definidos.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-21-accessibility-responsive-polish -->
+## 2026-09-12 · sprint-21-accessibility-responsive-polish aprobado
+
+Contexto: se aprobó el spec `sprint-21-accessibility-responsive-polish` (Sprint 21 - Accessibility and Responsive Polish).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

@@ -7,11 +7,14 @@ def test_sanitize_payload_removes_secrets_recursively():
         "result": [{"id_dispositivo": "device", "Name": "Team"}],
         "nested": {"TOKEN": "token", "value": 3},
         "password": "password",
+        "Cookies": "session=x",
+        "child": {"VaPiD_Private_Key": "secret", "safe": True},
     }
 
     assert sanitize_payload(payload) == {
         "result": [{"Name": "Team"}],
         "nested": {"value": 3},
+        "child": {"safe": True},
     }
 
 

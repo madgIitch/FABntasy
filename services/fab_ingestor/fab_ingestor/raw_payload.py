@@ -2,10 +2,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-SENSITIVE_KEYS = {"key", "id_dispositivo", "token", "password", "secret"}
+SENSITIVE_KEY = re.compile(
+    r"(?:authorization|cookie|token|password|secret|key|api[_-]?key|fab[_-]?(?:key|device)|"
+    r"id_dispositivo|vapid|p256dh|refresh|access[_-]?token|request[_-]?body)", re.IGNORECASE
+)
 
 
 def sanitize_payload(value: Any) -> Any:
@@ -14,7 +18,7 @@ def sanitize_payload(value: Any) -> Any:
         return {
             str(key): sanitize_payload(item)
             for key, item in value.items()
-            if str(key).casefold() not in SENSITIVE_KEYS
+            if not SENSITIVE_KEY.search(str(key))
         }
     if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
         return [sanitize_payload(item) for item in value]

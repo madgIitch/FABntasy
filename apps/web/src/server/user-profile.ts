@@ -55,6 +55,7 @@ export async function getUserProfileOverview(authUserId: string) {
     username: profile.username,
     displayName: profile.displayName,
     avatarPath: profile.avatarPath,
+    discoverableByUsername: profile.discoverableByUsername,
     createdAt: profile.createdAt,
     leagueCount: profile.leagueMemberships.length,
     totalPoints: publishedTotals.length ? publishedTotals.reduce((sum, total) => sum + Number(total.totalPoints), 0) : null,
@@ -67,4 +68,22 @@ export async function getUserProfileOverview(authUserId: string) {
       teamName: teamsByLeague.get(league.id)?.name ?? null,
     })),
   };
+}
+
+export async function setUsernameDiscovery(authUserId: string, enabled: boolean) {
+  try {
+    return await db.userProfile.update({ where: { authUserId }, data: { discoverableByUsername: enabled }, select: { discoverableByUsername: true } });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") throw new ProfileServiceError("PROFILE_NOT_FOUND");
+    throw error;
+  }
+}
+
+export async function findDiscoverableProfiles(actorAuthUserId: string, query: string) {
+  const normalized = normalizeUsername(query).slice(0, 24);
+  if (normalized.length < 3) return [];
+  return db.userProfile.findMany({
+    where: { authUserId: { not: actorAuthUserId }, discoverableByUsername: true, deletedAt: null, username: { startsWith: normalized, mode: "insensitive" } },
+    select: { id: true, username: true }, orderBy: { username: "asc" }, take: 10,
+  });
 }

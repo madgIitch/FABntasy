@@ -6,7 +6,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "audit:dependencies": "pnpm audit --audit-level high --prod"
   },
   "dependencies": {
     "@prisma/client": "^6.0.0",

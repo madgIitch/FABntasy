@@ -6,6 +6,6 @@ export async function createClient() {
   const { url, publishableKey } = getSupabaseEnv();
   return createServerClient(url, publishableKey, { cookies: {
     getAll: () => cookieStore.getAll(),
-    setAll: (items) => { try { items.forEach(({ name, value, options }) => cookieStore.set(name, value, options)); } catch { /* middleware refreshes */ } },
+    setAll: (items) => { try { items.forEach(({ name, value, options }) => cookieStore.set(name, value, { ...options, httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production" })); } catch { /* middleware refreshes */ } },
   } });
 }

@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { safeError } from "./security";
 import { deriveHomeMode } from "./home-presentation";
 
 export type SectionState = "READY" | "EMPTY" | "ERROR";
@@ -18,7 +19,7 @@ export function buildMarketMovers(events: PriceEvent[]) {
 
 async function section<T>(load:()=>Promise<T>) {
   try { return { state:"READY" as SectionState, updatedAt:new Date().toISOString(), data:await load() }; }
-  catch (error) { console.error("[home-dashboard] section_failed", error); return { state:"ERROR" as SectionState, updatedAt:null, data:null }; }
+  catch (error) { console.error("[home-dashboard] section_failed", safeError(error)); return { state:"ERROR" as SectionState, updatedAt:null, data:null }; }
 }
 
 export async function getHomeDashboard(authUserId:string, requestedLeagueId?:string) {
@@ -48,5 +49,5 @@ export async function getHomeDashboard(authUserId:string, requestedLeagueId?:str
     const isLive=(gamesResult.data??[]).some((game)=>liveStatuses.some((status)=>(game.status||game.sourceStatus||"").toLowerCase().includes(status)));
     const mode=deriveHomeMode({hasLive:isLive,latestFinishedAt:playedGamesResult.data?.[0]?.sourceUpdatedAt??playedGamesResult.data?.[0]?.scheduledAt??null,now});
     return {kind:"READY" as const,schemaVersion:"canastio.home.v1",mode,displayName:profile.displayName,league:{id:team.league.id,name:team.league.name},leagues:profile.fantasyTeams.map((item)=>({id:item.league.id,name:item.league.name})),competition:team.competitionSeason.competition.name,roster:{count:team.rosterSlots.length,balanceCredits:team.balanceCredits===null?null:Number(team.balanceCredits)},round:{number:nextRound,cutoffAt:lineup?.cutoffAt?iso(lineup.cutoffAt):nextGame?.scheduledAt?iso(nextGame.scheduledAt):null,lineupState,isLive},performance:{state:stateOf(scoresResult.state==="ERROR",Boolean(latestScore)),updatedAt:latestScore?.publishedAt?iso(latestScore.publishedAt):scoresResult.updatedAt,data:latestScore?{roundNumber:latestScore.roundNumber,points:latestScore.points!.toString(),position,positionChange:position!==null&&previousPosition!==null?previousPosition-position:null}:null},market:{state:stateOf(marketResult.state==="ERROR",Boolean(marketResult.data?.length)),updatedAt:marketResult.data?.[0]?.createdAt?iso(marketResult.data[0].createdAt):marketResult.updatedAt,data:marketResult.data?buildMarketMovers(marketResult.data):null},games:{state:stateOf(gamesResult.state==="ERROR",Boolean(uniqueGames.length)),updatedAt:gamesResult.updatedAt,data:uniqueGames.map((game)=>({id:game.id,home:game.homeTeam.name,away:game.awayTeam.name,scheduledAt:game.scheduledAt?iso(game.scheduledAt):null,status:game.sourceStatus??game.status}))},playedGames:{state:stateOf(playedGamesResult.state==="ERROR",Boolean(playedGamesResult.data?.length)),updatedAt:playedGamesResult.updatedAt,data:playedGamesResult.data?.map((game)=>({id:game.id,home:game.homeTeam.name,away:game.awayTeam.name,homeScore:game.homeScore,awayScore:game.awayScore,scheduledAt:game.scheduledAt?iso(game.scheduledAt):null}))??null},activity:{state:stateOf(activityResult.state==="ERROR",Boolean(activity?.length)),updatedAt:activityResult.data?.[0]?.createdAt?iso(activityResult.data[0].createdAt):activityResult.updatedAt,data:activity},updatedAt};
-  } catch (error) { console.error("[home-dashboard] critical_load_failed",error); return {kind:"CRITICAL_ERROR" as const,code:"DASHBOARD_UNAVAILABLE",updatedAt}; }
+  } catch (error) { console.error("[home-dashboard] critical_load_failed",safeError(error)); return {kind:"CRITICAL_ERROR" as const,code:"DASHBOARD_UNAVAILABLE",updatedAt}; }
 }

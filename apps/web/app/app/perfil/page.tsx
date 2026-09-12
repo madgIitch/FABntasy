@@ -6,15 +6,21 @@ import { getUserProfileOverview } from "../../../src/server/user-profile";
 import { Icon } from "../../../src/components/ui/icon";
 import { LogoutControl } from "../account-controls";
 import { PwaSettings } from "./pwa-settings";
+import { headers } from "next/headers";
+import { SecuritySettings } from "./security-settings";
 
 const points = new Intl.NumberFormat("es-ES", { maximumFractionDigits: 1 });
 
-export default async function ProfilePage() {
+const accountMessages: Record<string, string> = { "reauth-failed": "No se pudo confirmar tu identidad.", "email-pending": "Revisa ambos correos para completar el cambio.", "password-changed": "Contraseña actualizada.", "privacy-saved": "Preferencia de privacidad guardada.", "sessions-revoked": "Las demás sesiones han sido revocadas.", "delete-failed": "El borrado no pudo completarse; vuelve a intentarlo." };
+export default async function ProfilePage({ searchParams = Promise.resolve({}) }: { searchParams?: Promise<{ account?: string }> } = {}) {
   const { data: { user } } = await (await createClient()).auth.getUser();
   if (!user) redirect("/login");
   const profile = await getUserProfileOverview(user.id);
   const image = avatarUrl(profile.avatarPath);
   const pointsLabel = profile.totalPoints === null ? "—" : points.format(profile.totalPoints);
+  const ua = (await headers()).get("user-agent") ?? "";
+  const device = /mobile|android|iphone/i.test(ua) ? "Móvil" : /tablet|ipad/i.test(ua) ? "Tablet" : "Navegador";
+  const account = (await searchParams).account;
 
   return <main className="app-main profile-page">
     <header className="workspace-header profile-header"><div><p className="eyebrow">Mi cuenta</p><h1>Perfil</h1></div></header>
@@ -43,6 +49,8 @@ export default async function ProfilePage() {
     </section>
 
     <PwaSettings vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} />
+
+    <SecuritySettings email={user.email ?? ""} username={profile.username} discoverable={profile.discoverableByUsername} lastSignInAt={user.last_sign_in_at ?? null} device={device} message={account ? accountMessages[account] ?? "No se pudo completar la operación." : undefined} />
 
     <div className="profile-logout setting-row"><Icon name="logout" /><LogoutControl /></div>
   </main>;

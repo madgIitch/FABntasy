@@ -1,0 +1,17 @@
+"use server";
+
+import { redirect } from "next/navigation";
+import { createClient } from "../../../src/lib/supabase/server";
+import { createAdminClient } from "../../../src/lib/supabase/admin";
+import { anonymizeOwnAccount } from "../../../src/server/account-privacy";
+import { setUsernameDiscovery } from "../../../src/server/user-profile";
+
+const destination = (kind: string) => `/app/perfil?account=${encodeURIComponent(kind)}`;
+async function authenticated() { const supabase = await createClient(); const { data: { user } } = await supabase.auth.getUser(); if (!user) redirect("/login"); return { supabase, user }; }
+async function reauthenticate(password: string) { const { supabase, user } = await authenticated(); if (!user.email || password.length < 8) redirect(destination("reauth-failed")); const { error } = await supabase.auth.signInWithPassword({ email: user.email, password }); if (error) redirect(destination("reauth-failed")); return { supabase, user }; }
+
+export async function changeEmail(formData: FormData) { const email = String(formData.get("email") ?? "").trim().toLowerCase(); const { supabase } = await reauthenticate(String(formData.get("currentPassword") ?? "")); if (!email.includes("@")) redirect(destination("invalid-email")); const origin = process.env.NEXT_PUBLIC_SITE_URL; const { error } = await supabase.auth.updateUser({ email }, origin ? { emailRedirectTo: `${origin}/auth/callback` } : undefined); redirect(destination(error ? "email-failed" : "email-pending")); }
+export async function changePassword(formData: FormData) { const password = String(formData.get("password") ?? ""), confirmation = String(formData.get("passwordConfirm") ?? ""); const { supabase } = await reauthenticate(String(formData.get("currentPassword") ?? "")); if (password.length < 8 || password !== confirmation) redirect(destination("invalid-password")); const { error } = await supabase.auth.updateUser({ password }); redirect(destination(error ? "password-failed" : "password-changed")); }
+export async function updateDiscovery(formData: FormData) { const { user } = await authenticated(); await setUsernameDiscovery(user.id, formData.get("discoverable") === "on"); redirect(destination("privacy-saved")); }
+export async function revokeOtherSessions() { const { supabase } = await authenticated(); const { error } = await supabase.auth.signOut({ scope: "others" }); redirect(destination(error ? "sessions-failed" : "sessions-revoked")); }
+export async function deleteAccount(formData: FormData) { const confirmation = String(formData.get("confirmation") ?? "").trim().toLowerCase(); const { supabase, user } = await reauthenticate(String(formData.get("currentPassword") ?? "")); const { db } = await import("../../../src/server/db"); const profile = await db.userProfile.findUnique({ where: { authUserId: user.id }, select: { username: true } }); if (!profile?.username || confirmation !== profile.username.toLowerCase()) redirect(destination("delete-confirmation-failed")); const anonymized = await anonymizeOwnAccount(user.id); if (!anonymized) redirect(destination("delete-failed")); if (anonymized.avatarPath) await supabase.storage.from("avatars").remove([anonymized.avatarPath]).catch(() => undefined); const { error } = await createAdminClient().auth.admin.deleteUser(user.id); if (error) redirect(destination("delete-failed")); await supabase.auth.signOut({ scope: "global" }); redirect("/login?account=deleted"); }

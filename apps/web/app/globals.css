@@ -1,12 +1,12 @@
 @import "./tokens.css";
 
 *{box-sizing:border-box}
-html{background:var(--color-canvas);scroll-padding-top:80px}
+html{max-width:100%;overflow-x:hidden;background:var(--color-canvas);scroll-padding-top:80px}
 body{margin:0;color:var(--color-text);font:400 15px/1.5 var(--font-ui);min-height:100svh;background:var(--background-canvas);background-attachment:fixed}
 a{color:inherit;text-decoration:none}
 button,input,select,textarea{font:inherit}
 button,a,input,select,textarea,summary{-webkit-tap-highlight-color:transparent}
-button{cursor:pointer}
+button,[role="button"]{min-height:44px}button{cursor:pointer}
 button:disabled{cursor:not-allowed;opacity:.6}
 input,select,textarea{min-width:0;max-width:100%;font-size:16px;accent-color:var(--color-brand)}
 input::placeholder,textarea::placeholder{color:var(--color-text-muted);opacity:1}
@@ -15,6 +15,7 @@ h1,h2,h3{letter-spacing:-.035em;line-height:1.2}
 h1{font-size:var(--page-title)}
 h2{font-size:var(--section-title)}
 img{max-width:100%}
+.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
 :focus-visible{outline:2px solid var(--color-brand);outline-offset:4px;box-shadow:0 0 0 2px var(--color-surface)}
 ::selection{background:var(--color-brand);color:var(--color-on-brand)}
 .wordmark{font:700 1.6rem/1 var(--font-ui);letter-spacing:-.07em;color:var(--color-brand-text)}
@@ -142,6 +143,7 @@ img{max-width:100%}
 .empty-state>span{font-size:48px;color:var(--color-brand-text)}
 .empty-state p,.empty-state small{color:var(--color-text-muted)}
 .loading-line,.loading-block{background:var(--color-border);border-radius:var(--radius-control);animation:shimmer 1.4s ease-in-out infinite}
+.loading-state{min-height:55svh}.loading-state>p{margin:0 0 16px;color:var(--color-text-muted)}
 .loading-line{height:32px;width:60%;margin-bottom:24px}
 .loading-line.short{width:35%}.loading-block{height:240px}
 /* Profile */
@@ -179,6 +181,7 @@ img{max-width:100%}
 .confirm-dialog-body>div{display:flex;justify-content:flex-end;gap:12px;margin-top:24px}
 .confirm-dialog button{min-height:44px;padding:12px 16px;border:0;border-radius:var(--radius-control);background:var(--color-canvas);color:var(--color-text)}
 .confirm-dialog .primary-action{min-width:0;background:var(--color-brand);color:var(--color-on-brand)}
+.theme-picker{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0;padding:0;border:0}.theme-picker legend{margin-bottom:10px;font-size:13px;font-weight:600}.theme-picker label{position:relative;display:grid;place-items:center;min-height:48px;border:1px solid var(--color-control-border);border-radius:var(--radius-control);cursor:pointer}.theme-picker input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}.theme-picker label:has(input:checked){border-color:var(--color-brand);background:var(--color-brand-soft);color:var(--color-brand-text);font-weight:600}.theme-picker label:has(input:focus-visible){outline:2px solid var(--color-brand);outline-offset:4px}
 @keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @keyframes shimmer{50%{opacity:.5}}
 @media(max-width:900px){.app-frame{grid-template-columns:192px minmax(0,1fr)}.side-nav{padding:24px 12px}.app-main{padding:24px}.fixture{grid-template-columns:1fr 1fr}.fixture time,.fixture small{grid-column:1/-1;text-align:left}}
@@ -215,6 +218,7 @@ img{max-width:100%}
  .confirm-dialog[open]{animation:sheet-rise var(--motion-dialog) ease-out}
  .confirm-dialog-body::before{content:"";display:block;width:40px;height:4px;margin:0 auto 18px;border-radius:999px;background:var(--color-border)}
 }
+@media(max-width:360px){.theme-picker{grid-template-columns:1fr}}
 @keyframes sheet-rise{from{transform:translateY(20px)}}
 @media(max-width:360px){.auth-panel{padding:24px 16px}.court-hero{padding-top:150px}.hero-logo{width:180px;top:90px}.bottom-nav a{font-size:10px}.profile-identity{align-items:start}.profile-person h2{font-size:18px}}
 @media(max-height:720px){.auth-page{justify-content:flex-start}}

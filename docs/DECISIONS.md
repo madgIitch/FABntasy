@@ -10,6 +10,14 @@ una decisión de arquitectura relevante durante implementación.
 
 <!-- Nuevas entradas debajo -->
 
+## 2026-09-12 · Tema previo al pintado y configuración regional única
+
+Contexto: la PWA necesita tema Sistema/Claro/Oscuro sin destello de hidratación y formatos coherentes mientras solo existe la interfaz española.
+
+Decisión: validar `canastio-theme` y resolver Sistema contra `prefers-color-scheme` mediante un script inline síncrono en el `head`; los tokens se seleccionan con `data-theme`. La configuración efectiva se centraliza como `es-ES` y `Europe/Madrid` en `apps/web/src/lib/preferences.ts`.
+
+Consecuencia: valores inválidos o almacenamiento inaccesible degradan a Sistema, y las nuevas superficies deben reutilizar el contrato regional en vez de inferirlo del navegador.
+
 ## 2026-09-11 · El marcador live y el boxscore individual progresan de forma independiente
 
 Contexto: FAB publicó un tanteo 21-24 y después 38-34 desde `estadisticas.ashx` mientras `buscarPartido` seguía en `-/-`; durante ese intervalo el array de jugadores permaneció vacío.

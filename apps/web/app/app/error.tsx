@@ -1,2 +1,2 @@
 "use client";
-export default function ErrorPage({ reset }: { reset: () => void }) { return <main className="app-main"><section className="empty-state"><span>!</span><h1>No hemos podido cargar esta vista</h1><p>Tus datos siguen a salvo. Comprueba la conexión y vuelve a intentarlo.</p><button className="primary-action" onClick={reset}>Reintentar</button></section></main>; }
+export default function ErrorPage({ reset }: { reset: () => void }) { return <main className="app-main"><section className="empty-state" role="alert"><span aria-hidden="true">!</span><h1>No hemos podido cargar esta vista</h1><p>Tus datos siguen a salvo. Comprueba la conexión y vuelve a intentarlo.</p><button className="primary-action" onClick={reset}>Reintentar</button></section></main>; }

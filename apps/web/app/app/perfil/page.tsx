@@ -8,8 +8,10 @@ import { LogoutControl } from "../account-controls";
 import { PwaSettings } from "./pwa-settings";
 import { headers } from "next/headers";
 import { SecuritySettings } from "./security-settings";
+import { AppearanceSettings } from "./appearance-settings";
+import { APP_LOCALE } from "../../../src/lib/preferences";
 
-const points = new Intl.NumberFormat("es-ES", { maximumFractionDigits: 1 });
+const points = new Intl.NumberFormat(APP_LOCALE, { maximumFractionDigits: 1 });
 
 const accountMessages: Record<string, string> = { "reauth-failed": "No se pudo confirmar tu identidad.", "email-pending": "Revisa ambos correos para completar el cambio.", "password-changed": "Contraseña actualizada.", "privacy-saved": "Preferencia de privacidad guardada.", "sessions-revoked": "Las demás sesiones han sido revocadas.", "delete-failed": "El borrado no pudo completarse; vuelve a intentarlo." };
 export default async function ProfilePage({ searchParams }: { searchParams: Promise<{ account?: string }> }) {
@@ -48,6 +50,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
       </div>
     </section>
 
+    <AppearanceSettings />
     <PwaSettings vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} />
 
     <SecuritySettings email={user.email ?? ""} username={profile.username} discoverable={profile.discoverableByUsername} lastSignInAt={user.last_sign_in_at ?? null} device={device} message={account ? accountMessages[account] ?? "No se pudo completar la operación." : undefined} />

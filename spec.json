@@ -1655,7 +1655,7 @@
     {
       "id": "sprint-18c-home-contextual-polish",
       "name": "Sprint 18C - Home Contextual Polish",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.7.3",
       "dependencies": [

@@ -1795,7 +1795,7 @@
     {
       "id": "sprint-20-performance-reliability",
       "name": "Sprint 20 - Performance and Reliability",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.8.1",
       "dependencies": [
@@ -1818,12 +1818,21 @@
       ],
       "deliverable": "FABntasy cumple presupuestos de rendimiento definidos para la beta.",
       "acceptance": [
-        "AC1: Home, mercado y ranking tienen presupuesto p95 documentado y testeable.",
-        "AC2: El cálculo de una jornada completa no bloquea requests interactivos.",
-        "AC3: Los rankings no se recalculan desde cero en cada request.",
-        "AC4: La caída temporal del ingestor no afecta lecturas de datos ya sincronizados.",
-        "AC5: Las queries lentas relevantes quedan identificadas y cubiertas por índices o justificación.",
-        "AC6: Los tests de carga no realizan llamadas al backend real de FAB."
+        "Home, mercado y ranking tienen benchmarks reproducibles sobre el perfil `realistic` de Sprint 14F que registran entorno, dataset, concurrencia, muestras, p50, p95 y errores.",
+        "Con 20 clientes concurrentes y caché caliente, el p95 server-side es como máximo 800 ms para home y 1000 ms para mercado y ranking; con caché fría cada ruta queda como máximo en 1500 ms.",
+        "El cálculo y publicación de una jornada completa del perfil `realistic` termina en 30 segundos o menos mientras las lecturas interactivas mantienen p95 de 1500 ms o menos.",
+        "Los rankings publicados se leen desde resultados persistidos o un agregado derivado versionado; ninguna request recalcula desde cero scores de jugadores, jornadas o clasificación completa.",
+        "La publicación y las correcciones son atómicas e idempotentes: un fallo conserva visible la última revisión válida y nunca expone una mezcla parcial de revisiones.",
+        "Las claves de caché privadas incluyen actor y liga resueltos server-side; cambiar parámetros cliente no cruza usuarios o ligas y ninguna clave, métrica o log contiene tokens, cookies, secretos o PII.",
+        "La invalidación está ligada como mínimo a liga, jornada y revisión; una publicación, corrección, operación de mercado o cambio de alineación invalida únicamente las lecturas afectadas y no sirve datos incompatibles.",
+        "La caída temporal del ingestor no afecta a las lecturas de datos ya sincronizados y ninguna ruta web realiza llamadas directas a FAB.",
+        "Las queries de home, mercado, ranking y publicación quedan inventariadas con `EXPLAIN (ANALYZE, BUFFERS)` sobre datos realistas; cada scan o sort costoso tiene índice aditivo o justificación documentada.",
+        "La carga simultánea cubre caché fría y caliente, publicación, corrección, invalidación concurrente y reintentos; no produce deadlocks, duplicados, resultados parciales ni errores no controlados.",
+        "Métricas server-side mínimas registran duración, resultado, operación y estado de caché con cardinalidad acotada y redacción conforme al Sprint 19; existen umbrales de alerta documentados para latencia, errores y frescura.",
+        "Cachés y optimizaciones pueden desactivarse sin pérdida de datos ni cambio del contrato público; las migraciones son aditivas y existe ruta documentada de rollback.",
+        "La UI de home, mercado y ranking conserva estados de carga, error y reintento y, durante una recomputación, identifica la última revisión válida y su timestamp sin presentarla como nueva publicación.",
+        "Los tests de rendimiento usan únicamente una base de integración marcada y fixtures sintéticos; no llaman a FAB, Supabase, Web Push ni servicios externos reales.",
+        "Typecheck, lint, tests, pytest, ruff, Prisma validate, diff-scope y el gate de rendimiento reproducible terminan con código cero."
       ],
       "scope": [
         "apps/web/**",
@@ -1831,10 +1840,21 @@
         "prisma/**",
         "tests/**",
         "scripts/**",
+        ".github/workflows/**",
+        ".env.example",
         "docs/**",
+        "spec/**",
+        "progress/**",
+        ".harness/**",
         "spec.json"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-09-12T10:51:50.418Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:aa0c50b3ff65d7d1a186b338b9524be391b94ff57fee2eb97cbab584e777867b",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-12T10:51:50.692Z"
     },
     {
       "id": "sprint-21-accessibility-responsive-polish",

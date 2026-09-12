@@ -385,3 +385,16 @@ Contexto: se aprobó el spec `sprint-19-security-privacy-hardening` (Sprint 19 -
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-20-performance-reliability -->
+## 2026-09-12 · sprint-20-performance-reliability aprobado
+
+Contexto: se aprobó el spec `sprint-20-performance-reliability` (Sprint 20 - Performance and Reliability).
+
+Decisiones registradas:
+
+- **auth_secrets:** aislamiento de caché y métricas saneadas definidos.
+- **rollback_compat:** cambios aditivos y bypass de caché definidos.
+- **tests:** dataset, concurrencia y umbrales exactos definidos.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

@@ -574,3 +574,30 @@ Originado por el incidente documentado en docs/operations/INCIDENT_2026-09-10_FA
   - `.env.example`
   - `spec.json`
 
+<!-- harness:sprint-20-performance-reliability -->
+## sprint-20-performance-reliability · Sprint 20 - Performance and Reliability
+
+
+
+### Scope aprobado
+
+  - `apps/web/**`
+  - `services/fab_ingestor/**`
+  - `prisma/**`
+  - `tests/**`
+  - `scripts/**`
+  - `.github/workflows/**`
+  - `.env.example`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+  - `.harness/**`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** agregados derivados, índices y autoridad definidos.
+- **external_contracts:** PostgreSQL de integración y servicios simulados definidos.
+- **edge_cases:** carga, invalidación, recomputación e ingestor caído cubiertos.
+- **ui_states:** carga, error, revisión vigente y datos en recomputación definidos.
+

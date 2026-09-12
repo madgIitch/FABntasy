@@ -42,6 +42,12 @@ describe("home dashboard contract",()=>{
     expect(refresh).toContain("refreshing.current");
   });
 
+  it("keeps the mobile navigation fixed and visible through 720px",()=>{
+    const css=readFileSync(resolve(process.cwd(),"app/globals.css"),"utf8").replace(/\s+/g,"");
+    expect(css).toContain("@media(max-width:720px)");
+    expect(css).toContain(".bottom-nav{position:fixed;z-index:50;right:0;bottom:0;left:0;width:100%;display:grid");
+  });
+
   it("keeps already-started live games in the home query",()=>{
     const source=readFileSync(resolve(process.cwd(),"src/server/home-dashboard.ts"),"utf8");
     expect(source).toContain('OR:[{status:{in:liveStatuses}},{scheduledAt:{gte:now}}]');

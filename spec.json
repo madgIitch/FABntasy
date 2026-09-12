@@ -1860,7 +1860,7 @@
       "id": "sprint-21-accessibility-responsive-polish",
       "visual_spec_reference": "sprint-14d-green-white-design-system (aprobado; adoptar al implementar): docs/design/CANASTIO_14D_VISUAL_DIRECTION.md; extender tokens al tema oscuro sin restaurar el acento lima",
       "name": "Sprint 21 - Accessibility and Responsive Polish",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.9.0",
       "dependencies": [

@@ -558,3 +558,19 @@ Originado por el incidente documentado en docs/operations/INCIDENT_2026-09-10_FA
   - `docs/**`
   - `spec.json`
 
+<!-- harness:sprint-19-security-privacy-hardening -->
+## sprint-19-security-privacy-hardening · Sprint 19 - Security and Privacy Hardening
+
+
+
+### Scope aprobado
+
+  - `apps/web/**`
+  - `services/fab_ingestor/**`
+  - `packages/**`
+  - `prisma/**`
+  - `tests/**`
+  - `docs/**`
+  - `.env.example`
+  - `spec.json`
+

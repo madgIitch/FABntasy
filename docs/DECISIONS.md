@@ -376,3 +376,12 @@ Contexto: se aprobó el spec `sprint-18c-home-contextual-polish` (Sprint 18C - H
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-19-security-privacy-hardening -->
+## 2026-09-12 · sprint-19-security-privacy-hardening aprobado
+
+Contexto: se aprobó el spec `sprint-19-security-privacy-hardening` (Sprint 19 - Security and Privacy Hardening).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

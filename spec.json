@@ -1729,7 +1729,7 @@
       "id": "sprint-19-security-privacy-hardening",
       "visual_spec_reference": "sprint-14d-green-white-design-system (aprobado; adoptar al implementar): docs/design/CANASTIO_14D_VISUAL_DIRECTION.md",
       "name": "Sprint 19 - Security and Privacy Hardening",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.8.0",
       "dependencies": [
@@ -1759,18 +1759,20 @@
       ],
       "deliverable": "La beta dispone de controles de seguridad, privacidad y abuso coherentes.",
       "acceptance": [
-        "AC1: Ningún endpoint de usuario acepta user_id arbitrario como sustituto de la identidad de sesión.",
-        "AC2: Mercado, ligas, lineup y admin tienen autorización server-side.",
-        "AC3: Rate limiting distingue autenticación de lecturas normales.",
-        "AC4: Exportar/borrar cuenta no elimina datos deportivos globales importados de FAB.",
-        "AC5: Logs no contienen cookies, tokens, key FAB ni payloads de contraseña.",
-        "AC6: Dependencias críticas conocidas con vulnerabilidad alta bloquean release hasta evaluación.",
-        "AC7: Cambiar correo o contraseña exige sesión reciente o reautenticación; el nuevo correo no sustituye al anterior hasta completar la confirmación enviada por Supabase Auth.",
-        "AC8: La vista de sesiones activas muestra dispositivos de forma minimizada, permite revocar otras sesiones y nunca expone refresh tokens, direcciones completas o huellas invasivas.",
-        "AC9: La preferencia Permitir que me encuentren por username controla el descubrimiento y las invitaciones, pero no rompe membresías existentes ni revela correo o nombre real.",
-        "AC10: El borrado de cuenta requiere confirmación reforzada, explica qué datos se eliminan o conservan por integridad histórica, revoca sesiones y elimina o anonimiza perfil, avatares y PII sin afectar datos deportivos globales.",
-        "AC11: Cerrar sesión no se presenta como acción destructiva roja; eliminar cuenta queda aislado en una zona de peligro con lenguaje inequívoco y confirmación separada.",
-        "AC12: La autenticación en dos pasos solo aparece como disponible cuando exista un flujo completo de alta, verificación, recuperación y desactivación; hasta entonces se muestra como Próximamente sin simular protección."
+        "Ningún endpoint de usuario acepta `user_id` arbitrario como sustituto de la identidad de sesión; los accesos ajenos fallan sin revelar la existencia del recurso.",
+        "Mercado, ligas, lineup, perfil y administración resuelven actor y permisos server-side en cada lectura o mutación sensible.",
+        "El rate limiting distingue autenticación, mutaciones sensibles y lecturas normales, devuelve 429 con `Retry-After` y no usa identificadores entregados por el cliente como identidad confiable.",
+        "CSP, cookies seguras, protección same-origin/CSRF y headers defensivos se aplican sin romper PWA, Supabase Auth ni Web Push.",
+        "Logs, errores y auditoría redactan cookies, authorization, tokens, contraseñas, claves FAB, VAPID y cuerpos sensibles de forma recursiva y sin distinción de mayúsculas.",
+        "El gate de dependencias bloquea vulnerabilidades altas o críticas conocidas hasta resolución o evaluación documentada, acotada y con caducidad.",
+        "Cambiar correo o contraseña exige sesión reciente o reautenticación; el correo anterior continúa vigente hasta confirmación completada por Supabase Auth.",
+        "La vista de sesiones minimiza dispositivo y momento de actividad, permite revocar otras sesiones y nunca expone refresh tokens, IP completa ni huellas invasivas.",
+        "`Permitir que me encuentren por username` controla descubrimiento e invitaciones nuevas sin romper membresías existentes ni revelar correo o nombre real.",
+        "La exportación contiene exclusivamente datos propios en formato documentado y no incluye secretos, RAW FAB, PII de terceros ni datos privados de otras ligas.",
+        "El borrado requiere confirmación reforzada, revoca sesiones y elimina o anonimiza perfil, avatar y PII sin borrar datos deportivos globales ni romper el histórico competitivo necesario.",
+        "Cerrar sesión conserva tratamiento neutral; eliminar cuenta queda aislado en una zona de peligro con explicación previa y confirmación separada.",
+        "MFA solo se muestra disponible cuando alta, verificación, recuperación y desactivación funcionan de extremo a extremo; mientras tanto figura como `Próximamente`.",
+        "Tests cubren autorización horizontal, rate limiting, headers, CSRF, redacción, dependencias, reautenticación, sesiones, descubrimiento, exportación, borrado/anominización y estados responsive sin servicios externos reales."
       ],
       "scope": [
         "apps/web/**",
@@ -1779,9 +1781,16 @@
         "prisma/**",
         "tests/**",
         "docs/**",
+        ".env.example",
         "spec.json"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-09-12T10:06:49.362Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:7fc5df1f35fb5082d29b8caefc17a6fccdf2cbcf327c99054031be96364154fa",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-12T10:06:49.598Z"
     },
     {
       "id": "sprint-20-performance-reliability",

@@ -1581,7 +1581,7 @@
     {
       "id": "sprint-18b-live-game-score-ingestion",
       "name": "Sprint 18B - Live Game Score Ingestion",
-      "status": "in_progress",
+      "status": "done",
       "sdd": true,
       "milestone": "0.7.2",
       "dependencies": [
@@ -1653,6 +1653,79 @@
       "approved_at": "2026-09-11T18:31:04.185Z"
     },
     {
+      "id": "sprint-18c-home-contextual-polish",
+      "name": "Sprint 18C - Home Contextual Polish",
+      "status": "spec_ready",
+      "sdd": true,
+      "milestone": "0.7.3",
+      "dependencies": [
+        "sprint-15-home-dashboard",
+        "sprint-18b-live-game-score-ingestion"
+      ],
+      "objective": "Convertir la portada autenticada en una narración contextual que explique en menos de diez segundos qué ocurre, qué implica para el usuario y cuál es su siguiente acción, humanizando los datos FAB sin cambiar la arquitectura visual bosque-lima ni los contratos de resiliencia.",
+      "user_stories": [
+        {
+          "id": "HU18C.1",
+          "story": "Como manager quiero entender al abrir Inicio qué está ocurriendo ahora y si tengo que actuar, sin interpretar estados técnicos ni recorrer toda la página."
+        },
+        {
+          "id": "HU18C.2",
+          "story": "Como usuario quiero leer resultados, movimientos y actividad con lenguaje deportivo y humano, conservando señales claras sobre la frescura y fiabilidad de los datos."
+        }
+      ],
+      "tasks": [
+        "Definir una máquina de presentación con tres modos estables: jornada en directo, jornada recién terminada y estado ordinario.",
+        "Reforzar el módulo prioritario existente sin crear un segundo hero ni alterar la identidad bosque-lima.",
+        "Ordenar el feed mediante reglas contextuales limitadas y deterministas, conservando Actividad como contexto secundario.",
+        "Crear una capa de presentación para estados FAB, nombres personales, importes y tiempos relativos sin mutar los valores originales persistidos.",
+        "Diferenciar Agenda, Resultados, Mercado y Actividad mediante sus patrones de contenido, ritmo y densidad, no mediante nuevas tarjetas.",
+        "Destacar ganadores y sustituir flechas ambiguas por affordances de navegación consistentes y accesibles.",
+        "Sistematizar frescura normal, live, stale y error manteniendo aislamiento por sección y refresco manual fuera del directo.",
+        "Reducir Actividad a cuatro eventos y redactarlos como frases humanas sin perder autorización ni contexto de liga.",
+        "Comprimir estados vacíos obligatorios sin ocultar por completo la ausencia honesta de datos.",
+        "Medir contraste y verificar nombres largos, timestamps, marcadores y acciones a 320, 375, 400, 430, 768 y 1440 px y zoom 200 %."
+      ],
+      "deliverable": "Una portada contextual, estable y accesible que mantiene el módulo prioritario y el feed continuo, pero comunica estados, resultados y actividad con lenguaje propio de Canastio y menor ruido técnico.",
+      "acceptance": [
+        "El módulo prioritario existente sigue siendo la única pieza hero de Inicio y responde siempre, en este orden, qué está pasando, qué implica para el usuario y qué acción válida puede realizar; no inventa puntos, horarios ni estados para completar la composición.",
+        "En todos sus estados —alineación pendiente, lista, bloqueada, jornada live, provisional, resultado publicado y sin calendario— el módulo prioritario se distingue sistemáticamente del feed mediante superficie o contraste, escala del mensaje principal, una única acción y separación vertical, sin cambiar la paleta 14E.",
+        "El feed usa únicamente tres modos deterministas: LIVE prioriza directo/resultados, mercado, agenda y actividad; RECENT_FINAL prioriza resultado de jornada/resultados, mercado, actividad y agenda; DEFAULT prioriza mercado, agenda, resultados y actividad.",
+        "La transición entre modos depende de estado deportivo persistido y de un horizonte temporal explícito y probado; no usa aleatoriedad, personalización opaca ni reordenación durante una misma carga.",
+        "Actividad permanece última salvo un futuro spec que defina eventos extraordinarios; un módulo con datos no cambia de posición por errores de otra sección.",
+        "Los estados vacíos exigidos por Sprint 15 se conservan como mensajes compactos y honestos; Mercado sin precios comparables no desaparece ni muestra ejemplos ficticios, pero tampoco ocupa el espacio de una lista poblada.",
+        "La UI traduce estados externos mediante una función central y exhaustiva: `No comenzado`/`scheduled` se presenta como `Próximo`, los estados live como `En directo`, los finales como `Final` y los estados desconocidos usan una etiqueta neutral segura; el valor FAB original permanece intacto en persistencia.",
+        "Los nombres de jugadores se presentan en orden natural y capitalización humana cuando el patrón FAB `APELLIDOS, NOMBRE` es inequívoco; la transformación es solo visual, conserva diacríticos y guiones y ante ambigüedad mantiene el nombre original sin intentar adivinar identidades.",
+        "Los importes del feed usan el lenguaje compacto existente —por ejemplo `5 M`— y cada evento se redacta como una frase humana que integra actor, acción, jugador e importe cuando proceda; no revela datos de otra liga ni elimina información necesaria para comprender la operación.",
+        "Inicio muestra como máximo cuatro eventos de actividad, del más reciente al más antiguo, y mantiene un enlace inequívoco a la vista completa de la liga.",
+        "Los resultados muestran fecha, equipos y marcador; el ganador se diferencia mediante peso tipográfico además de cualquier color, los empates no fuerzan un ganador y los marcadores ausentes se muestran como pendientes, nunca como cero.",
+        "Los enlaces de Agenda y Resultados usan el mismo chevron o icono de navegación accesible del sistema, colocado al extremo de la fila; no reutilizan flechas de tendencia ni dependen del icono para comunicar el destino.",
+        "La frescura usa un formateador central: hora breve para datos normales del día, tiempo relativo para live o cambios recientes, aviso `Datos de hace …` al superar un umbral documentado y mensaje de error específico cuando una sección falla.",
+        "Cada sección conserva `updatedAt`, estado independiente y degradación aislada conforme a Sprint 15; reducir timestamps repetidos no elimina la capacidad de distinguir qué bloque está stale o falló.",
+        "Durante live continúa el refresco acotado existente y se comunica la última actualización; fuera de live no aparece polling continuo y permanece una acción manual secundaria con nombre accesible.",
+        "La portada mantiene una columna continua, sin cuadrícula de tarjetas ni cards por fila. Cada sección se diferencia por estructura del dato, densidad y ritmo: cotización en Mercado, enfrentamiento en Agenda, marcador en Resultados y frase temporal en Actividad.",
+        "El lima continúa reservado a acción principal, navegación activa, foco e información viva conforme a 14E; no se añaden grandes fondos lima, nuevos gradientes decorativos, iconos ornamentales ni una paleta paralela.",
+        "El contexto de competición y liga activa sigue visible y el cambio de liga no mezcla saldo, clasificación, mercado, actividad, calendario ni resultados entre ámbitos.",
+        "Texto normal y secundario alcanza 4.5:1 y gráficos o texto grande 3:1 en el tema bosque-lima; la evidencia incluye mediciones sobre los tokens realmente renderizados, no solo inspección visual de capturas.",
+        "La portada no presenta overflow horizontal a 320, 375, 400 y 430 px con nombres largos, dos marcadores de tres cifras, fechas localizadas y zoom 200 %; navegación inferior, foco y safe area no tapan contenido ni controles.",
+        "`prefers-reduced-motion`, foco visible, objetivos táctiles mínimos de 44 px y estados que no dependen solo del color continúan cumpliéndose.",
+        "Tests unitarios cubren modos y orden contextual, horizonte RECENT_FINAL, traducción de estados, nombres ambiguos y no ambiguos, importes, frescura, ganador/empate, límites de actividad y aislamiento entre ligas.",
+        "Tests de componente y capturas verifican hero con pocos datos, mercado vacío, live, final reciente, sección stale/error, nombres largos y viewport de 320 px; typecheck, lint, tests y build finalizan correctamente."
+      ],
+      "scope": [
+        "apps/web/**",
+        "packages/domain/**",
+        "tests/**",
+        "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_reason": "La crítica visual, las capturas reales y las decisiones aprobadas de los Sprints 14D, 14E y 15 proporcionan respuestas completas y límites explícitos para preparar el spec sin implementar.",
+      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-12T03:11:58.725Z"
+    },
+    {
       "id": "sprint-19-security-privacy-hardening",
       "visual_spec_reference": "sprint-14d-green-white-design-system (aprobado; adoptar al implementar): docs/design/CANASTIO_14D_VISUAL_DIRECTION.md",
       "name": "Sprint 19 - Security and Privacy Hardening",
@@ -1660,7 +1733,7 @@
       "sdd": true,
       "milestone": "0.8.0",
       "dependencies": [
-        "sprint-18b-live-game-score-ingestion",
+        "sprint-18c-home-contextual-polish",
         "sprint-16-pwa-install-and-notifications"
       ],
       "objective": "Cerrar vectores de abuso, proteger datos de usuario y preparar el producto para beta pública.",

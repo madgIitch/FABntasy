@@ -59,7 +59,7 @@ function writeProgress(task, state, branch) {
   mkdirSync(PDIR, { recursive: true });
   const attempts = state.tasks[task.id]?.attempts ?? [];
   const ts = new Date().toISOString();
-  const agent = process.env.HARNESS_AGENT || "claude";
+  const agent = "codex";
   const table = attemptsTable(attempts);
 
   const impl = `${PDIR}/impl_${task.name}.md`;

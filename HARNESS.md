@@ -4,6 +4,7 @@ Este repo usa un flujo SDD controlado por `.harness/`. Antes de implementar, el 
 
 ## Reglas obligatorias
 
+- El agente del harness es siempre Codex. `HARNESS_AGENT` no cambia el proveedor.
 - Si falta `.harness/`, instalarlo con `bash init.sh`.
 - No implementar una feature sin `spec_approved: true` en `spec.json`.
 - Trabajar una feature cada vez.

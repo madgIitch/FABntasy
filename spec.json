@@ -1921,7 +1921,7 @@
     {
       "id": "sprint-22-beta-observability",
       "name": "Sprint 22 - Beta Observability",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "0.9.1",
       "dependencies": [
@@ -1945,22 +1945,45 @@
       ],
       "deliverable": "La beta puede operarse y diagnosticarse sin inspección manual constante.",
       "acceptance": [
-        "AC1: Un error de ingesta fallida genera una señal operativa sin incluir credenciales FAB.",
-        "AC2: Los errores client-side se agrupan sin registrar tokens ni datos privados de ligas.",
-        "AC3: Existe dashboard interno de jobs fallidos y backlog pendiente.",
-        "AC4: Las métricas distinguen fallo de FAB, DB y aplicación.",
-        "AC5: Se documenta cómo desactivar temporalmente scoring/mercado sin perder datos.",
-        "AC6: El feedback de usuario no se mezcla con logs técnicos."
+        "Existe una capa de observabilidad compartida con esquema versionado y adaptadores server, client e ingestor; los tests usan un sink local determinista y ninguna petición de producto falla cuando el sink está desactivado o indisponible.",
+        "Un fallo sintético de FAB, PostgreSQL, aplicación web o ingestor genera una señal con `timestamp`, `release`, `environment`, `component`, `operation`, `result` y `errorCategory`, y cada origen queda clasificado de forma inequívoca.",
+        "La redacción se ejecuta antes de almacenar o transportar eventos y pruebas con valores canario demuestran que tokens, cookies, contraseñas, credenciales FAB, DSN, cuerpos, payloads RAW, correos, nombres privados e IDs directos de usuario no aparecen en eventos ni dashboards.",
+        "Los errores client-side se agrupan por firma estable y release sin capturar contenido de formularios, URL queries, estado privado de ligas, stack con datos dinámicos ni identificadores directos de usuario.",
+        "Métricas de uso del producto registran únicamente eventos agregables con nombres y dimensiones allowlist de cardinalidad acotada; no permiten reconstruir la actividad o contenido de un usuario individual.",
+        "La ruta administrativa de estado requiere autorización server-side y muestra salud global, frescura, heartbeat, último éxito, jobs fallidos, jobs bloqueados, backlog, tasa de errores y latencias por componente sin stack traces ni datos sensibles.",
+        "La página interna cubre estados de carga, vacío, parcial, obsoleto, error y offline, conserva accesibilidad y responsive de 320 a 1440 px y muestra el timestamp de la última señal válida.",
+        "Heartbeat mayor de 10 minutos, job sin progreso durante 15 minutos, backlog superior a 20 durante 10 minutos, error rate superior al 2% durante 5 minutos o p95 sobre el presupuesto del Sprint 20 durante 10 minutos producen salud degradada o crítica y una señal operativa deduplicada.",
+        "Las señales equivalentes se deduplican por componente, operación, categoría y release, están limitadas en frecuencia/tamaño/cardinalidad y conservan contadores e intervalo sin ocultar recuperaciones o cambios de severidad.",
+        "El canal de feedback autenticado guarda categoría, texto acotado, estado y timestamps en un flujo separado de logs técnicos; adjuntar contexto técnico saneado requiere consentimiento explícito y nunca concede al usuario acceso a telemetría interna.",
+        "El formulario de feedback presenta envío, éxito, error recuperable, offline y prevención de doble envío; validación, rate limit e idempotencia impiden abuso y duplicados previsibles.",
+        "Error tracking, métricas de uso y feedback tienen flags server-side independientes; desactivarlos convierte sus escrituras en no-op o solo lectura sin modificar datos de producto ni contratos de negocio.",
+        "El runbook documenta diagnóstico, responsables, severidades, triage, comunicación, recuperación y cierre, además de pausar y reanudar ingesta, scoring y mercado sin borrar datos ni exponer publicaciones parciales.",
+        "Las migraciones son aditivas, la retención de telemetría y feedback está documentada y la retirada de un proveedor o rollback de aplicación no exige migraciones destructivas.",
+        "Tests unitarios, de integración y smoke cubren clasificación, redacción, deduplicación, umbrales, permisos, feedback separado, sink caído, flags y estados UI sin llamadas reales a FAB ni proveedores externos.",
+        "Typecheck, lint, tests web, pytest, ruff, Prisma validate y diff-scope terminan con código cero."
       ],
       "scope": [
         "apps/web/**",
         "services/fab_ingestor/**",
+        "prisma/**",
         "infrastructure/**",
         "tests/**",
+        "scripts/**",
+        ".github/workflows/**",
+        ".env.example",
         "docs/**",
+        "spec/**",
+        "progress/**",
+        ".harness/**",
         "spec.json"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-09-13T22:44:58.253Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:1db9f2fa237e2097f78adf77c4fa292dfc93175c418e8aff6a3bf59bf16b6230",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-13T22:46:42.051Z"
     },
     {
       "id": "sprint-22b-ingestor-production-deployment",

@@ -613,3 +613,31 @@ Originado por el incidente documentado en docs/operations/INCIDENT_2026-09-10_FA
   - `docs/**`
   - `spec.json`
 
+<!-- harness:sprint-22-beta-observability -->
+## sprint-22-beta-observability · Sprint 22 - Beta Observability
+
+
+
+### Scope aprobado
+
+  - `apps/web/**`
+  - `services/fab_ingestor/**`
+  - `prisma/**`
+  - `infrastructure/**`
+  - `tests/**`
+  - `scripts/**`
+  - `.github/workflows/**`
+  - `.env.example`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+  - `.harness/**`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** fuentes operativas existentes, feedback separado, agregados y retención acotados.
+- **external_contracts:** adaptadores, esquema versionado, sink de test y separación de feedback definidos.
+- **edge_cases:** deduplicación, cardinalidad, tormentas, obsolescencia y despliegues cubiertos.
+- **ui_states:** contenido, permisos y estados de status y feedback definidos.
+

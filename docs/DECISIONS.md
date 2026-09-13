@@ -438,3 +438,16 @@ Contexto: se aprobó el spec `sprint-21-accessibility-responsive-polish` (Sprint
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-22-beta-observability -->
+## 2026-09-13 · sprint-22-beta-observability aprobado
+
+Contexto: se aprobó el spec `sprint-22-beta-observability` (Sprint 22 - Beta Observability).
+
+Decisiones registradas:
+
+- **auth_secrets:** allowlist, redacción previa, permisos y datos prohibidos definidos.
+- **rollback_compat:** flags independientes, no-op, cambios aditivos y runbook definidos.
+- **tests:** inyecciones, umbrales, duración y verificaciones reproducibles definidos.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

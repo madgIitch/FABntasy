@@ -455,3 +455,16 @@ Decisiones registradas:
 - **tests:** inyecciones, umbrales, duración y verificaciones reproducibles definidos.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-22b-ingestor-production-deployment -->
+## 2026-09-13 · sprint-22b-ingestor-production-deployment aprobado
+
+Contexto: se aprobó el spec `sprint-22b-ingestor-production-deployment` (Sprint 22B - Ingestor Production Deployment).
+
+Decisiones registradas:
+
+- **auth_secrets:** Define secretos externos, volumen privado escribible, TLS, secreto compartido con Vercel, rechazo seguro, rotación y prohibición de secretos en imagen, repositorio, argumentos, logs, métricas, panel y CI. FAB_CREDENTIALS_FILE reside en un volumen privado de 1 GB y sus backups diarios saneados se retienen 7 días.
+- **rollback_compat:** El rollback restaura el digest anterior conservando PostgreSQL, cola y volumen; prohíbe migraciones destructivas y prescribe diagnóstico auditado para jobs RUNNING interrumpidos. La política on-failure se limita a 5 reinicios consecutivos y después alerta, evitando reinicios indefinidos que oculten una release defectuosa.
+- **tests:** El smoke real queda limitado a la 1ª Provincial Senior Masculina de Sevilla 2026/2027, una jornada publicada y como máximo tres partidos representativos, sin tráfico inventado. La observación empieza 60 minutos antes del primer partido y termina al validar el último, con máximo de 6 horas. Se exige heartbeat menor de 10 minutos, claim de un job elegible en menos de 2 minutos, SIGTERM completado en 10 segundos, cero duplicados tras repetición y recuperación HEALTHY dentro de 10 minutos desde restaurar una dependencia. La cadencia verificable es 120 minutos sin partidos próximos, 5 minutos desde 60 minutos antes, 30–60 segundos durante juego y reintentos del boxscore final a 2/5/10/20 minutos; tras validar todos los finales vuelve a 120 minutos. La evidencia saneada se conserva en progress/deployment/sprint-22b/<fecha>-<commit>/.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

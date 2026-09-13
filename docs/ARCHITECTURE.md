@@ -641,3 +641,33 @@ Originado por el incidente documentado en docs/operations/INCIDENT_2026-09-10_FA
 - **edge_cases:** deduplicación, cardinalidad, tormentas, obsolescencia y despliegues cubiertos.
 - **ui_states:** contenido, permisos y estados de status y feedback definidos.
 
+<!-- harness:sprint-22b-ingestor-production-deployment -->
+## sprint-22b-ingestor-production-deployment · Sprint 22B - Ingestor Production Deployment
+
+
+
+### Scope aprobado
+
+  - `infrastructure/**`
+  - `services/fab_ingestor/**`
+  - `.github/workflows/**`
+  - `prisma/migrations/**`
+  - `tests/**`
+  - `scripts/**`
+  - `docs/operations/**`
+  - `docs/ARCHITECTURE.md`
+  - `docs/CONVENTIONS.md`
+  - `docs/DECISIONS.md`
+  - `.env.example`
+  - `spec/**`
+  - `progress/**`
+  - `.harness/**`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** No requiere un nuevo modelo de dominio: PostgreSQL sigue siendo la fuente de verdad para runs, jobs y heartbeat; locks, revisiones y overrides ya están definidos. Cualquier migración de despliegue debe ser aditiva, ejecutarse como job de release independiente y nunca durante el arranque.
+- **external_contracts:** El destino queda fijado en Railway Hobby, región EU West/Amsterdam o la región europea disponible más próxima a PostgreSQL registrada en la ADR. La topología es un único servicio y una sola réplica, sin serverless ni scale-to-zero, con supervisor PID 1, exactamente un scheduler y un worker. Los límites iniciales son 1 vCPU, 512 MiB de RAM, una conexión PostgreSQL persistente por proceso y máximo 4 conexiones totales incluyendo releases. El volumen privado es de 1 GB, con backup diario saneado, retención de 7 días y restauración probada. El coste esperado es 5 USD/mes, con alerta en 7 USD y techo operativo de 12 USD; cambiar plan, región o límites exige actualizar la ADR.
+- **edge_cases:** Contempla reinicio durante jobs activos, scheduler duplicado, pérdida temporal de dependencias, jobs RUNNING interrumpidos, renovación atómica de credenciales, repetición idempotente y concurrencia. El supervisor PID 1 garantiza exactamente un scheduler y un worker, propaga SIGTERM y reinicia procesos; la política on-failure admite como máximo 5 reinicios consecutivos antes de alertar.
+- **ui_states:** No añade UI funcional; reutiliza el panel administrativo existente, autorizado server-side, que representa HEALTHY, DEGRADED y STALE, backlog, jobs fallidos o bloqueados, latencias y frescura. La vuelta a HEALTHY exige heartbeat reciente, ausencia de jobs bloqueados y error rate/p95 bajo los umbrales del Sprint 22.
+

@@ -1,11 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { PLAYER_PRICING_V1, calculatePriceCohort, capitalGainCredits, releaseClauseCredits, type PricingPlayerInput } from "../../../../packages/domain/player-pricing";
+import { isAggregatePlayerName } from "./player-pricing";
 
 const cohort = (count = 20, overrides: Partial<PricingPlayerInput> = {}): PricingPlayerInput[] => Array.from({ length: count }, (_, index) => ({
   playerRegistrationId: `player-${index}`, currentPrice: 5_000_000, performances: [String(index + 1)], outcome: "PLAYED", consecutiveDnp: 0, ...overrides,
 }));
 
 describe("Canastio player pricing v1", () => {
+  it("never treats FAB aggregate rows as market players", () => {
+    expect(isAggregatePlayerName("  TOTALES  ")).toBe(true);
+    expect(isAggregatePlayerName("Totales")).toBe(true);
+    expect(isAggregatePlayerName("Total García")).toBe(false);
+  });
   it("keeps the global cold-start price while the market sample is insufficient", () => {
     const result = calculatePriceCohort(cohort(19), 1);
     expect(result.every((item) => item.newPrice === 5_000_000 && item.status === "INSUFFICIENT_MARKET_SAMPLE")).toBe(true);

@@ -9,6 +9,14 @@ describe("fantasy market rules",()=>{
   });
   it("rounds half-up to an integer credit",()=>expect(calculateClauseBase(101n,100n)).toBe(177n));
   it("charges the same 5 M initial price shown by the global market",()=>expect(MARKET_INITIAL_PRICE).toBe(5_000_000));
+  it("removes historical FAB aggregate rows from market pricing",()=>{
+    const pricing=readFileSync(new URL("./player-pricing.ts",import.meta.url),"utf8");
+    const migration=readFileSync(new URL("../../../../prisma/migrations/20260914000200_remove_aggregate_player_prices/migration.sql",import.meta.url),"utf8");
+    expect(pricing).toContain("isAggregatePlayerName");
+    expect(pricing).toContain(".filter((registration) => !isAggregatePlayerName");
+    expect(pricing).toContain("prices.filter((price) => !isAggregatePlayerName");
+    expect(migration).toContain("lower(btrim(player.\"display_name\")) = 'totales'");
+  });
   it("exposes active protection expiry to every league member",()=>{
     const service=readFileSync(new URL("./fantasy-market.ts",import.meta.url),"utf8");
     expect(service).toContain("protectedUntil:{gt:now}");

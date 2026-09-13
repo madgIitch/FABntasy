@@ -11,12 +11,16 @@ export type PlayerPriceDto = {
   roundNumber: number | null; updatedAt: string;
 };
 
+export function isAggregatePlayerName(value: string) {
+  return value.normalize("NFKC").trim().toLocaleLowerCase("es") === "totales";
+}
+
 export async function recomputePlayerPrices(competitionSeasonId: string, roundNumber: number, algorithmVersion = PLAYER_PRICING_V1.version) {
   if (algorithmVersion !== PLAYER_PRICING_V1.version) throw new Error("UNSUPPORTED_ALGORITHM_VERSION");
   if (!Number.isSafeInteger(roundNumber) || roundNumber < 1) throw new Error("INVALID_ROUND_NUMBER");
   return retrySerializable(() => db.$transaction(async (tx) => {
     await tx.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${`player-pricing:${competitionSeasonId}:${algorithmVersion}`}))`);
-    const registrations = await tx.playerRegistration.findMany({
+    const registrations = (await tx.playerRegistration.findMany({
       where: { competitionSeasonId },
       include: {
         player: true,
@@ -30,7 +34,7 @@ export async function recomputePlayerPrices(competitionSeasonId: string, roundNu
           include: { game: true, fantasyScores: { where: { ruleSet: { status: "ACTIVE" } }, orderBy: { createdAt: "desc" } } },
         },
       },
-    });
+    })).filter((registration) => !isAggregatePlayerName(registration.player.displayName));
     const games = await tx.game.findMany({ where: { competitionSeasonId, roundNumber }, select: { homeTeamId: true, awayTeamId: true, status: true } });
     const confirmedRounds = await tx.game.findMany({ where: { competitionSeasonId, roundNumber: { lte: roundNumber }, fantasyScores: { some: { status: { in: ["CALCULATED", "DNP"] } } } }, distinct: ["roundNumber"], select: { roundNumber: true } });
     const input: PricingPlayerInput[] = registrations.map((registration) => {
@@ -117,7 +121,7 @@ export async function getPlayerPrices(params: { competitionSeasonId: string; pla
   const algorithmVersion = params.algorithmVersion ?? PLAYER_PRICING_V1.version;
   const prices = await db.playerPrice.findMany({ where: { competitionSeasonId: params.competitionSeasonId, playerRegistrationId: params.playerRegistrationId, algorithmVersion },
     include: { playerRegistration: { include: { player: true, teamRegistration: { include: { team: true } } } }, events: { orderBy: { createdAt: "desc" }, take: 1 } }, orderBy: [{ currentPrice: "desc" }, { playerRegistration: { player: { displayName: "asc" } } }] });
-  return prices.map((price) => {
+  return prices.filter((price) => !isAggregatePlayerName(price.playerRegistration.player.displayName)).map((price) => {
     const previous = price.events[0] ? Number(price.events[0].previousPrice) : null;
     const current = Number(price.currentPrice); const change = previous === null ? 0 : current - previous;
     return { playerRegistrationId: price.playerRegistrationId, playerId: price.playerRegistration.playerId, displayName: price.playerRegistration.player.displayName,

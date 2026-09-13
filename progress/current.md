@@ -1,6 +1,6 @@
 # Sesión actual
 
-Feature: **sprint-22-beta-observability · Sprint 22 - Beta Observability** — estado: `review_pending`.
+Feature: **sprint-22b-ingestor-production-deployment · Sprint 22B - Ingestor Production Deployment** — estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,10 +8,10 @@ Feature: **sprint-22-beta-observability · Sprint 22 - Beta Observability** — 
 
 ## Siguiente acción
 
-- Revisar el diff del commit `feat(Sprint 22 - Beta Observability)` y cerrar con `node .harness/spec.mjs done sprint-22-beta-observability` (o `git revert` para descartarlo).
+- Revisar el diff del commit `feat(Sprint 22B - Ingestor Production Deployment)` y cerrar con `node .harness/spec.mjs done sprint-22b-ingestor-production-deployment` (o `git revert` para descartarlo).
 
 ## Último resultado
 
 | intento | resultado | gate fallido | tts(s) | coste |
 |--:|--|--|--:|--:|
-| 1 | OK | — | 716.2 | — |
+| 1 | OK | — | 493.0 | — |

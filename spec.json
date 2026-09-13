@@ -1921,7 +1921,7 @@
     {
       "id": "sprint-22-beta-observability",
       "name": "Sprint 22 - Beta Observability",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.9.1",
       "dependencies": [

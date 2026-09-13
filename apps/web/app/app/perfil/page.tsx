@@ -23,6 +23,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
     <HubGroup title="Cuenta"><HubLink href="/app/perfil/seguridad/correo" title="Correo electrónico" detail={`${user.email ?? "Sin correo"} · ${user.email_confirmed_at ? "Verificado" : "Sin verificar"}`} /><HubLink href="/app/perfil/seguridad/contrasena" title="Contraseña" detail="••••••••" /></HubGroup>
     <HubGroup title="Preferencias"><HubLink href="/app/perfil/preferencias" title="Apariencia e idioma" detail="Tema, idioma y zona horaria" /><HubLink href="/app/perfil/notificaciones" title="Notificaciones" detail="Permisos y tipos de aviso" /></HubGroup>
     <HubGroup title="Seguridad y privacidad"><HubLink href="/app/perfil/seguridad" title="Seguridad" detail="Correo, contraseña y sesiones" /><HubLink href="/app/perfil/privacidad" title="Privacidad y datos" detail="Visibilidad, exportación y eliminación" /></HubGroup>
+    <HubGroup title="Ayuda"><HubLink href="/app/perfil/feedback" title="Enviar feedback" detail="Cuéntanos un problema o comparte una idea" /></HubGroup>
     <div className="profile-logout setting-row"><Icon name="logout" /><LogoutControl /></div>
   </main>;
 }

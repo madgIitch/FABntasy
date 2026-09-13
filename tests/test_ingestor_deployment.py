@@ -1,7 +1,7 @@
 from __future__ import annotations
+
 import importlib.util
 from pathlib import Path
-import pytest
 
 ROOT = Path(__file__).parents[1]
 
@@ -27,6 +27,13 @@ def test_dockerfile_is_non_root_and_defaults_to_supervisor():
     assert "--uid 10001" in dockerfile and "USER ingestor" in dockerfile
     assert 'CMD ["run-production"]' in dockerfile
     assert "org.opencontainers.image.revision" in dockerfile
+
+
+def test_railway_monorepo_config_targets_ingestor_root():
+    railway = (ROOT / "infrastructure/railway/railway.toml").read_text()
+    provision = (ROOT / "scripts/deployment/provision-railway.ps1").read_text()
+    assert 'dockerfilePath = "Dockerfile"' in railway
+    assert "source.rootDirectory /services/fab_ingestor" in provision
 
 def test_workflow_promotes_digest_after_separate_migration():
     workflow = (ROOT / ".github/workflows/ingestor-production.yml").read_text()

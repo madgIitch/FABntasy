@@ -1,6 +1,6 @@
 [build]
 builder = "DOCKERFILE"
-dockerfilePath = "services/fab_ingestor/Dockerfile"
+dockerfilePath = "Dockerfile"
 
 [deploy]
 startCommand = "python -m fab_ingestor run-production"

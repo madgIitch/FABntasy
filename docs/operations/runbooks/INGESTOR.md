@@ -3,7 +3,7 @@
 ## Desplegar
 
 1. Verificar aprobación operativa, commit y que `main` pasa `ingestor-production`.
-2. Crear proyecto vacío, ejecutar `scripts/deployment/provision-railway.ps1 -ProjectId <id>` y aplicar en Railway los límites de `service-config.json`.
+2. Crear proyecto vacío, ejecutar `scripts/deployment/provision-railway.ps1 -ProjectId <id>` y aplicar en Railway los límites de `service-config.json`. En **Service → Settings → Source**, fijar `Root Directory` a `/services/fab_ingestor`; en **Config as Code**, fijar la ruta absoluta `/infrastructure/railway/railway.toml`. Esto evita que Railpack detecte el monorepo raíz como Node.
 3. Cargar mediante el panel de secretos `DATABASE_URL` (pooler, `sslmode=require`), `DIRECT_URL` solo al entorno GitHub, `CANASTIO_FANTASY_LIFECYCLE_URL=https://...`, `CANASTIO_INTERNAL_JOB_SECRET`, `INGESTOR_MODE=live` y la ruta del volumen. No pegarlos en comandos/logs.
 4. Promover `repo@sha256:<64 hex>`. Ejecutar `verify-deployment.ps1 -ImageRef ...`; confirmar UID/GID 10001, una réplica, un scheduler, un worker y heartbeat <10 min.
 

@@ -31,3 +31,6 @@
 
 ## 2026-09-12T18:52:56.771Z — #sprint-21-accessibility-responsive-polish Sprint 21 - Accessibility and Responsive Polish → review_pending
 - 1 intento(s) · agente codex
+
+## 2026-09-13T23:06:40.196Z — #sprint-22-beta-observability Sprint 22 - Beta Observability → review_pending
+- 1 intento(s) · agente codex

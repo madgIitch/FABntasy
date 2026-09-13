@@ -1,6 +1,6 @@
 # Sesión actual
 
-Feature: **sprint-21-accessibility-responsive-polish · Sprint 21 - Accessibility and Responsive Polish** — estado: `review_pending`.
+Feature: **sprint-22-beta-observability · Sprint 22 - Beta Observability** — estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,10 +8,10 @@ Feature: **sprint-21-accessibility-responsive-polish · Sprint 21 - Accessibilit
 
 ## Siguiente acción
 
-- Revisar el diff del commit `feat(Sprint 21 - Accessibility and Responsive Polish)` y cerrar con `node .harness/spec.mjs done sprint-21-accessibility-responsive-polish` (o `git revert` para descartarlo).
+- Revisar el diff del commit `feat(Sprint 22 - Beta Observability)` y cerrar con `node .harness/spec.mjs done sprint-22-beta-observability` (o `git revert` para descartarlo).
 
 ## Último resultado
 
 | intento | resultado | gate fallido | tts(s) | coste |
 |--:|--|--|--:|--:|
-| 1 | OK | — | 582.3 | — |
+| 1 | OK | — | 716.2 | — |

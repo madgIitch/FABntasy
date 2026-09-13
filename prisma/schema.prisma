@@ -29,8 +29,27 @@ model UserProfile {
   ingestionJobsRequested  IngestionJob[]
   adminAuditEvents        AdminAuditEvent[]
   sportsDataRevisions     SportsDataRevision[]     @relation("SportsDataRevisionActor")
+  feedback                UserFeedback[]
 
   @@map("user_profiles")
+}
+
+model UserFeedback {
+  id                     String      @id @default(uuid()) @db.Uuid
+  userProfileId          String      @map("user_profile_id") @db.Uuid
+  category               String      @db.VarChar(32)
+  text                   String      @db.VarChar(1000)
+  status                 String      @default("NEW") @db.VarChar(24)
+  technicalContext       Json?       @map("technical_context")
+  technicalContextConsent Boolean    @default(false) @map("technical_context_consent")
+  idempotencyKey         String      @map("idempotency_key") @db.VarChar(128)
+  createdAt              DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt              DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+  userProfile            UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([userProfileId, idempotencyKey])
+  @@index([status, createdAt])
+  @@map("user_feedback")
 }
 
 model PushSubscription {

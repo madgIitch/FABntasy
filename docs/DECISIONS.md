@@ -63,6 +63,10 @@ Decisiones registradas:
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
 
+## 2026-09-14 · Observabilidad beta independiente de proveedor
+
+La telemetría usa `canastio.observability.v1`, redacción y allowlist antes del sink, agrupación por componente/operación/categoría/release y adaptadores best-effort. El feedback se persiste en `user_feedback`, separado de señales técnicas. Los tres canales tienen flags server-side independientes y la retirada del sink no requiere cambios destructivos.
+
 ## 2026-09-06 · Revisiones inmutables de alineación y cutoff autoritativo
 
 Contexto: Sprint 10 exige permitir guardados antes del cierre y conservar snapshots aunque cambien plantilla, precios, jugadores o calendario.

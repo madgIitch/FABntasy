@@ -16,6 +16,8 @@ from .boxscore import BoxscoreContractError, sync_competition_stats
 from .client import FabCancelledError, FabClient, FabResponseError, FabTransportError
 from .discovery import CompetitionDiscoveryError, sync_competition_teams
 from .fantasy_lifecycle import FantasyLifecycleTransportError
+from .observability import Observability
+from .observability import category as observability_category
 from .repository import SportsRepository
 from .schedule import ScheduleContractError, sync_competition_games
 
@@ -92,6 +94,7 @@ class IngestionOrchestrator:
         sleeper: Callable[[float], None] = time.sleep,
         clock: Callable[[], float] = time.monotonic,
         fantasy_lifecycle: Callable[[Any], Any] | None = None,
+        observability: Observability | None = None,
     ) -> None:
         self.client = client
         self.repository = repository
@@ -100,6 +103,7 @@ class IngestionOrchestrator:
         self.sleeper = sleeper
         self.clock = clock
         self.fantasy_lifecycle = fantasy_lifecycle
+        self.observability = observability or Observability(enabled=False)
 
     def sync_all(self, *, force_stats: bool = False, stop_event: Event | None = None) -> OrchestratorSummary:
         summary = OrchestratorSummary()
@@ -180,12 +184,14 @@ class IngestionOrchestrator:
         try:
             result = self._retry(operation)
         except Exception as error:  # noqa: BLE001 - orchestration boundary redacts all failures
+            self.observability.emit(component="INGESTOR", operation=name, result="ERROR", error_category=observability_category(error))
             self.repository.finish_ingestion_run(
                 run_id, status="failed", error_code=_error_code(error)
             )
             return False
         counters = _safe_counters(result)
         self.repository.finish_ingestion_run(run_id, status="succeeded", counters=counters)
+        self.observability.emit(component="INGESTOR", operation=name, result="SUCCESS", error_category="NONE")
         return True
 
     def _retry(self, operation: Callable[[], Any]) -> Any:

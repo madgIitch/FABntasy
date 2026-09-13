@@ -1,0 +1,3 @@
+import { createClient } from "../../../src/lib/supabase/server";
+import { createFeedback, FeedbackError } from "../../../src/server/feedback";
+export async function POST(request: Request) { try { const { data:{user} }=await(await createClient()).auth.getUser(); if(!user) throw new FeedbackError("UNAUTHENTICATED",401); const result=await createFeedback(user.id,await request.json()); return Response.json({schemaVersion:"feedback.v1",data:{id:result?.id,status:result?.status}},{status:201}); } catch(error){const known=error instanceof FeedbackError; return Response.json({error:known?error.code:"INTERNAL_ERROR"},{status:known?error.status:500});} }

@@ -1,0 +1,2 @@
+import { FeedbackForm } from "../../../../src/components/feedback-form";
+export default function FeedbackPage(){return <main className="app-main settings-page"><header className="workspace-header"><div><p className="eyebrow">Ayúdanos a mejorar</p><h1>Enviar feedback</h1></div></header><p>Este canal está separado de los registros técnicos. No incluyas contraseñas ni datos personales.</p><FeedbackForm/></main>}

@@ -17,5 +17,5 @@ Checklist de implementación. El agente marca [x] al completar; los gates verifi
 - [x] (T13) El runbook documenta diagnóstico, responsables, severidades, triage, comunicación, recuperación y cierre, además de pausar y reanudar ingesta, scoring y mercado sin borrar datos ni exponer publicaciones parciales.  ↔ R13
 - [x] (T14) Las migraciones son aditivas, la retención de telemetría y feedback está documentada y la retirada de un proveedor o rollback de aplicación no exige migraciones destructivas.  ↔ R14
 - [x] (T15) Tests unitarios, de integración y smoke cubren clasificación, redacción, deduplicación, umbrales, permisos, feedback separado, sink caído, flags y estados UI sin llamadas reales a FAB ni proveedores externos.  ↔ R15
-- [ ] (T16) Typecheck, lint, tests web, pytest, ruff, Prisma validate y diff-scope terminan con código cero.  ↔ R16
+- [x] (T16) Typecheck, lint, tests web, pytest, ruff, Prisma validate y diff-scope terminan con código cero.  ↔ R16
 - [x] Tests que cubran los criterios de aceptación

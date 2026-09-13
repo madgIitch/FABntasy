@@ -1,4 +1,4 @@
-# Review · sprint-22-beta-observability · undefined
+# Review · sprint-22-beta-observability · Sprint 22 - Beta Observability
 
 ## Veredicto
 
@@ -30,4 +30,3 @@ APPROVED → `review_pending`.
 ## Pendiente
 
 - [ ] Smoke test humano (por eso no pasa a `done` automáticamente)
-

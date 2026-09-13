@@ -18,6 +18,7 @@ from .orchestrator import (
     install_signal_handlers,
     parse_journey_windows,
 )
+from .production import run_production
 from .repository import SportsRepository
 from .schedule import sync_competition_games
 
@@ -40,6 +41,7 @@ def main() -> None:
             "sync-all",
             "run-scheduler",
             "run-admin-worker",
+            "run-production",
             "grant-ingestion-admin",
         ),
         default="status",
@@ -59,6 +61,9 @@ def main() -> None:
     )
     args = parser.parse_args()
     settings = Settings.from_env()
+    if args.command == "run-production":
+        run_production()
+        return
     store = FileCredentialStore(settings.credentials_file)
     if settings.mode == "live":
         try:

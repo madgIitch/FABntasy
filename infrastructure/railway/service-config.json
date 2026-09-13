@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "canastio-ingestor-deployment.v1",
+  "provider": "railway",
+  "region": "europe-west4",
+  "replicas": 1,
+  "cpu": 1,
+  "memoryMiB": 512,
+  "startCommand": "python -m fab_ingestor run-production",
+  "restart": { "policy": "on-failure", "maxRetries": 5 },
+  "scaleToZero": false,
+  "volume": { "mountPath": "/var/lib/canastio", "sizeGiB": 1 },
+  "alerts": ["heartbeat-stale", "backlog-10m", "job-failed", "scheduled-cycle-failed", "cost-usd-7"]
+}

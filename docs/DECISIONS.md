@@ -63,6 +63,10 @@ Decisiones registradas:
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
 
+## 2026-09-14 · ADR-002 alojamiento productivo del ingestor
+
+Se aprueba Railway Hobby en región EU West, una réplica permanente de 1 vCPU/512 MiB con supervisor PID 1, volumen privado de 1 GiB y despliegue OCI por digest. El presupuesto de conexiones es 2 persistentes + 1 release + 1 reserva (máximo 4); migraciones se ejecutan como release job y el rollback no revierte datos. Detalle y alternativas en `docs/operations/ADR-002-INGESTOR-PRODUCTION-HOSTING.md`.
+
 ## 2026-09-14 · Observabilidad beta independiente de proveedor
 
 La telemetría usa `canastio.observability.v1`, redacción y allowlist antes del sink, agrupación por componente/operación/categoría/release y adaptadores best-effort. El feedback se persiste en `user_feedback`, separado de señales técnicas. Los tres canales tienen flags server-side independientes y la retirada del sink no requiere cambios destructivos.

@@ -1,0 +1,76 @@
+name: ingestor-production
+on:
+  workflow_dispatch:
+    inputs:
+      environment: { description: Environment, required: true, default: production }
+  push:
+    branches: [main]
+    paths: ["services/fab_ingestor/**", "infrastructure/**", "scripts/deployment/**", "prisma/migrations/**"]
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+jobs:
+  build-test-publish:
+    runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build tested image once
+        uses: docker/build-push-action@v6
+        with:
+          context: services/fab_ingestor
+          load: true
+          tags: fab-ingestor:test
+          build-args: VCS_REF=${{ github.sha }}
+      - name: Verify non-root, revision and tests
+        run: |
+          test "$(docker run --rm --entrypoint id fab-ingestor:test -u)" = "10001"
+          test "$(docker image inspect fab-ingestor:test --format '{{ index .Config.Labels \"org.opencontainers.image.revision\" }}')" = "$GITHUB_SHA"
+          docker run --rm --entrypoint sh -v "$PWD/services/fab_ingestor/tests:/tests:ro" fab-ingestor:test -c "pip install --quiet pytest && python -m pytest /tests"
+      - name: Canary secret scan
+        run: |
+          mkdir -p release-scan
+          docker image inspect fab-ingestor:test > release-scan/image-metadata.json
+          python scripts/deployment/secret-scan.py release-scan --canary 'CANARY-FAB-DEVICE-22B' --canary 'CANARY-DATABASE-22B'
+          printf 'Authorization: Bearer CANARY-FAB-DEVICE-22B\n' > release-scan/negative-control.log
+          if python scripts/deployment/secret-scan.py release-scan --canary 'CANARY-FAB-DEVICE-22B'; then exit 1; fi
+          rm release-scan/negative-control.log
+      - name: Scan image
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: fab-ingestor:test
+          severity: CRITICAL,HIGH
+          exit-code: '1'
+      - name: Login GHCR
+        uses: docker/login-action@v3
+        with: { registry: ghcr.io, username: "${{ github.actor }}", password: "${{ secrets.GITHUB_TOKEN }}" }
+      - id: build
+        name: Publish the exact tested image and expose digest
+        run: |
+          target="ghcr.io/${GITHUB_REPOSITORY}/fab-ingestor:${GITHUB_SHA}"
+          docker tag fab-ingestor:test "$target"
+          docker push "$target"
+          digest="$(docker inspect --format='{{index .RepoDigests 0}}' "$target" | cut -d@ -f2)"
+          test -n "$digest"
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+  migrate-and-promote:
+    needs: build-test-publish
+    environment: ${{ inputs.environment || 'production' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: corepack pnpm install --frozen-lockfile
+      - name: Release migration (promotion stops on failure)
+        env: { DIRECT_URL: "${{ secrets.DIRECT_URL }}", DATABASE_URL: "${{ secrets.DIRECT_URL }}" }
+        run: corepack pnpm exec prisma migrate deploy
+      - name: Promote exactly the published digest
+        env: { RAILWAY_TOKEN: "${{ secrets.RAILWAY_TOKEN }}" }
+        run: railway redeploy --image "ghcr.io/${{ github.repository }}/fab-ingestor@${{ needs.build-test-publish.outputs.digest }}" --yes

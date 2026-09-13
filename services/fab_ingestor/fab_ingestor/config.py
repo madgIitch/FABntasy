@@ -1,6 +1,7 @@
 import os
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 
 
 @dataclass(frozen=True)
@@ -51,6 +52,16 @@ class Settings:
         auto_refresh_credentials = os.getenv("FAB_AUTO_CREDENTIAL_REFRESH", "true").lower() in {"1", "true", "yes"}
         if fantasy_lifecycle_url and not internal_job_secret:
             raise ValueError("CANASTIO_INTERNAL_JOB_SECRET is required when CANASTIO_FANTASY_LIFECYCLE_URL is configured")
+        if mode == "live":
+            if not credentials_file.is_absolute() or credentials_file.parent == credentials_file:
+                raise ValueError("FAB_CREDENTIALS_FILE must be an absolute path inside a persistent directory")
+            database_url = os.getenv("DATABASE_URL", "")
+            query = parse_qs(urlparse(database_url).query)
+            sslmode = query.get("sslmode", [""])[0].lower()
+            if sslmode not in {"require", "verify-ca", "verify-full"}:
+                raise ValueError("DATABASE_URL must require TLS in live mode")
+            if fantasy_lifecycle_url and urlparse(fantasy_lifecycle_url).scheme != "https":
+                raise ValueError("CANASTIO_FANTASY_LIFECYCLE_URL must use HTTPS in live mode")
         if not 60 <= idle_minutes <= 180:
             raise ValueError("FAB_SCHEDULER_IDLE_MINUTES must be between 60 and 180")
         if not 30 <= active_seconds <= 900:

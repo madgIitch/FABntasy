@@ -6,8 +6,9 @@ import socket
 from typing import Any
 
 from .boxscore import sync_competition_stats, sync_game_stats
-from .client import FabClient
+from .client import FabCancelledError, FabClient
 from .discovery import sync_competition_teams
+from .fantasy_lifecycle import FantasyLifecycleTransportError
 from .repository import SportsRepository
 from .schedule import sync_competition_games
 
@@ -89,7 +90,12 @@ def run_one_job(client: FabClient, repository: SportsRepository, worker_id: str)
             (job["requested_by_id"], job["id"]),
         )
     except Exception as error:  # noqa: BLE001 - every job failure must reach a terminal state
-        code = type(error).__name__.upper()[:64]
+        if isinstance(error, FabCancelledError):
+            code = "WORKER_TERMINATED"
+        elif isinstance(error, FantasyLifecycleTransportError):
+            code = "FANTASY_LIFECYCLE_TRANSPORT"
+        else:
+            code = type(error).__name__.upper()[:64]
         repository.connection.execute(
             """UPDATE ingestion_jobs SET status='FAILED', error_code=%s,
             finished_at=CURRENT_TIMESTAMP, heartbeat_at=CURRENT_TIMESTAMP WHERE id=%s""",

@@ -1,0 +1,13 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "services/fab_ingestor/Dockerfile"
+
+[deploy]
+startCommand = "python -m fab_ingestor run-production"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
+numReplicas = 1
+
+# Applied by scripts/deployment/provision-railway.ps1: EU West, 1 vCPU,
+# 512 MiB, private network and a 1 GB volume at /var/lib/canastio.

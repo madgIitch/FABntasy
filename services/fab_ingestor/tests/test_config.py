@@ -29,10 +29,26 @@ def test_live_mode_accepts_persisted_credentials(monkeypatch, tmp_path):
     credentials_file.write_text('{"device_id":"device","key":"secret"}', encoding="utf-8")
     monkeypatch.setenv("INGESTOR_MODE", "live")
     monkeypatch.setenv("FAB_CREDENTIALS_FILE", str(credentials_file))
+    monkeypatch.setenv("DATABASE_URL", "postgresql://db.test/app?sslmode=require")
     monkeypatch.delenv("FAB_DEVICE_ID", raising=False)
     monkeypatch.delenv("FAB_KEY", raising=False)
 
     assert Settings.from_env().mode == "live"
+
+
+def test_live_mode_requires_tls_and_https(monkeypatch, tmp_path):
+    credentials_file = tmp_path / "credentials.json"
+    credentials_file.write_text('{"device_id":"device","key":"secret"}', encoding="utf-8")
+    monkeypatch.setenv("INGESTOR_MODE", "live")
+    monkeypatch.setenv("FAB_CREDENTIALS_FILE", str(credentials_file))
+    monkeypatch.setenv("DATABASE_URL", "postgresql://db.test/app")
+    with pytest.raises(ValueError, match="TLS"):
+        Settings.from_env()
+    monkeypatch.setenv("DATABASE_URL", "postgresql://db.test/app?sslmode=require")
+    monkeypatch.setenv("CANASTIO_FANTASY_LIFECYCLE_URL", "http://web.test/internal")
+    monkeypatch.setenv("CANASTIO_INTERNAL_JOB_SECRET", "sentinel")
+    with pytest.raises(ValueError, match="HTTPS"):
+        Settings.from_env()
 
 
 def test_scheduler_defaults_and_ranges(monkeypatch):

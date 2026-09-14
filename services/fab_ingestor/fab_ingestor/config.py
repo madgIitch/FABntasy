@@ -32,8 +32,18 @@ class Settings:
         device_id = os.getenv("FAB_DEVICE_ID") or None
         key = os.getenv("FAB_KEY") or None
         credentials_file = Path(os.getenv("FAB_CREDENTIALS_FILE", ".local/fab-credentials.json"))
+        auto_refresh_credentials = os.getenv("FAB_AUTO_CREDENTIAL_REFRESH", "true").lower() in {
+            "1",
+            "true",
+            "yes",
+        }
         has_environment_credentials = bool(device_id and key)
-        if mode == "live" and not has_environment_credentials and not credentials_file.is_file():
+        if (
+            mode == "live"
+            and not auto_refresh_credentials
+            and not has_environment_credentials
+            and not credentials_file.is_file()
+        ):
             raise ValueError("live mode requires server-side FAB credentials")
         idle_minutes = int(os.getenv("FAB_SCHEDULER_IDLE_MINUTES", "120"))
         active_seconds = int(os.getenv("FAB_SCHEDULER_ACTIVE_SECONDS", "30"))
@@ -49,7 +59,6 @@ class Settings:
         circuit_recovery = float(os.getenv("FAB_CIRCUIT_RECOVERY_SECONDS", "300"))
         fantasy_lifecycle_url = os.getenv("CANASTIO_FANTASY_LIFECYCLE_URL") or None
         internal_job_secret = os.getenv("CANASTIO_INTERNAL_JOB_SECRET") or None
-        auto_refresh_credentials = os.getenv("FAB_AUTO_CREDENTIAL_REFRESH", "true").lower() in {"1", "true", "yes"}
         if fantasy_lifecycle_url and not internal_job_secret:
             raise ValueError("CANASTIO_INTERNAL_JOB_SECRET is required when CANASTIO_FANTASY_LIFECYCLE_URL is configured")
         if mode == "live":

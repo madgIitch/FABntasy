@@ -72,6 +72,10 @@ def main() -> None:
             raise SystemExit("FAB credential directory must be persistent and writable in live mode") from error
         if store.load() is None and settings.device_id is not None and settings.key is not None:
             store.replace(Credentials(settings.device_id, settings.key))
+        if store.load() is None and settings.auto_refresh_credentials:
+            with store.renewal_lock():
+                if store.load() is None:
+                    FabClient(store).register_device()
 
     if args.command == "grant-ingestion-admin":
         if not settings.database_url or not args.auth_user_id:

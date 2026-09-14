@@ -13,6 +13,7 @@ def test_mock_mode_does_not_require_fab_credentials(monkeypatch):
 
 def test_live_mode_requires_credentials(monkeypatch):
     monkeypatch.setenv("INGESTOR_MODE", "live")
+    monkeypatch.setenv("FAB_AUTO_CREDENTIAL_REFRESH", "false")
     monkeypatch.setenv("FAB_CREDENTIALS_FILE", "missing-test-credentials.json")
     monkeypatch.delenv("FAB_DEVICE_ID", raising=False)
     monkeypatch.delenv("FAB_KEY", raising=False)
@@ -22,6 +23,17 @@ def test_live_mode_requires_credentials(monkeypatch):
         assert "credentials" in str(error)
     else:
         raise AssertionError("live mode accepted missing credentials")
+
+
+def test_live_mode_can_bootstrap_credentials_when_auto_refresh_is_enabled(monkeypatch, tmp_path):
+    monkeypatch.setenv("INGESTOR_MODE", "live")
+    monkeypatch.setenv("FAB_AUTO_CREDENTIAL_REFRESH", "true")
+    monkeypatch.setenv("FAB_CREDENTIALS_FILE", str(tmp_path / "credentials.json"))
+    monkeypatch.setenv("DATABASE_URL", "postgresql://db.test/app?sslmode=require")
+    monkeypatch.delenv("FAB_DEVICE_ID", raising=False)
+    monkeypatch.delenv("FAB_KEY", raising=False)
+
+    assert Settings.from_env().auto_refresh_credentials is True
 
 
 def test_live_mode_accepts_persisted_credentials(monkeypatch, tmp_path):

@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from unittest.mock import Mock
 
-from fab_ingestor.admin_jobs import claim_job, run_one_job
+from fab_ingestor.admin_jobs import claim_job, execute_job, run_one_job
+from fab_ingestor.boxscore import BoxscoreSyncSummary
+from fab_ingestor.fantasy_lifecycle import FantasyLifecycleSummary
 
 
 def test_claim_uses_skip_locked_and_marks_running():
@@ -35,3 +37,56 @@ def test_job_failure_records_only_stable_error_code(monkeypatch):
     assert "status='FAILED'" in query
     assert params == ("RUNTIMEERROR", "job-1")
     assert "secret body" not in str(params)
+
+
+def test_game_job_advances_fantasy_after_ingestion(monkeypatch):
+    repository = Mock()
+    repository.get_game_stats_context.return_value = {
+        "competition_season_id": "season-1"
+    }
+    monkeypatch.setattr(
+        "fab_ingestor.admin_jobs.sync_game_stats",
+        Mock(return_value=BoxscoreSyncSummary(1, 2, 3, 0)),
+    )
+    lifecycle = Mock(return_value=FantasyLifecycleSummary(1, 1))
+
+    counters = execute_job(
+        {"type": "GAME", "target": {"gameId": "fab-1"}},
+        Mock(),
+        repository,
+        lifecycle,
+    )
+
+    lifecycle.assert_called_once_with("season-1")
+    assert counters == {
+        "games": 1,
+        "rejected": 0,
+        "fantasyEligibleRounds": 1,
+        "fantasyRoundsProcessed": 1,
+    }
+
+
+def test_game_job_does_not_advance_fantasy_when_ingestion_fails(monkeypatch):
+    repository = Mock()
+    repository.get_game_stats_context.return_value = {
+        "competition_season_id": "season-1"
+    }
+    monkeypatch.setattr(
+        "fab_ingestor.admin_jobs.sync_game_stats",
+        Mock(side_effect=RuntimeError("ingestion failed")),
+    )
+    lifecycle = Mock()
+
+    try:
+        execute_job(
+            {"type": "GAME", "target": {"gameId": "fab-1"}},
+            Mock(),
+            repository,
+            lifecycle,
+        )
+    except RuntimeError:
+        pass
+    else:
+        raise AssertionError("failed ingestion was accepted")
+
+    lifecycle.assert_not_called()

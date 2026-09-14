@@ -3,12 +3,13 @@ from __future__ import annotations
 import json
 import os
 import socket
+from collections.abc import Callable
 from typing import Any
 
 from .boxscore import sync_competition_stats, sync_game_stats
 from .client import FabCancelledError, FabClient, FabResponseError
 from .discovery import sync_competition_teams
-from .fantasy_lifecycle import FantasyLifecycleTransportError
+from .fantasy_lifecycle import FantasyLifecycleSummary, FantasyLifecycleTransportError
 from .repository import SportsRepository
 from .schedule import sync_competition_games
 
@@ -53,29 +54,64 @@ def _round_game_ids(repository: SportsRepository, category_id: str, round_number
     return [str(row[0]) for row in rows]
 
 
-def execute_job(job: dict[str, Any], client: FabClient, repository: SportsRepository) -> dict[str, int]:
+def execute_job(
+    job: dict[str, Any],
+    client: FabClient,
+    repository: SportsRepository,
+    fantasy_lifecycle: Callable[[object], FantasyLifecycleSummary] | None = None,
+) -> dict[str, int]:
     target = job["target"]
     if job["type"] == "GAME":
-        summary = sync_game_stats(client, repository, external_game_id=str(target["gameId"]))
-        return {"games": summary.games, "rejected": summary.rejected}
+        game_id = str(target["gameId"])
+        competition_season_id = repository.get_game_stats_context(game_id)[
+            "competition_season_id"
+        ]
+        summary = sync_game_stats(client, repository, external_game_id=game_id)
+        counters = {"games": summary.games, "rejected": summary.rejected}
+        return _advance_fantasy(counters, competition_season_id, fantasy_lifecycle)
     category_id = str(target["categoryId"])
+    competition_season_id, _ = repository.resolve_competition_selection(category_id)
     if job["type"] == "ROUND":
         round_number = int(target["roundNumber"])
         schedule = sync_competition_games(client, repository, category_competition_id=category_id, round_number=round_number)
         rejected = 0
         for game_id in _round_game_ids(repository, category_id, round_number):
             rejected += sync_game_stats(client, repository, external_game_id=game_id).rejected
-        return {"games": schedule.games, "rejected": rejected}
+        return _advance_fantasy(
+            {"games": schedule.games, "rejected": rejected},
+            competition_season_id,
+            fantasy_lifecycle,
+        )
     teams = sync_competition_teams(client, repository, category_competition_id=category_id)
     games = sync_competition_games(client, repository, category_competition_id=category_id)
     stats = sync_competition_stats(client, repository, category_competition_id=category_id)
-    return {"teams": teams.teams, "games": games.games, "rejected": stats.rejected}
+    return _advance_fantasy(
+        {"teams": teams.teams, "games": games.games, "rejected": stats.rejected},
+        competition_season_id,
+        fantasy_lifecycle,
+    )
+
+
+def _advance_fantasy(
+    counters: dict[str, int],
+    competition_season_id: object,
+    fantasy_lifecycle: Callable[[object], FantasyLifecycleSummary] | None,
+) -> dict[str, int]:
+    if fantasy_lifecycle is None:
+        return counters
+    summary = fantasy_lifecycle(competition_season_id)
+    return {
+        **counters,
+        "fantasyEligibleRounds": summary.eligible_rounds,
+        "fantasyRoundsProcessed": summary.rounds_processed,
+    }
 
 
 def run_one_job(
     client: FabClient,
     repository: SportsRepository,
     worker_id: str,
+    fantasy_lifecycle: Callable[[object], FantasyLifecycleSummary] | None = None,
 ) -> bool:
     heartbeat(repository, worker_id)
 
@@ -84,7 +120,7 @@ def run_one_job(
         return False
 
     try:
-        counters = execute_job(job, client, repository)
+        counters = execute_job(job, client, repository, fantasy_lifecycle)
 
         repository.connection.execute(
             """UPDATE ingestion_jobs
@@ -183,10 +219,17 @@ def run_one_job(
     return True
 
 
-def run_worker(client: FabClient, repository: SportsRepository, *, once: bool, stop_event: Any) -> None:
+def run_worker(
+    client: FabClient,
+    repository: SportsRepository,
+    *,
+    once: bool,
+    stop_event: Any,
+    fantasy_lifecycle: Callable[[object], FantasyLifecycleSummary] | None = None,
+) -> None:
     worker_id = worker_identity()
     while not stop_event.is_set():
-        worked = run_one_job(client, repository, worker_id)
+        worked = run_one_job(client, repository, worker_id, fantasy_lifecycle)
         if once:
             return
         if not worked:

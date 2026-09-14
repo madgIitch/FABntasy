@@ -100,6 +100,15 @@ def main() -> None:
         stop_event = Event()
         install_signal_handlers(stop_event)
         with SportsRepository.connect(settings.database_url) as repository:
+            fantasy_lifecycle = (
+                FantasyLifecycleClient(
+                    settings.fantasy_lifecycle_url,
+                    settings.internal_job_secret,
+                    timeout=settings.request_timeout_seconds,
+                ).advance
+                if settings.fantasy_lifecycle_url and settings.internal_job_secret
+                else None
+            )
             orchestrator = IngestionOrchestrator(
                 FabClient(
                     store,
@@ -117,11 +126,7 @@ def main() -> None:
                     failure_threshold=settings.circuit_failure_threshold,
                     recovery_seconds=settings.circuit_recovery_seconds,
                 ),
-                fantasy_lifecycle=(FantasyLifecycleClient(
-                    settings.fantasy_lifecycle_url,
-                    settings.internal_job_secret,
-                    timeout=settings.request_timeout_seconds,
-                ).advance if settings.fantasy_lifecycle_url and settings.internal_job_secret else None),
+                fantasy_lifecycle=fantasy_lifecycle,
             )
             if args.command == "run-admin-worker":
                 print("FAB admin job worker started")
@@ -135,6 +140,7 @@ def main() -> None:
                     repository,
                     once=args.once,
                     stop_event=stop_event,
+                    fantasy_lifecycle=fantasy_lifecycle,
                 )
                 print("FAB admin job worker stopped")
             elif args.command == "sync-all":

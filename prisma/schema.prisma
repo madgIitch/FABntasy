@@ -58,9 +58,12 @@ model PushSubscription {
   endpoint      String                 @unique @db.Text
   p256dh        String                 @db.Text
   auth          String                 @db.Text
+  vapidKeyVersion String?              @map("vapid_key_version") @db.VarChar(32)
+  deviceId      String?                @map("device_id") @db.Uuid
   userAgent     String?                @map("user_agent") @db.VarChar(512)
   lastSeenAt    DateTime               @default(now()) @map("last_seen_at") @db.Timestamptz(3)
   revokedAt     DateTime?              @map("revoked_at") @db.Timestamptz(3)
+  revokedReason String?                @map("revoked_reason") @db.VarChar(24)
   createdAt     DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt     DateTime               @updatedAt @map("updated_at") @db.Timestamptz(3)
   userProfile   UserProfile            @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
@@ -93,6 +96,10 @@ model NotificationDelivery {
   attemptCount       Int              @default(0) @map("attempt_count")
   lastErrorCode      String?          @map("last_error_code") @db.VarChar(64)
   deliveredAt        DateTime?        @map("delivered_at") @db.Timestamptz(3)
+  nextAttemptAt      DateTime         @default(now()) @map("next_attempt_at") @db.Timestamptz(3)
+  claimedAt          DateTime?        @map("claimed_at") @db.Timestamptz(3)
+  claimToken         String?          @map("claim_token") @db.Uuid
+  lastAttemptAt      DateTime?        @map("last_attempt_at") @db.Timestamptz(3)
   createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt          DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
   userProfile        UserProfile      @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
@@ -100,6 +107,7 @@ model NotificationDelivery {
 
   @@unique([pushSubscriptionId, intent, eventKey])
   @@index([userProfileId, status, createdAt])
+  @@index([status, nextAttemptAt, claimedAt])
   @@map("notification_deliveries")
 }
 

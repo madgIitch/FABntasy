@@ -27,3 +27,25 @@ export async function getObservabilityStatus(now = new Date()) {
 }
 export function serverObservability(sink?: SignalSink) { return new Observability(sink, process.env.CANASTIO_ERROR_TRACKING_ENABLED === "true"); }
 export function emitOperational(obs: Observability, operation: string, category: ErrorCategory, result: "ERROR"|"DEGRADED"|"RECOVERED") { obs.emit({ component: "WEB", operation, result, errorCategory: category }); }
+
+export const PUSH_THRESHOLDS = { failureRate: 0.1, failureWindowMs: 15 * 60_000, oldestBacklogMs: 10 * 60_000, expiredEndpoints: 5, expiredWindowMs: 15 * 60_000 } as const;
+export function evaluatePushHealth(input:{failureRate:number;windowMs:number;oldestBacklogMs:number;expiredEndpoints:number}) {
+  const alerts:string[]=[];
+  if(input.windowMs>=PUSH_THRESHOLDS.failureWindowMs&&input.failureRate>PUSH_THRESHOLDS.failureRate)alerts.push("PUSH_FAILURE_RATE_HIGH");
+  if(input.oldestBacklogMs>PUSH_THRESHOLDS.oldestBacklogMs)alerts.push("PUSH_BACKLOG_OLD");
+  if(input.windowMs>=PUSH_THRESHOLDS.expiredWindowMs&&input.expiredEndpoints>=PUSH_THRESHOLDS.expiredEndpoints)alerts.push("PUSH_ENDPOINTS_EXPIRED");
+  return {health:alerts.length?"DEGRADED" as const:"HEALTHY" as const,alerts};
+}
+export async function getPushMetrics(now=new Date()){
+  const since=new Date(now.getTime()-PUSH_THRESHOLDS.failureWindowMs);
+  const [byResult,pending,expiredEndpoints]=await Promise.all([
+    db.notificationDelivery.groupBy({by:["status"],where:{lastAttemptAt:{gte:since}},_count:{_all:true}}),
+    db.notificationDelivery.findMany({where:{status:{in:["PENDING","RETRYABLE"]}},select:{createdAt:true},orderBy:{createdAt:"asc"}}),
+    db.pushSubscription.count({where:{revokedAt:{gte:since},revokedReason:"EXPIRED"}}),
+  ]);
+  const counts=Object.fromEntries(byResult.map(row=>[row.status,row._count._all]));
+  const attempted=byResult.reduce((sum,row)=>sum+row._count._all,0),failed=(counts.FAILED??0)+(counts.EXPIRED??0);
+  const ages=pending.map(row=>now.getTime()-row.createdAt.getTime()),backlog={under5m:ages.filter(age=>age<300_000).length,from5to15m:ages.filter(age=>age>=300_000&&age<900_000).length,over15m:ages.filter(age=>age>=900_000).length};
+  const oldestBacklogMs=ages.length?Math.max(...ages):0,failureRate=attempted?failed/attempted:0;
+  return {schemaVersion:"push.metrics.v1",windowMinutes:15,deliveriesByResult:counts,failureRate,backlog,expiredEndpoints,...evaluatePushHealth({failureRate,windowMs:PUSH_THRESHOLDS.failureWindowMs,oldestBacklogMs,expiredEndpoints})};
+}

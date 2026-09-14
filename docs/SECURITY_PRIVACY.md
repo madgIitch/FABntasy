@@ -12,3 +12,8 @@
 ## Gate de dependencias
 
 CI debe ejecutar `corepack pnpm --filter @fabntasy/web audit:dependencies`. El comando falla ante vulnerabilidades altas o críticas. Una excepción solo puede documentarse aquí con paquete/CVE, alcance, mitigación, responsable y fecha de caducidad (máximo 30 días). No hay excepciones activas.
+## Web Push productivo
+
+La sesión Supabase determina siempre el actor. Las rutas rechazan `userId` del cuerpo, validan origen en mutaciones y RLS aplica el mismo aislamiento a SELECT/INSERT/UPDATE/DELETE. El endpoint de dispatch usa un secreto independiente server-side y el de prueba exige sesión, origen, dispositivo propio y rate limit.
+
+Endpoint completo, `p256dh`, `auth`, payload, usuario, liga, claves VAPID y texto libre de excepciones están prohibidos en logs, respuestas, métricas y evidencias. Los errores se reducen a códigos estables; las métricas solo usan resultado y bucket temporal. Las claves privadas actuales o anteriores nunca se almacenan en base de datos ni repositorio.

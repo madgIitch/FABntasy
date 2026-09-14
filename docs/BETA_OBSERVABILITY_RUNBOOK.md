@@ -19,3 +19,12 @@ El on-call de plataforma lidera incidentes de ingesta/PostgreSQL; el responsable
 - Mercado: bloquear temporalmente nuevas mutaciones en el gateway/despliegue, manteniendo lecturas. Reanudar tras comprobar transacciones abiertas y versión esperada; nunca publicar un lote parcial.
 
 La migración de feedback es aditiva. Retirar un sink o volver a una release anterior deja la tabla intacta y no necesita migración destructiva. El smoke local usa sinks en memoria e inyecciones sintéticas; no llama FAB ni proveedores externos.
+## Señales Web Push
+
+`push.metrics.v1` publica únicamente conteos de entrega por resultado, tasa `(FAILED + EXPIRED) / intentos` en 15 minutos, backlog `<5m`, `5–15m`, `>15m` y endpoints expirados en 15 minutos. No se permiten dimensiones de usuario, liga, endpoint, payload, claves ni texto de excepción.
+
+- `PUSH_FAILURE_RATE_HIGH`: warning si supera 10% durante 15 minutos.
+- `PUSH_BACKLOG_OLD`: warning si la entrega pendiente más antigua supera 10 minutos.
+- `PUSH_ENDPOINTS_EXPIRED`: warning desde 5 endpoints en 15 minutos.
+
+Diagnóstico: comprobar preflight VAPID y versión (sin mostrar valores), backlog/lease y códigos agregados. Ante 404/410 confirmar que solo cae el dispositivo afectado. Ante backlog, detener nuevos productores si crece, preservar filas y recuperar claims al vencer 5 minutos. Cierre: tasa bajo umbral durante una ventana completa, backlog sin filas >10 minutos y prueba saneada en un dispositivo autorizado.

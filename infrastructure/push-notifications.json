@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "canastio.push-operations.v1",
+  "sender": { "timeoutMs": 10000, "maxConcurrency": 10, "maxPayloadBytes": 3584, "ttlSeconds": 300 },
+  "dispatcher": { "leaseSeconds": 300, "maxAttempts": 3, "retrySeconds": [60, 300, 900], "maxRetryAfterSeconds": 900 },
+  "testEndpoint": { "requestsPerUserPerHour": 3 },
+  "alerts": { "failureRate": { "threshold": 0.1, "windowMinutes": 15 }, "oldestBacklogMinutes": 10, "expiredEndpoints": { "threshold": 5, "windowMinutes": 15 } },
+  "metricDimensions": ["result", "age_bucket"]
+}

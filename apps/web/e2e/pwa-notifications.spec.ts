@@ -7,6 +7,8 @@ test("manifest and service worker expose only the public PWA shell",async({reque
  const worker=await (await request.get("/sw.js")).text();
  expect(worker).not.toContain("caches.put");
  expect(worker).toContain("notificationclick");
+ expect(worker).toContain("safeDestination");
+ expect(worker).toContain("client.navigate(destination)");
 });
 
 test.describe("profile PWA controls",()=>{

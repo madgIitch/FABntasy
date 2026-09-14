@@ -58,6 +58,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Validate Web Push production configuration
+        run: node infrastructure/scripts/validate-push-config.mjs
+        env:
+          NEXT_PUBLIC_VAPID_PUBLIC_KEY: "${{ vars.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}"
+          VAPID_PRIVATE_KEY: "${{ secrets.VAPID_PRIVATE_KEY }}"
+          VAPID_SUBJECT: "${{ vars.VAPID_SUBJECT }}"
+          VAPID_KEY_VERSION: "${{ vars.VAPID_KEY_VERSION }}"
+          CANASTIO_PUSH_JOB_SECRET: "${{ secrets.CANASTIO_PUSH_JOB_SECRET }}"
       - name: Promote immutable artifacts
         env:
           INGESTOR_DIGEST: "${{ needs.build.outputs.ingestor_digest }}"

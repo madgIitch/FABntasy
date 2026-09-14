@@ -1,6 +1,6 @@
 # Sesión actual
 
-Feature: **sprint-22b-ingestor-production-deployment · Sprint 22B - Ingestor Production Deployment** — estado: `review_pending`.
+Feature: **hotfix-partial-round-fantasy-lifecycle · Hotfix - Partial Round Fantasy Lifecycle** — estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,10 +8,10 @@ Feature: **sprint-22b-ingestor-production-deployment · Sprint 22B - Ingestor Pr
 
 ## Siguiente acción
 
-- Revisar el diff del commit `feat(Sprint 22B - Ingestor Production Deployment)` y cerrar con `node .harness/spec.mjs done sprint-22b-ingestor-production-deployment` (o `git revert` para descartarlo).
+- Desplegar el hotfix y relanzar el partido `46006E...` para verificar que la jornada parcial genera puntuaciones y precios sin procesar el partido pendiente.
 
 ## Último resultado
 
 | intento | resultado | gate fallido | tts(s) | coste |
 |--:|--|--|--:|--:|
-| 1 | OK | — | 493.0 | — |
+| 1 | OK | — | — | — |

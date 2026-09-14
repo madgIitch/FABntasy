@@ -2066,6 +2066,52 @@
       "approved_at": "2026-09-13T23:29:43.696Z"
     },
     {
+      "id": "hotfix-partial-round-fantasy-lifecycle",
+      "name": "Hotfix - Partial Round Fantasy Lifecycle",
+      "title": "Procesamiento fantasy de jornadas parcialmente sincronizadas",
+      "status": "review_pending",
+      "sdd": true,
+      "milestone": "0.9.6",
+      "dependencies": [
+        "sprint-22b-ingestor-production-deployment"
+      ],
+      "description": "Permitir que el lifecycle calcule puntuaciones, forma y precios para los partidos finalizados con estadísticas válidas aunque otro partido de la misma jornada continúe pendiente por una incidencia de FAB.",
+      "objective": "Evitar que un boxscore FAB inaccesible bloquee indefinidamente los resultados fantasy válidos del resto de la jornada.",
+      "user_stories": [
+        {
+          "id": "HU-HF.1",
+          "story": "Como manager quiero que el rendimiento y el valor de mis jugadores se actualicen cuando su partido tenga estadísticas finales, aunque otro partido de la jornada siga pendiente."
+        }
+      ],
+      "tasks": [
+        "Cambiar la elegibilidad del lifecycle para aceptar jornadas con al menos un partido stats_final.",
+        "Mantener sin puntuación los partidos pendientes y permitir que se incorporen idempotentemente en ejecuciones posteriores.",
+        "Cubrir jornadas completas, mixtas y sin ningún boxscore final mediante tests unitarios."
+      ],
+      "deliverable": "El lifecycle procesa los boxscores finales disponibles de una jornada sin quedar bloqueado por otros partidos pendientes.",
+      "acceptance": [
+        "Una jornada con al menos un partido finished, hasStatistics=true y statsSyncStatus=stats_final es elegible aunque otro partido de la misma jornada permanezca pending.",
+        "Una jornada sin ningún partido stats_final no es elegible para publicación ni actualización de precios.",
+        "El recálculo solo consume estadísticas persistidas disponibles; no crea puntuaciones para partidos pendientes ni inventa datos.",
+        "Cuando un partido pendiente pase posteriormente a stats_final, una nueva ejecución lo incorpora sin duplicar revisiones vigentes ni transacciones de precio.",
+        "Los tests cubren jornadas completas, parcialmente sincronizadas y sin estadísticas finales."
+      ],
+      "scope": [
+        "apps/web/src/server/fantasy-lifecycle.ts",
+        "apps/web/src/server/fantasy-lifecycle.test.ts",
+        "docs/ARCHITECTURE.md",
+        "docs/DECISIONS.md",
+        "spec/**",
+        "progress/**",
+        ".harness/**",
+        "spec.json"
+      ],
+      "spec_approved": true,
+      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-14T12:16:40.374Z"
+    },
+    {
       "id": "sprint-23-release-candidate",
       "name": "Sprint 23 - Release Candidate",
       "status": "pending",

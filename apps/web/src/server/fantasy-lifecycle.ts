@@ -18,7 +18,7 @@ export function eligibleRoundNumbers(games: LifecycleGame[]) {
     grouped.set(game.roundNumber, [...(grouped.get(game.roundNumber) ?? []), game]);
   }
   return [...grouped.entries()]
-    .filter(([, rows]) => rows.length > 0 && rows.every((game) =>
+    .filter(([, rows]) => rows.some((game) =>
       game.status === "finished" && game.hasStatistics && game.statsSyncStatus === "stats_final"))
     .map(([roundNumber]) => roundNumber)
     .sort((a, b) => a - b);

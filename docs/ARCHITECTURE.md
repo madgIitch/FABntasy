@@ -671,3 +671,26 @@ Originado por el incidente documentado en docs/operations/INCIDENT_2026-09-10_FA
 - **edge_cases:** Contempla reinicio durante jobs activos, scheduler duplicado, pérdida temporal de dependencias, jobs RUNNING interrumpidos, renovación atómica de credenciales, repetición idempotente y concurrencia. El supervisor PID 1 garantiza exactamente un scheduler y un worker, propaga SIGTERM y reinicia procesos; la política on-failure admite como máximo 5 reinicios consecutivos antes de alertar.
 - **ui_states:** No añade UI funcional; reutiliza el panel administrativo existente, autorizado server-side, que representa HEALTHY, DEGRADED y STALE, backlog, jobs fallidos o bloqueados, latencias y frescura. La vuelta a HEALTHY exige heartbeat reciente, ausencia de jobs bloqueados y error rate/p95 bajo los umbrales del Sprint 22.
 
+<!-- harness:hotfix-partial-round-fantasy-lifecycle -->
+## hotfix-partial-round-fantasy-lifecycle · Procesamiento fantasy de jornadas parcialmente sincronizadas
+
+Permitir que el lifecycle calcule puntuaciones, forma y precios para los partidos finalizados con estadísticas válidas aunque otro partido de la misma jornada continúe pendiente por una incidencia de FAB.
+
+### Scope aprobado
+
+  - `apps/web/src/server/fantasy-lifecycle.ts`
+  - `apps/web/src/server/fantasy-lifecycle.test.ts`
+  - `docs/ARCHITECTURE.md`
+  - `docs/DECISIONS.md`
+  - `spec/**`
+  - `progress/**`
+  - `.harness/**`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** No requiere migraciones; reutiliza estadísticas, puntuaciones y valores versionados existentes.
+- **external_contracts:** Mantiene el contrato HTTP del lifecycle y solo cambia la selección de jornadas elegibles.
+- **edge_cases:** Cubre jornadas completas, mixtas y sin ningún partido stats_final.
+- **ui_states:** Los jugadores con boxscore final reciben forma y valor; los pendientes conservan su estado anterior.
+

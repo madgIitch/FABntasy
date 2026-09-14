@@ -472,3 +472,16 @@ Decisiones registradas:
 - **tests:** El smoke real queda limitado a la 1ª Provincial Senior Masculina de Sevilla 2026/2027, una jornada publicada y como máximo tres partidos representativos, sin tráfico inventado. La observación empieza 60 minutos antes del primer partido y termina al validar el último, con máximo de 6 horas. Se exige heartbeat menor de 10 minutos, claim de un job elegible en menos de 2 minutos, SIGTERM completado en 10 segundos, cero duplicados tras repetición y recuperación HEALTHY dentro de 10 minutos desde restaurar una dependencia. La cadencia verificable es 120 minutos sin partidos próximos, 5 minutos desde 60 minutos antes, 30–60 segundos durante juego y reintentos del boxscore final a 2/5/10/20 minutos; tras validar todos los finales vuelve a 120 minutos. La evidencia saneada se conserva en progress/deployment/sprint-22b/<fecha>-<commit>/.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:hotfix-partial-round-fantasy-lifecycle -->
+## 2026-09-14 · hotfix-partial-round-fantasy-lifecycle aprobado
+
+Contexto: se aprobó el spec `hotfix-partial-round-fantasy-lifecycle` (Procesamiento fantasy de jornadas parcialmente sincronizadas).
+
+Decisiones registradas:
+
+- **auth_secrets:** No cambia autenticación, secretos ni contratos internos protegidos.
+- **rollback_compat:** El cambio es reversible y no altera el esquema ni elimina revisiones históricas.
+- **tests:** Se amplían los tests unitarios de elegibilidad para los tres estados de jornada.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

@@ -99,6 +99,13 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
       - run: corepack pnpm install --frozen-lockfile
+      - name: Resolve manually applied beta observability migration
+        env:
+          DIRECT_URL: "${{ secrets.DIRECT_URL }}"
+          DATABASE_URL: "${{ secrets.DIRECT_URL }}"
+        run: |
+          corepack pnpm exec prisma migrate resolve \
+            --applied 20260914000100_beta_observability
       - name: Release migration (promotion stops on failure)
         env: { DIRECT_URL: "${{ secrets.DIRECT_URL }}", DATABASE_URL: "${{ secrets.DIRECT_URL }}" }
         run: corepack pnpm exec prisma migrate deploy

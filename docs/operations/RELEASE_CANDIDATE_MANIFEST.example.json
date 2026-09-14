@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "fabntasy-rc.v1",
+  "competition": {
+    "name": "1ª Provincial Senior Masculina de Sevilla",
+    "season": "2026/2027",
+    "fabCompetitionId": "REPLACE_WITH_FAB_ID",
+    "fabCategoryCompetitionId": "REPLACE_WITH_FAB_CATEGORY_COMPETITION_ID"
+  },
+  "round": { "fabRoundId": "REPLACE_WITH_FAB_ROUND_ID", "number": 1 },
+  "window": {
+    "timezone": "Europe/Madrid",
+    "startsAt": "2026-10-02T18:00:00+02:00",
+    "endsAt": "2026-10-04T22:00:00+02:00"
+  },
+  "ruleSet": { "id": "REPLACE_WITH_RULESET_ID", "version": "v1" },
+  "testLeagueIds": ["REPLACE_WITH_TEST_LEAGUE_ID"],
+  "release": {
+    "commit": "REPLACE_WITH_COMMIT",
+    "webDigest": "sha256:REPLACE_WITH_64_HEX_CHARACTERS",
+    "ingestorDigest": "sha256:REPLACE_WITH_64_HEX_CHARACTERS"
+  },
+  "rollbackBaseline": {
+    "release": "REPLACE_WITH_RELEASE",
+    "commit": "REPLACE_WITH_COMMIT",
+    "webDigest": "sha256:REPLACE_WITH_64_HEX_CHARACTERS",
+    "ingestorDigest": "sha256:REPLACE_WITH_64_HEX_CHARACTERS"
+  },
+  "responsible": { "release": "REPLACE_WITH_INTERNAL_ID", "operations": "REPLACE_WITH_INTERNAL_ID" }
+}

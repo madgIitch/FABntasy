@@ -727,3 +727,38 @@ Descubrir periódicamente todas las competiciones publicadas por FAB, conservar 
 - **edge_cases:** Renombrados, textos duplicados, IDs distintos, páginas repetidas, reanudación y discrepancias entre nombre interno y FAB.
 - **ui_states:** Resumen, tarjetas monitorizadas, catálogo filtrable y estados saludables, obsoletos, parciales y fallidos.
 
+<!-- harness:sprint-23-release-candidate -->
+## sprint-23-release-candidate · Sprint 23 - Release Candidate
+
+
+
+### Scope aprobado
+
+  - `apps/web/app/app/**`
+  - `apps/web/app/api/**`
+  - `apps/web/src/server/**`
+  - `apps/web/src/components/**`
+  - `services/fab_ingestor/**`
+  - `packages/domain/**`
+  - `prisma/schema.prisma`
+  - `prisma/migrations/**`
+  - `tests/**`
+  - `docs/operations/**`
+  - `docs/testing/**`
+  - `docs/ARCHITECTURE.md`
+  - `docs/CONVENTIONS.md`
+  - `docs/DECISIONS.md`
+  - `.github/workflows/**`
+  - `.env.example`
+  - `spec/**`
+  - `progress/**`
+  - `.harness/**`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** La evidencia canónica reutiliza Game y PlayerGameStat con revisión y hash de origen, FantasyPlayerGameScore único por estadística, ruleset y source_stats_version, y la revisión publicada de RoundTeamScore con las filas de ranking vigentes por liga, jornada e input_revision. No se admite una fuente de verdad paralela; las claves y constraints existentes deben reconciliarse y documentarse, y cualquier constraint faltante solo puede añadirse mediante una migración aditiva y compatible hacia atrás.
+- **external_contracts:** El manifiesto fija la 1ª Provincial Senior Masculina de Sevilla 2026/2027 y una jornada publicada mediante IDs FAB reales, sin inferir identidad por nombre. La completitud de calendario exige finalizar el barrido paginado sin PARTIAL ni FAILED y reconciliar todos los partidos esperados; la de boxscore exige una respuesta estructurada válida y stats_final. Una indisponibilidad o cambio incompatible de FAB impide certificar la RC con datos inventados.
+- **edge_cases:** Se definen resultados para aplazamientos, finales sin boxscore, boxscores parciales, DNP confirmado, correcciones concurrentes con publicación, doble resync y fallos entre cálculo y publicación. Se preservan nulls, atomicidad, idempotencia, una única revisión vigente y la última publicación completa.
+- **ui_states:** Inicio, Jornada, partido, Mi equipo y clasificación distinguen mediante texto los estados vacío, parcial o live, pendiente de estadísticas, calculado no publicado, publicado, corregido, degradado y error. Conservan la última revisión completa, muestran frescura o revisión cuando sea relevante, bloquean acciones inválidas y limitan las acciones administrativas a roles autorizados.
+

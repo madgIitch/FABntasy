@@ -10,6 +10,14 @@ una decisión de arquitectura relevante durante implementación.
 
 <!-- Nuevas entradas debajo -->
 
+## 2026-09-14 · Scope de dependencias de Sprint 23
+
+Contexto: la auditoría de la release candidate detectó vulnerabilidades HIGH transitivas en PostCSS y deepmerge-ts, pero los manifests y el lockfile no estaban incluidos en el scope inicial.
+
+Decisión: el responsable del proyecto autoriza ampliar Sprint 23 a `package.json`, `apps/web/package.json` y `pnpm-lock.yaml` exclusivamente para aplicar las actualizaciones mínimas compatibles necesarias para que el gate de dependencias pase.
+
+Consecuencia: cualquier salto mayor o cambio funcional ajeno a la remediación requiere una decisión separada; typecheck, lint, tests y auditoría deben repetirse tras regenerar el lockfile.
+
 ## 2026-09-12 · Perfil como hub de configuración
 
 Contexto: Perfil acumulaba identidad, preferencias, notificaciones, seguridad y privacidad en un único scroll móvil de más de seis viewports.
@@ -496,5 +504,18 @@ Decisiones registradas:
 - **auth_secrets:** INGESTION_ADMIN, origen validado, auditoría y prohibición de secretos o RAW en resúmenes.
 - **rollback_compat:** Tablas aditivas y feature desactivable sin eliminar catálogo ni afectar la ingesta actual.
 - **tests:** Paginación, identidad, parcialidad, idempotencia, locks, autorización y UI responsive.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-23-release-candidate -->
+## 2026-09-14 · sprint-23-release-candidate aprobado
+
+Contexto: se aprobó el spec `sprint-23-release-candidate` (Sprint 23 - Release Candidate).
+
+Decisiones registradas:
+
+- **auth_secrets:** Las lecturas privadas exigen sesión y pertenencia; resync y correcciones requieren INGESTION_ADMIN, origen validado y auditoría, y la publicación utiliza un actor o servicio server-side autorizado. Solo el responsable de release designado puede aceptar riesgos altos. Logs, trazas, capturas e informes deben excluir credenciales FAB, tokens, cookies, Authorization, secretos de despliegue, payload RAW no redactado, correos reales y demás PII.
+- **rollback_compat:** Web e ingestor se despliegan por digest y el ensayo restaura el digest anterior sin borrar datos, revisiones ni auditoría. Las migraciones son aditivas y compatibles con la versión previa. Los jobs interrumpidos se diagnostican mediante heartbeat, lock y eventos, se detienen ordenadamente y solo se reencolan de forma auditada cuando no existe lock.
+- **tests:** La matriz cubre autenticación, ligas privadas, mercado y roster, alineación y cutoff, jornada parcial, publicación y ranking, corrección y republicación, y degradación. Se ejecuta en las versiones soportadas de Chromium, Firefox y WebKit mediante Playwright, en 375x812 y 1440x900, usando la suite determinista 14F y un smoke sobre la jornada FAB real fijada. El informe incluye trazabilidad del candidato, evidencias saneadas y registro firmado de defectos y aceptaciones.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

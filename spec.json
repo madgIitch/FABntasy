@@ -25,7 +25,7 @@
     "valid_status": [
       "pending",
       "spec_ready",
-      "in_progress",
+      "done",
       "review_pending",
       "done",
       "blocked"
@@ -2115,7 +2115,7 @@
       "id": "sprint-22c-fab-competition-monitoring",
       "name": "Sprint 22C - FAB Competition Monitoring",
       "title": "Catálogo y monitorización de competiciones FAB",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.9.7",
       "dependencies": [
@@ -2185,7 +2185,7 @@
     {
       "id": "sprint-23-release-candidate",
       "name": "Sprint 23 - Release Candidate",
-      "status": "pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.9.9",
       "dependencies": [
@@ -2208,23 +2208,50 @@
       ],
       "deliverable": "Una release candidate completa una jornada real sin intervención manual salvo incidencias excepcionales.",
       "acceptance": [
-        "AC1: Al menos una jornada real recorre ingesta -> stats -> fantasy score -> team score -> ranking.",
-        "AC2: Un resync del mismo partido no duplica puntuaciones ni transacciones.",
-        "AC3: Una corrección posterior de FAB puede recalcular de forma auditable.",
-        "AC4: El fantasy sigue legible si un partido carece de estadísticas completas.",
-        "AC5: Todos los flujos críticos tienen E2E en navegadores objetivo.",
-        "AC6: No quedan errores conocidos de severidad bloqueante o alta sin aceptación explícita."
+        "Se identifica antes de ejecutar la RC una competición, temporada y jornada reales, junto con sus IDs FAB, ventana temporal, ruleset activo, ligas de prueba y responsables; estos datos quedan en un manifiesto de ejecución saneado.",
+        "La jornada seleccionada completa ingesta de calendario y boxscores, generación de revisiones de estadísticas, fantasy scores de jugadores, puntuaciones de titulares, total de equipo, ranking global y rankings de todas las ligas privadas incluidas en el manifiesto; una reconciliación automática devuelve cero diferencias entre cada nivel y sus inputs versionados.",
+        "Repetir secuencialmente y en concurrencia la ingesta y el cálculo del mismo partido con idénticos inputs no aumenta el número de estadísticas vigentes, fantasy scores vigentes, revisiones de jornada, entradas económicas, precios ni notificaciones deduplicables; las constraints y consultas de reconciliación devuelven cero duplicados. Cada intento administrativo sí genera su propio evento de auditoría.",
+        "Una corrección FAB que cambie al menos una estadística crea una nueva revisión con hash de inputs distinto, conserva la revisión anterior como auditable, enlaza actor u origen, timestamps y diff, recalcula de forma atómica los fantasy scores, team scores y ranking afectados y deja una única revisión vigente.",
+        "Si el recálculo corregido falla antes del commit, continúa visible la última revisión publicada completa; el reintento converge al mismo resultado sin filas parciales ni duplicadas.",
+        "Un partido sin boxscore o con estadísticas requeridas incompletas conserva valores desconocidos como null, muestra un estado textual estable de pendiente o no calculable, no los transforma en cero, no bloquea la lectura del resto de la jornada y no publica como definitivo un total incoherente.",
+        "Se verifican explícitamente estos resultados: partido aplazado y partido final sin boxscore quedan PENDING y no publicables; boxscore parcial permanece provisional con desconocidos null; DNP confirmado puntúa cero según el ruleset; corrección durante publicación se serializa o reintenta y deja una revisión vigente; doble resync converge sin duplicados; fallo previo a publicación revierte y conserva la última publicación completa.",
+        "Solicitar resync y aplicar o revertir correcciones exige INGESTION_ADMIN; publicar resultados exige el servicio interno server-side autorizado; aceptar excepcionalmente un defecto alto exige al responsable de release designado y, cuando sea posible, un aprobador distinto. Cada intento permitido o rechazado queda auditado y ninguna respuesta, log, captura o artefacto contiene credenciales, cabeceras de autorización, payload RAW no redactado ni PII real.",
+        "Los flujos E2E críticos incluyen autenticación, crear o unirse a liga privada, mercado y roster, guardar y bloquear alineación, seguir jornada parcial, ver publicación y ranking, ejecutar corrección autorizada, comprobar republicación y consultar estados degradados.",
+        "La matriz E2E usa las versiones de Chromium, Firefox y WebKit incluidas en la versión de Playwright fijada por el lockfile del candidato y ejecuta los flujos críticos al menos en 375x812 y 1440x900; todos pasan sin overflow horizontal, errores o excepciones de consola fuera de una allowlist con motivo, responsable y caducidad, ni infracciones axe critical o serious.",
+        "La validación real produce un informe fechado con release y digests desplegados, manifiesto de jornada, tiempos por fase, IDs de runs, revisiones antes y después, resultados de reconciliación, matriz E2E, evidencias saneadas y enlaces a incidencias.",
+        "Existe un registro único de defectos con severidad, impacto, reproducción, responsable y estado. Es bloqueante si impide un flujo crítico, causa corrupción o pérdida de datos o una vulnerabilidad crítica; es alto si causa resultados incorrectos, fallo de autorización, duplicación económica o degradación grave sin alternativa segura. La RC queda bloqueada ante ambos salvo aceptación del responsable de release con mitigación, aprobador y caducidad.",
+        "Las migraciones de la RC son aditivas o compatibles con la versión anterior; un ensayo documentado revierte web e ingestor al último despliegue productivo estable anterior, identificado para cada uno por release, commit y digest, conservando datos reales, revisiones publicadas y auditoría, y define cómo diagnosticar o reanudar jobs interrumpidos.",
+        "Typecheck, lint, tests web, pytest, ruff, Prisma validate, pruebas PostgreSQL de idempotencia y corrección, matriz E2E, auditoría de dependencias y diff-scope terminan con código cero en el commit candidato."
       ],
       "scope": [
-        "apps/web/**",
+        "apps/web/app/app/**",
+        "apps/web/app/api/**",
+        "apps/web/src/server/**",
+        "apps/web/src/components/**",
         "services/fab_ingestor/**",
-        "packages/**",
-        "prisma/**",
+        "packages/domain/**",
+        "prisma/schema.prisma",
+        "prisma/migrations/**",
         "tests/**",
-        "docs/**",
+        "docs/operations/**",
+        "docs/testing/**",
+        "docs/ARCHITECTURE.md",
+        "docs/CONVENTIONS.md",
+        "docs/DECISIONS.md",
+        ".github/workflows/**",
+        ".env.example",
+        "package.json",
+        "apps/web/package.json",
+        "pnpm-lock.yaml",
+        "spec/**",
+        "progress/**",
+        ".harness/**",
         "spec.json"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "answers_hash": "sha256:7acf7d91b8fbc31c764990cca69e6d58280d6ac90c1f5064caa5f6b30b9e8dea",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-14T13:33:55.010Z"
     },
     {
       "id": "sprint-24-production-1-0",
@@ -2274,6 +2301,68 @@
         "infrastructure/**",
         "tests/**",
         "docs/**",
+        "spec.json"
+      ],
+      "spec_approved": false
+    },
+    {
+      "id": "sprint-25-production-push-notifications",
+      "name": "Sprint 25 - Production Push Notifications",
+      "title": "Configuración productiva de Web Push en Supabase y PWA",
+      "status": "pending",
+      "sdd": true,
+      "milestone": "1.1.0",
+      "dependencies": [
+        "sprint-24-production-1-0"
+      ],
+      "description": "Completar la configuración operativa de las notificaciones Web Push ya iniciadas en Sprint 16, conectando Supabase, secretos VAPID, PWA, dispatcher y dispositivos reales de forma segura y observable.",
+      "objective": "Permitir que los usuarios opt-in reciban notificaciones push fiables de mercado, alineación, liga y jornada desde la PWA instalada, sin exponer secretos ni depender de una sesión abierta.",
+      "user_stories": [
+        {
+          "id": "HU25.1",
+          "story": "Como usuario quiero activar notificaciones en mi dispositivo y recibir avisos relevantes aunque la PWA no esté abierta."
+        },
+        {
+          "id": "HU25.2",
+          "story": "Como operador quiero configurar, observar y rotar Web Push sin exponer claves ni perder suscripciones válidas."
+        }
+      ],
+      "tasks": [
+        "Generar y custodiar el par VAPID; configurar NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY y VAPID_SUBJECT en los entornos correspondientes.",
+        "Aplicar y verificar en Supabase la migración de suscripciones, preferencias y entregas, incluyendo RLS y permisos server-side.",
+        "Configurar la PWA y el service worker para alta, renovación, baja, recepción y navegación segura desde notificaciones.",
+        "Conectar eventos de mercado, lineup/cutoff, liga y jornada al dispatcher con deduplicación, reintentos y revocación de endpoints expirados.",
+        "Completar la experiencia opt-in en Perfil con estados de soporte, permiso, suscripción, dispositivo, error y recuperación.",
+        "Añadir métricas y alertas saneadas de envíos, fallos, endpoints 404/410, backlog y latencia sin registrar payloads sensibles.",
+        "Probar rotación VAPID, múltiples dispositivos, cierre de sesión, reinstalación PWA y navegadores/plataformas compatibles.",
+        "Documentar configuración Supabase, despliegue, diagnóstico, rollback y matriz real de compatibilidad."
+      ],
+      "deliverable": "Web Push queda configurado y verificado de extremo a extremo en Supabase y la PWA, con opt-in, entregas deduplicadas, secretos rotables y operación documentada.",
+      "acceptance": [
+        "La clave VAPID privada y VAPID_SUBJECT solo existen en configuración server-side; la PWA recibe exclusivamente la clave pública y ningún bundle, log, métrica o respuesta expone secretos.",
+        "Las migraciones necesarias están aplicadas en Supabase y RLS impide leer o modificar suscripciones, preferencias o entregas de otros usuarios; los endpoints derivan la identidad de la sesión.",
+        "Un usuario puede activar y desactivar Push por dispositivo desde Perfil, y la UI distingue navegador no compatible, permiso pendiente, concedido, denegado, suscrito, desuscrito, error y recuperación.",
+        "La PWA instalada recibe una notificación de prueba con la aplicación cerrada; pulsarla abre únicamente una ruta allowlist bajo /app y reutiliza una ventana existente cuando corresponde.",
+        "Los eventos configurados de mercado, alineación/cutoff, liga y jornada generan como máximo una entrega por suscripción, intención y evento, incluso ante reintentos o dispatchers concurrentes.",
+        "Los fallos transitorios aplican backoff y un máximo de tres intentos; respuestas 404 o 410 revocan la suscripción sin afectar los demás dispositivos del usuario.",
+        "Cerrar sesión revoca la suscripción del dispositivo según el contrato vigente, y reinstalar o renovar la suscripción no crea endpoints activos duplicados ni transfiere una suscripción entre usuarios.",
+        "Una rotación documentada de VAPID mantiene una ventana de transición o fuerza una resincronización explícita y recuperable, sin guardar la clave privada anterior en el repositorio.",
+        "La operación expone métricas agregadas y alertas por tasa de fallo, backlog y endpoints expirados sin almacenar payloads privados, endpoints completos, claves de cifrado ni PII.",
+        "Tests unitarios, de integración Supabase y E2E cubren autorización, opt-in, permisos, múltiples dispositivos, deduplicación, reintentos, 404/410, service worker, navegación, logout y degradación sin depender de envíos externos en CI.",
+        "Un smoke manual documentado verifica al menos un dispositivo Chromium de escritorio y un dispositivo móvil compatible; las plataformas sin Web Push muestran instrucciones o estado no compatible sin prometer una entrega inexistente.",
+        "Typecheck, lint, tests web, Prisma validate, pruebas de RLS, E2E PWA y diff-scope terminan con código cero."
+      ],
+      "scope": [
+        "apps/web/**",
+        "prisma/**",
+        "infrastructure/**",
+        "tests/**",
+        ".github/workflows/**",
+        ".env.example",
+        "docs/**",
+        "spec/**",
+        "progress/**",
+        ".harness/**",
         "spec.json"
       ],
       "spec_approved": false

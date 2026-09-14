@@ -2,6 +2,12 @@
   "name": "fabntasy",
   "private": true,
   "packageManager": "pnpm@9.15.0",
+  "pnpm": {
+    "overrides": {
+      "postcss": "8.5.18",
+      "deepmerge-ts": "8.0.0"
+    }
+  },
   "scripts": {
     "dev": "corepack pnpm --filter @fabntasy/web dev",
     "postinstall": "prisma generate",

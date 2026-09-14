@@ -7,6 +7,8 @@
     { "name": "seed-assertions", "cmd": "node scripts/test-data-gate.mjs assertions", "blocking": true },
     { "name": "seed-realistic-cycle", "cmd": "node scripts/test-data-gate.mjs realistic-cycle", "blocking": true },
     { "name": "seed-teardown-isolation", "cmd": "node scripts/test-data-gate.mjs teardown-isolation", "blocking": true },
+    { "name": "rc-manifest-unit", "cmd": "node --test tests/release-candidate/manifest.test.mjs", "blocking": true },
+    { "name": "rc-e2e-matrix", "cmd": "corepack pnpm --filter @fabntasy/web test:e2e", "blocking": true },
     { "name": "typecheck", "cmd": "pnpm typecheck", "blocking": true },
     { "name": "lint", "cmd": "pnpm lint", "blocking": true },
     { "name": "test", "cmd": "pnpm test", "blocking": true },

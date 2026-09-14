@@ -783,7 +783,7 @@ model RawFabPayload {
   payload     Json
   createdAt   DateTime @default(now()) @map("created_at")
 
-  @@unique([endpoint, checksum])
+  @@unique([endpoint, entityType, externalId, checksum])
   @@index([entityType, externalId, retrievedAt])
   @@map("raw_fab_payloads")
 }

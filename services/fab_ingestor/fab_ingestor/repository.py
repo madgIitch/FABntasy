@@ -526,7 +526,7 @@ class SportsRepository:
                 %s,
                 %s::jsonb
             )
-            ON CONFLICT (endpoint, checksum) DO UPDATE
+            ON CONFLICT (endpoint, entity_type, external_id, checksum) DO UPDATE
             SET
                 retrieved_at = CURRENT_TIMESTAMP,
                 http_status = EXCLUDED.http_status

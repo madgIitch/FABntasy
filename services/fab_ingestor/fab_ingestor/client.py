@@ -345,6 +345,7 @@ class FabClient:
         action = self.SEARCH_ACTIONS[resource]
         items: list[dict] = []
         skip = 0
+        page_signatures: set[str] = set()
         while True:
             payload = self._post(
                 "/v2/busqueda.ashx",
@@ -353,6 +354,10 @@ class FabClient:
             if payload_sink is not None:
                 payload_sink(payload)
             page = self._extract_page(payload, resource)
+            signature = json.dumps(page, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+            if page and signature in page_signatures:
+                raise FabResponseError("FAB search pagination repeated a page")
+            page_signatures.add(signature)
             items.extend(page)
             server_page_size = payload.get("numeroMaximoResultados", page_size)
             try:

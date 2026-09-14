@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 from dataclasses import dataclass
 from typing import Any
 
@@ -41,6 +43,14 @@ class CompetitionSyncSummary:
     skipped_placeholders: int
 
 
+@dataclass(frozen=True)
+class CatalogSyncSummary:
+    pages: int
+    observed: int
+    discovered: int
+    changed: int
+
+
 def discover_categories(
     client: FabClient,
     query: str,
@@ -51,6 +61,50 @@ def discover_categories(
         CategoryCandidate.from_payload(item)
         for item in client.search_category(query, payload_sink=payload_sink)
     ]
+
+
+def sync_competition_catalog(
+    client: FabClient,
+    repository: SportsRepository,
+) -> CatalogSyncSummary:
+    raw_pages: list[dict] = []
+    scan_id = repository.start_catalog_scan()
+    try:
+        candidates = discover_categories(client, "", payload_sink=raw_pages.append)
+        if not candidates:
+            raise CompetitionDiscoveryError("FAB competition catalog was empty")
+        discovered = changed = 0
+        with repository.connection.transaction():
+            for candidate in candidates:
+                metadata = {
+                    "categoryCompetitionId": candidate.category_competition_id,
+                    "categoryName": candidate.category_name,
+                    "competitionName": candidate.competition_name,
+                    "delegationName": candidate.delegation_name,
+                }
+                checksum = hashlib.sha256(
+                    json.dumps(metadata, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode()
+                ).hexdigest()
+                result = repository.upsert_catalog_candidate(candidate, checksum, metadata)
+                discovered += int(result == "DISCOVERED")
+                changed += int(result == "CHANGED")
+            repository.finish_catalog_scan(
+                scan_id,
+                status="SUCCEEDED",
+                pages=len(raw_pages),
+                observed=len(candidates),
+                discovered=discovered,
+                changed=changed,
+            )
+        return CatalogSyncSummary(len(raw_pages), len(candidates), discovered, changed)
+    except Exception:
+        repository.finish_catalog_scan(
+            scan_id,
+            status="PARTIAL" if raw_pages else "FAILED",
+            pages=len(raw_pages),
+            error_code="FAB_CATALOG_SCAN_FAILED",
+        )
+        raise
 
 
 def select_competition(

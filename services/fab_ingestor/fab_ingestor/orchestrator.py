@@ -8,13 +8,14 @@ from datetime import datetime
 from datetime import time as wall_time
 from threading import Event
 from typing import Any
+from uuid import UUID
 from zoneinfo import ZoneInfo
 
 import psycopg
 
 from .boxscore import BoxscoreContractError, sync_competition_stats
 from .client import FabCancelledError, FabClient, FabResponseError, FabTransportError
-from .discovery import CompetitionDiscoveryError, sync_competition_teams
+from .discovery import CompetitionDiscoveryError, sync_competition_catalog, sync_competition_teams
 from .fantasy_lifecycle import FantasyLifecycleTransportError
 from .observability import Observability
 from .observability import category as observability_category
@@ -107,6 +108,19 @@ class IngestionOrchestrator:
 
     def sync_all(self, *, force_stats: bool = False, stop_event: Event | None = None) -> OrchestratorSummary:
         summary = OrchestratorSummary()
+        catalog_scan_due = getattr(self.repository, "catalog_scan_due", lambda: False)
+        if catalog_scan_due():
+            with self.repository.advisory_lock("competition_catalog", UUID(int=0)) as acquired:
+                if acquired:
+                    try:
+                        self._retry(lambda: sync_competition_catalog(self.client, self.repository))
+                    except Exception as error:  # noqa: BLE001 - catalog visibility must not block selected competitions
+                        self.observability.emit(
+                            component="INGESTOR",
+                            operation="competition_catalog",
+                            result="ERROR",
+                            error_category=observability_category(error),
+                        )
         for competition_season_id, category_id in self.repository.list_selected_competitions():
             if stop_event is not None and stop_event.is_set():
                 break

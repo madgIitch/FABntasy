@@ -85,6 +85,15 @@ def test_pagination_is_sequential_and_uses_server_page_size():
     assert skips == ["0", "2"]
 
 
+def test_pagination_rejects_a_repeated_non_empty_page():
+    def transport(url, fields, timeout):
+        return response({"categorias": [{"Id": "same"}], "numeroMaximoResultados": 1})
+
+    client = FabClient(MemoryCredentialStore(Credentials("d", "k")), transport=transport, min_interval=0)
+    with pytest.raises(FabResponseError, match="repeated a page"):
+        client.search_category("")
+
+
 def test_429_and_5xx_retry_with_bounded_backoff(monkeypatch):
     statuses = iter([429, 503, 200])
     sleeps = []

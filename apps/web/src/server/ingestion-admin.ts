@@ -60,20 +60,51 @@ export async function enqueueIngestionJob(actorProfileId: string, input: unknown
   }
 }
 
-export async function getIngestionDashboard(actorProfileId: string, filters: { status?: string; type?: string; competitionSeasonId?: string } = {}) {
+export async function getIngestionDashboard(actorProfileId: string, filters: { status?: string; type?: string; competitionSeasonId?: string; catalogQuery?: string; catalogStatus?: string; delegation?: string; season?: string } = {}) {
   const statuses = ["QUEUED", "RUNNING", "SUCCEEDED", "FAILED", "CANCELLED"];
   const jobWhere = { ...(statuses.includes(filters.status ?? "") ? { status: filters.status } : {}), ...(JOB_TYPES.includes(filters.type as typeof JOB_TYPES[number]) ? { type: filters.type } : {}) };
   const competitionSeasonId = /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(filters.competitionSeasonId ?? "") ? filters.competitionSeasonId : undefined;
-  const [jobs, runs, heartbeat, lastSuccess] = await Promise.all([
+  const catalogQuery = filters.catalogQuery?.trim().slice(0, 100);
+  const catalogAnd = [
+    ...(catalogQuery ? [{ OR: ["competitionName", "categoryName", "delegationName", "categoryCompetitionId"].map(field => ({ [field]: { contains: catalogQuery, mode: "insensitive" as const } })) }] : []),
+    ...(filters.season ? [{ OR: [{ seasonName: filters.season }, { competitionSeason: { season: { name: filters.season } } }] }] : []),
+  ];
+  const catalogWhere = {
+    ...(catalogAnd.length ? { AND: catalogAnd } : {}),
+    ...(filters.catalogStatus ? { status: filters.catalogStatus } : {}),
+    ...(filters.delegation ? { delegationName: filters.delegation } : {}),
+  };
+  const [jobs, runs, heartbeat, lastSuccess, catalog, catalogScan, delegations, seasons] = await Promise.all([
     db.ingestionJob.findMany({ where: jobWhere, orderBy: { requestedAt: "desc" }, take: 50, include: { requestedBy: { select: { username: true, displayName: true } } } }),
     db.ingestionRun.findMany({ where: competitionSeasonId ? { competitionSeasonId } : {}, orderBy: { startedAt: "desc" }, take: 50, include: { competitionSeason: { select: { id: true, name: true, competition: { select: { name: true } } } } } }),
     db.ingestionHeartbeat.findFirst({ orderBy: { seenAt: "desc" } }),
     db.ingestionRun.findFirst({ where: { status: "SUCCEEDED" }, orderBy: { finishedAt: "desc" } }),
+    db.fabCompetitionCatalog.findMany({ where: catalogWhere, orderBy: [{ monitored: "desc" }, { lastChangedAt: "desc" }], take: 200,
+      include: { competitionSeason: { include: { competition: true, season: true, games: { where: { syncStatus: "active" }, select: { status: true, statsSyncStatus: true, scheduledAt: true, roundNumber: true } }, teamRegistrations: { select: { id: true } } } } } }),
+    db.fabCompetitionCatalogScan.findFirst({ orderBy: { startedAt: "desc" } }),
+    db.fabCompetitionCatalog.findMany({ distinct: ["delegationName"], orderBy: { delegationName: "asc" }, select: { delegationName: true } }),
+    db.season.findMany({ orderBy: { name: "desc" }, select: { name: true } }),
   ]);
   const now = Date.now(), age = heartbeat ? now - heartbeat.seenAt.getTime() : Infinity;
   const health = age <= 5 * 60_000 ? "HEALTHY" : age <= 20 * 60_000 ? "DEGRADED" : "STALE";
   const visibleJobs = jobs.map(job => ({ ...job, effectiveStatus: job.status === "RUNNING" && (!job.heartbeatAt || now - job.heartbeatAt.getTime() > 20 * 60_000) ? "STALE" : job.status }));
-  return { actorProfileId, health, heartbeat, lastSuccess, jobs: visibleJobs, runs: runs.map(run => ({ ...run, errorCategory: classifyIngestionError(run.errorCode) })) };
+  return { actorProfileId, health, heartbeat, lastSuccess, jobs: visibleJobs, runs: runs.map(run => ({ ...run, errorCategory: classifyIngestionError(run.errorCode) })), catalog, catalogScan, delegations: delegations.map(item => item.delegationName), seasons: seasons.map(item => item.name) };
+}
+
+export async function setCompetitionMonitoring(actorProfileId: string, catalogId: string, monitored: boolean) {
+  const parsed = parseMonitoringUpdate(catalogId, monitored);
+  const entry = await db.fabCompetitionCatalog.findUnique({ where: { id: catalogId }, select: { id: true } });
+  if (!entry) throw new AdminError("CATALOG_ENTRY_NOT_FOUND", 404);
+  return db.$transaction(async tx => {
+    const updated = await tx.fabCompetitionCatalog.update({ where: { id: catalogId }, data: { monitored: parsed.monitored } });
+    await tx.adminAuditEvent.create({ data: { actorProfileId, action: parsed.monitored ? "COMPETITION_MONITOR_ENABLE" : "COMPETITION_MONITOR_DISABLE", resourceType: "FAB_COMPETITION", resourceId: catalogId, result: "SUCCESS" } });
+    return updated;
+  });
+}
+
+export function parseMonitoringUpdate(catalogId: string, monitored: unknown) {
+  if (!/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(catalogId) || typeof monitored !== "boolean") throw new AdminError("INVALID_TARGET");
+  return { catalogId, monitored };
 }
 
 export async function listRawPayloads() {

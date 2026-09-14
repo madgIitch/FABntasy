@@ -694,3 +694,36 @@ Permitir que el lifecycle calcule puntuaciones, forma y precios para los partido
 - **edge_cases:** Cubre jornadas completas, mixtas y sin ningún partido stats_final.
 - **ui_states:** Los jugadores con boxscore final reciben forma y valor; los pendientes conservan su estado anterior.
 
+<!-- harness:sprint-22c-fab-competition-monitoring -->
+## sprint-22c-fab-competition-monitoring · Catálogo y monitorización de competiciones FAB
+
+Descubrir periódicamente todas las competiciones publicadas por FAB, conservar su identidad y cambios de metadatos, y mostrar en la consola administrativa el estado detallado de las competiciones elegidas para Canastio.
+
+### Scope aprobado
+
+  - `services/fab_ingestor/**`
+  - `apps/web/app/app/admin/ingestion/**`
+  - `apps/web/app/api/admin/ingestion/**`
+  - `apps/web/src/server/ingestion-admin.ts`
+  - `apps/web/src/server/ingestion-admin.test.ts`
+  - `apps/web/src/server/ingestion-admin-http.ts`
+  - `prisma/schema.prisma`
+  - `prisma/migrations/**`
+  - `tests/**`
+  - `docs/operations/**`
+  - `docs/ARCHITECTURE.md`
+  - `docs/CONVENTIONS.md`
+  - `docs/DECISIONS.md`
+  - `.env.example`
+  - `spec/**`
+  - `progress/**`
+  - `.harness/**`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** Catálogo, observaciones, ejecuciones, eventos de cambio y vínculo opcional con competition_seasons mediante migración aditiva.
+- **external_contracts:** Enumeración paginada sin filtro nominal, rate limiting y separación entre catálogo ligero e ingesta profunda.
+- **edge_cases:** Renombrados, textos duplicados, IDs distintos, páginas repetidas, reanudación y discrepancias entre nombre interno y FAB.
+- **ui_states:** Resumen, tarjetas monitorizadas, catálogo filtrable y estados saludables, obsoletos, parciales y fallidos.
+

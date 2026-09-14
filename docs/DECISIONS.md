@@ -485,3 +485,16 @@ Decisiones registradas:
 - **tests:** Se amplían los tests unitarios de elegibilidad para los tres estados de jornada.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-22c-fab-competition-monitoring -->
+## 2026-09-14 · sprint-22c-fab-competition-monitoring aprobado
+
+Contexto: se aprobó el spec `sprint-22c-fab-competition-monitoring` (Catálogo y monitorización de competiciones FAB).
+
+Decisiones registradas:
+
+- **auth_secrets:** INGESTION_ADMIN, origen validado, auditoría y prohibición de secretos o RAW en resúmenes.
+- **rollback_compat:** Tablas aditivas y feature desactivable sin eliminar catálogo ni afectar la ingesta actual.
+- **tests:** Paginación, identidad, parcialidad, idempotencia, locks, autorización y UI responsive.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

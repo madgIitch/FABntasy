@@ -1,6 +1,6 @@
 # Sesión actual
 
-Feature: **hotfix-partial-round-fantasy-lifecycle · Hotfix - Partial Round Fantasy Lifecycle** — estado: `review_pending`.
+Feature: **sprint-22c-fab-competition-monitoring · Sprint 22C - FAB Competition Monitoring** — estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **hotfix-partial-round-fantasy-lifecycle · Hotfix - Partial Round Fant
 
 ## Siguiente acción
 
-- Desplegar el hotfix y relanzar el partido `46006E...` para verificar que la jornada parcial genera puntuaciones y precios sin procesar el partido pendiente.
+- Aplicar la migración de Sprint 22C, desplegar web e ingestor y verificar el primer barrido global en `/app/admin/ingestion`.
 
 ## Último resultado
 

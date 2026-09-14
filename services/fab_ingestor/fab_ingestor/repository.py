@@ -227,6 +227,81 @@ class SportsRepository:
         ).fetchall()
         return [(row[0], row[1]) for row in rows]
 
+    def catalog_scan_due(self, interval_hours: int = 6) -> bool:
+        row = self.connection.execute(
+            """SELECT id, status, started_at, finished_at FROM fab_competition_catalog_scans
+            ORDER BY started_at DESC LIMIT 1"""
+        ).fetchone()
+        if row is None:
+            return True
+        if row[1] != "SUCCEEDED" or row[3] is None:
+            return bool(
+                self.connection.execute(
+                    "SELECT CURRENT_TIMESTAMP - COALESCE(%s, %s) >= interval '15 minutes'",
+                    (row[3], row[2]),
+                ).fetchone()[0]
+            )
+        jitter_minutes = int(str(row[0]).replace("-", "")[-2:], 16) % 31 - 15
+        return bool(
+            self.connection.execute(
+                "SELECT CURRENT_TIMESTAMP - %s >= (%s * interval '1 minute')",
+                (row[3], interval_hours * 60 + jitter_minutes),
+            ).fetchone()[0]
+        )
+
+    def start_catalog_scan(self) -> UUID:
+        return self.connection.execute(
+            "INSERT INTO fab_competition_catalog_scans (status) VALUES ('RUNNING') RETURNING id"
+        ).fetchone()[0]
+
+    def finish_catalog_scan(self, scan_id: UUID, *, status: str, pages: int = 0, observed: int = 0,
+                            discovered: int = 0, changed: int = 0, error_code: str | None = None) -> None:
+        self.connection.execute(
+            """UPDATE fab_competition_catalog_scans SET status=%s, finished_at=CURRENT_TIMESTAMP,
+            pages=%s, observed=%s, discovered=%s, changed=%s, error_code=%s WHERE id=%s""",
+            (status, pages, observed, discovered, changed, error_code, scan_id),
+        )
+
+    def upsert_catalog_candidate(self, candidate: Any, checksum: str, metadata: dict[str, Any]) -> str:
+        row = self.connection.execute(
+            "SELECT id, checksum, category_competition_id, category_name, competition_name, delegation_name FROM fab_competition_catalog WHERE opaque_id=%s FOR UPDATE",
+            (candidate.opaque_id,),
+        ).fetchone()
+        linked = self.connection.execute(
+            """SELECT entity_id FROM external_ids WHERE source='FAB' AND entity_type='competition_season' AND external_id=%s""",
+            (candidate.opaque_id,),
+        ).fetchone()
+        if row is None:
+            catalog_id = self.connection.execute(
+                """INSERT INTO fab_competition_catalog
+                (opaque_id, category_competition_id, category_name, competition_name, delegation_name, checksum, competition_season_id, monitored)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
+                (candidate.opaque_id, candidate.category_competition_id, candidate.category_name,
+                 candidate.competition_name, candidate.delegation_name, checksum, linked[0] if linked else None, bool(linked)),
+            ).fetchone()[0]
+            self.connection.execute(
+                "INSERT INTO fab_competition_catalog_changes (catalog_id, checksum, after) VALUES (%s,%s,%s::jsonb) ON CONFLICT DO NOTHING",
+                (catalog_id, checksum, json.dumps(metadata)),
+            )
+            return "DISCOVERED"
+        before = {"categoryCompetitionId": row[2], "categoryName": row[3], "competitionName": row[4], "delegationName": row[5]}
+        changed = str(row[1]).strip() != checksum
+        self.connection.execute(
+            """UPDATE fab_competition_catalog SET category_competition_id=%s, category_name=%s,
+            competition_name=%s, delegation_name=%s, checksum=%s, status=%s, last_checked_at=CURRENT_TIMESTAMP,
+            last_changed_at=CASE WHEN %s THEN CURRENT_TIMESTAMP ELSE last_changed_at END,
+            competition_season_id=COALESCE(competition_season_id,%s), monitored=monitored OR %s WHERE id=%s""",
+            (candidate.category_competition_id, candidate.category_name, candidate.competition_name,
+             candidate.delegation_name, checksum, "CHANGED" if changed else "UNCHANGED", changed,
+             linked[0] if linked else None, bool(linked), row[0]),
+        )
+        if changed:
+            self.connection.execute(
+                "INSERT INTO fab_competition_catalog_changes (catalog_id, checksum, before, after) VALUES (%s,%s,%s::jsonb,%s::jsonb) ON CONFLICT DO NOTHING",
+                (row[0], checksum, json.dumps(before), json.dumps(metadata)),
+            )
+        return "CHANGED" if changed else "UNCHANGED"
+
     @contextmanager
     def advisory_lock(self, job_name: str, competition_season_id: UUID):
         lock_key = f"fabntasy:{job_name}:{competition_season_id}"

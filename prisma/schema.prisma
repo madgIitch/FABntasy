@@ -35,17 +35,17 @@ model UserProfile {
 }
 
 model UserFeedback {
-  id                     String      @id @default(uuid()) @db.Uuid
-  userProfileId          String      @map("user_profile_id") @db.Uuid
-  category               String      @db.VarChar(32)
-  text                   String      @db.VarChar(1000)
-  status                 String      @default("NEW") @db.VarChar(24)
-  technicalContext       Json?       @map("technical_context")
-  technicalContextConsent Boolean    @default(false) @map("technical_context_consent")
-  idempotencyKey         String      @map("idempotency_key") @db.VarChar(128)
-  createdAt              DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt              DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
-  userProfile            UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+  id                      String      @id @default(uuid()) @db.Uuid
+  userProfileId           String      @map("user_profile_id") @db.Uuid
+  category                String      @db.VarChar(32)
+  text                    String      @db.VarChar(1000)
+  status                  String      @default("NEW") @db.VarChar(24)
+  technicalContext        Json?       @map("technical_context")
+  technicalContextConsent Boolean     @default(false) @map("technical_context_consent")
+  idempotencyKey          String      @map("idempotency_key") @db.VarChar(128)
+  createdAt               DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt               DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+  userProfile             UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
 
   @@unique([userProfileId, idempotencyKey])
   @@index([status, createdAt])
@@ -164,12 +164,67 @@ model CompetitionSeason {
   playerPriceEvents     PlayerPriceEvent[]
   fantasyLeagues        FantasyLeague[]
   fantasyRoundScores    FantasyRoundScore[]
+  fabCatalogEntries     FabCompetitionCatalog[]
   fantasyTeamTotals     FantasyTeamTotal[]
   createdAt             DateTime                   @default(now()) @map("created_at")
   updatedAt             DateTime                   @updatedAt @map("updated_at")
 
   @@unique([competitionId, seasonId])
   @@map("competition_seasons")
+}
+
+model FabCompetitionCatalog {
+  id                    String                        @id @default(uuid()) @db.Uuid
+  opaqueId              String                        @unique @map("opaque_id") @db.VarChar(191)
+  categoryCompetitionId String                        @map("category_competition_id") @db.VarChar(191)
+  categoryName          String                        @map("category_name")
+  competitionName       String                        @map("competition_name")
+  delegationName        String                        @map("delegation_name")
+  seasonName            String?                       @map("season_name")
+  alias                 String?
+  monitored             Boolean                       @default(false)
+  status                String                        @default("DISCOVERED") @db.VarChar(24)
+  checksum              String                        @db.Char(64)
+  competitionSeasonId   String?                       @map("competition_season_id") @db.Uuid
+  competitionSeason     CompetitionSeason?            @relation(fields: [competitionSeasonId], references: [id], onDelete: SetNull)
+  firstSeenAt           DateTime                      @default(now()) @map("first_seen_at") @db.Timestamptz(3)
+  lastCheckedAt         DateTime                      @default(now()) @map("last_checked_at") @db.Timestamptz(3)
+  lastChangedAt         DateTime                      @default(now()) @map("last_changed_at") @db.Timestamptz(3)
+  changes               FabCompetitionCatalogChange[]
+
+  @@index([categoryCompetitionId])
+  @@index([monitored, lastCheckedAt])
+  @@index([delegationName, competitionName])
+  @@map("fab_competition_catalog")
+}
+
+model FabCompetitionCatalogChange {
+  id        String                @id @default(uuid()) @db.Uuid
+  catalogId String                @map("catalog_id") @db.Uuid
+  checksum  String                @db.Char(64)
+  before    Json?
+  after     Json
+  createdAt DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  catalog   FabCompetitionCatalog @relation(fields: [catalogId], references: [id], onDelete: Cascade)
+
+  @@unique([catalogId, checksum])
+  @@index([createdAt])
+  @@map("fab_competition_catalog_changes")
+}
+
+model FabCompetitionCatalogScan {
+  id         String    @id @default(uuid()) @db.Uuid
+  status     String    @default("RUNNING") @db.VarChar(24)
+  startedAt  DateTime  @default(now()) @map("started_at") @db.Timestamptz(3)
+  finishedAt DateTime? @map("finished_at") @db.Timestamptz(3)
+  pages      Int       @default(0)
+  observed   Int       @default(0)
+  discovered Int       @default(0)
+  changed    Int       @default(0)
+  errorCode  String?   @map("error_code") @db.VarChar(64)
+
+  @@index([startedAt])
+  @@map("fab_competition_catalog_scans")
 }
 
 model Group {
@@ -869,32 +924,32 @@ model AdminAuditEvent {
 }
 
 model SportsDataRevision {
-  id                    String          @id @default(uuid()) @db.Uuid
-  targetType            String          @map("target_type") @db.VarChar(32)
-  targetId              String          @map("target_id") @db.Uuid
-  gameId                String?         @map("game_id") @db.Uuid
-  playerGameStatId      String?         @map("player_game_stat_id") @db.Uuid
-  sourceType            String          @map("source_type") @db.VarChar(32)
-  status                String          @default("PROPOSED") @db.VarChar(32)
-  fieldName             String          @map("field_name") @db.VarChar(64)
-  beforeSnapshot        Json            @map("before_snapshot")
-  afterSnapshot         Json            @map("after_snapshot")
-  expectedFingerprint   String          @map("expected_fingerprint") @db.Char(64)
-  idempotencyKey        String          @unique @map("idempotency_key") @db.VarChar(191)
-  internalReason        String          @map("internal_reason") @db.VarChar(500)
-  publicReason          String?         @map("public_reason") @db.VarChar(240)
-  impact                Json
-  recomputationStatus   String          @default("PENDING") @map("recomputation_status") @db.VarChar(32)
-  recomputationError    String?         @map("recomputation_error") @db.VarChar(64)
-  actorProfileId        String          @map("actor_profile_id") @db.Uuid
-  revertsRevisionId     String?         @map("reverts_revision_id") @db.Uuid
-  createdAt             DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
-  appliedAt             DateTime?       @map("applied_at") @db.Timestamptz(3)
-  actor                 UserProfile     @relation("SportsDataRevisionActor", fields: [actorProfileId], references: [id], onDelete: Restrict)
-  game                  Game?           @relation("GameDataRevisions", fields: [gameId], references: [id], onDelete: Restrict)
-  playerGameStat        PlayerGameStat? @relation("PlayerStatDataRevisions", fields: [playerGameStatId], references: [id], onDelete: Restrict)
-  revertsRevision       SportsDataRevision? @relation("RevisionReversal", fields: [revertsRevisionId], references: [id], onDelete: Restrict)
-  reversalRevisions     SportsDataRevision[] @relation("RevisionReversal")
+  id                  String               @id @default(uuid()) @db.Uuid
+  targetType          String               @map("target_type") @db.VarChar(32)
+  targetId            String               @map("target_id") @db.Uuid
+  gameId              String?              @map("game_id") @db.Uuid
+  playerGameStatId    String?              @map("player_game_stat_id") @db.Uuid
+  sourceType          String               @map("source_type") @db.VarChar(32)
+  status              String               @default("PROPOSED") @db.VarChar(32)
+  fieldName           String               @map("field_name") @db.VarChar(64)
+  beforeSnapshot      Json                 @map("before_snapshot")
+  afterSnapshot       Json                 @map("after_snapshot")
+  expectedFingerprint String               @map("expected_fingerprint") @db.Char(64)
+  idempotencyKey      String               @unique @map("idempotency_key") @db.VarChar(191)
+  internalReason      String               @map("internal_reason") @db.VarChar(500)
+  publicReason        String?              @map("public_reason") @db.VarChar(240)
+  impact              Json
+  recomputationStatus String               @default("PENDING") @map("recomputation_status") @db.VarChar(32)
+  recomputationError  String?              @map("recomputation_error") @db.VarChar(64)
+  actorProfileId      String               @map("actor_profile_id") @db.Uuid
+  revertsRevisionId   String?              @map("reverts_revision_id") @db.Uuid
+  createdAt           DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  appliedAt           DateTime?            @map("applied_at") @db.Timestamptz(3)
+  actor               UserProfile          @relation("SportsDataRevisionActor", fields: [actorProfileId], references: [id], onDelete: Restrict)
+  game                Game?                @relation("GameDataRevisions", fields: [gameId], references: [id], onDelete: Restrict)
+  playerGameStat      PlayerGameStat?      @relation("PlayerStatDataRevisions", fields: [playerGameStatId], references: [id], onDelete: Restrict)
+  revertsRevision     SportsDataRevision?  @relation("RevisionReversal", fields: [revertsRevisionId], references: [id], onDelete: Restrict)
+  reversalRevisions   SportsDataRevision[] @relation("RevisionReversal")
 
   @@index([targetType, targetId, createdAt])
   @@index([status, recomputationStatus, createdAt])

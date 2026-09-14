@@ -2112,6 +2112,77 @@
       "approved_at": "2026-09-14T12:16:40.374Z"
     },
     {
+      "id": "sprint-22c-fab-competition-monitoring",
+      "name": "Sprint 22C - FAB Competition Monitoring",
+      "title": "Catálogo y monitorización de competiciones FAB",
+      "status": "review_pending",
+      "sdd": true,
+      "milestone": "0.9.7",
+      "dependencies": [
+        "sprint-22b-ingestor-production-deployment"
+      ],
+      "description": "Descubrir periódicamente todas las competiciones publicadas por FAB, conservar su identidad y cambios de metadatos, y mostrar en la consola administrativa el estado detallado de las competiciones elegidas para Canastio.",
+      "objective": "Detectar de forma segura cuándo FAB publica o modifica Primera Provincial de Sevilla, Liga Nacional N1 Masculina de Andalucía y cualquier otra competición, evitando que filtros por nombre oculten cambios o mezclen identidades.",
+      "user_stories": [
+        {
+          "id": "HU22C.1",
+          "story": "Como operador quiero ver todas las competiciones que FAB tiene publicadas y saber cuáles son nuevas o han cambiado desde el último barrido."
+        },
+        {
+          "id": "HU22C.2",
+          "story": "Como operador quiero fijar las competiciones reales del juego y conocer la frescura de sus equipos, jornadas, partidos y estadísticas."
+        }
+      ],
+      "tasks": [
+        "Persistir un catálogo FAB identificado por IDs externos canónicos, con metadatos actuales, checksum, primera/última observación y último cambio.",
+        "Implementar un barrido paginado y reanudable de todas las competiciones publicadas accesibles mediante FAB, sin filtros de nombre.",
+        "Separar el descubrimiento global ligero de la ingesta profunda de competiciones monitorizadas o habilitadas para fantasy.",
+        "Registrar ejecuciones, cardinales, cambios y errores del barrido sin almacenar secretos ni exponer RAW en la vista resumida.",
+        "Añadir a Administrar ingesta una vista de catálogo y tarjetas detalladas para Primera Provincial de Sevilla y Liga Nacional N1 Masculina de Andalucía.",
+        "Detectar y mostrar discrepancias entre nombre interno, categoría FAB, delegación y alias configurado sin fusionar por nombre.",
+        "Añadir acciones auditadas para fijar o dejar de monitorizar una competición y para solicitar una resincronización profunda.",
+        "Cubrir paginación, reanudación, snapshots parciales, renombrados, duplicados, rate limiting y estados vacíos/degradados mediante tests."
+      ],
+      "deliverable": "La consola administrativa muestra un catálogo FAB completo y fresco, resalta cambios y permite seguir de cerca las dos competiciones objetivo sin depender de coincidencias por nombre.",
+      "acceptance": [
+        "El scheduler ejecuta cada seis horas, con jitter y exclusión mutua, un barrido paginado de todas las competiciones publicadas que el contrato FAB permita enumerar, sin filtrar por nombre, delegación ni selección fantasy.",
+        "El catálogo usa los IDs externos FAB como identidad; un cambio de nombre, categoría o delegación actualiza metadatos y genera un evento de cambio, pero nunca crea ni fusiona una competición basándose solo en texto.",
+        "Un barrido incompleto, una página inválida o un fallo de FAB queda marcado PARTIAL o FAILED, conserva el último snapshot válido y no interpreta ausencias como retiradas.",
+        "El descubrimiento global es ligero y no descarga automáticamente equipos, calendarios ni boxscores de todas las competiciones; la ingesta profunda permanece limitada a competiciones monitorizadas o fantasyEnabled.",
+        "La consola permite buscar y filtrar el catálogo por texto, temporada, delegación y estado, y muestra primera observación, última comprobación, último cambio y checksum sin exponer credenciales ni payloads RAW.",
+        "La consola muestra para cada competición monitorizada sus nombres interno y FAB, alias, IDs externos, frescura, último job, último error, equipos, jornadas, partidos, próximos partidos y contadores por scheduled/live/finished/pending/stats_final.",
+        "Primera Provincial de Sevilla y Liga Nacional N1 Masculina de Andalucía pueden fijarse por ID FAB aunque todavía no estén fantasyEnabled; una discrepancia como categoryId 10468 con nombre interno COPA DELEGACIÓN 2026 aparece como advertencia explícita.",
+        "Fijar, desfijar o resincronizar una competición exige INGESTION_ADMIN, validación de origen y un evento de auditoría; observar el catálogo no produce mutaciones en FAB.",
+        "Los barridos son idempotentes, reanudables tras reinicio y respetan el rate limiter, backoff y circuit breaker existentes; dos schedulers no duplican un mismo barrido ni sus eventos.",
+        "Los tests cubren catálogo vacío, múltiples páginas, nuevas competiciones, renombrados, IDs iguales con textos distintos, textos iguales con IDs distintos, página repetida, respuesta parcial, reintento y renderizado responsive de estados HEALTHY/STALE/PARTIAL/FAILED."
+      ],
+      "scope": [
+        "services/fab_ingestor/**",
+        "apps/web/app/app/admin/ingestion/**",
+        "apps/web/app/api/admin/ingestion/**",
+        "apps/web/src/server/ingestion-admin.ts",
+        "apps/web/src/server/ingestion-admin.test.ts",
+        "apps/web/src/server/ingestion-admin-http.ts",
+        "prisma/schema.prisma",
+        "prisma/migrations/**",
+        "tests/**",
+        "docs/operations/**",
+        "docs/ARCHITECTURE.md",
+        "docs/CONVENTIONS.md",
+        "docs/DECISIONS.md",
+        ".env.example",
+        "spec/**",
+        "progress/**",
+        ".harness/**",
+        "spec.json"
+      ],
+      "spec_approved": true,
+      "spec_reference": "docs/operations/FAB_COMPETITION_MONITORING_SPEC.md",
+      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-14T12:38:19.113Z"
+    },
+    {
       "id": "sprint-23-release-candidate",
       "name": "Sprint 23 - Release Candidate",
       "status": "pending",

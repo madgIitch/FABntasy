@@ -10,9 +10,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    rm -rf /var/lib/apt/lists/*
+
 RUN addgroup --system --gid 10001 ingestor && \
     adduser --system --uid 10001 --ingroup ingestor ingestor && \
-    mkdir -p /var/lib/canastio && chown 10001:10001 /var/lib/canastio
+    mkdir -p /var/lib/canastio && \
+    chown 10001:10001 /var/lib/canastio
 
 COPY pyproject.toml ./
 COPY fab_ingestor ./fab_ingestor

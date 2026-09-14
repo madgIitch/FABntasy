@@ -50,9 +50,11 @@ jobs:
 
           docker run --rm \
             --entrypoint sh \
+            -e HOME=/tmp \
+            -e PYTHONUSERBASE=/tmp/python-userbase \
             -v "$PWD/services/fab_ingestor/tests:/tests:ro" \
             fab-ingestor:test \
-            -c "pip install --quiet pytest && python -m pytest /tests"
+            -c "python -m pip install --quiet --user pytest && python -m pytest /tests"
       - name: Canary secret scan
         run: |
           mkdir -p release-scan

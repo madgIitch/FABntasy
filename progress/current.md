@@ -1,17 +1,17 @@
 # Sesión actual
 
-Feature: **sprint-24-production-1-0 · Sprint 24 - Production 1.0** — estado: `spec_ready`.
+Feature: **sprint-24-production-1-0 · Sprint 24 - Production 1.0** — estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
-- spec aprobado: no
+- intentos: 1
 
 ## Siguiente acción
 
-- Revisar la entrevista preparada y aprobar con `node .harness/spec.mjs approve sprint-24-production-1-0` antes de implementar.
+- Revisar el diff del commit `feat(Sprint 24 - Production 1.0)` y cerrar con `node .harness/spec.mjs done sprint-24-production-1-0` (o `git revert` para descartarlo).
 
-## Preparación
+## Último resultado
 
-- Las ocho dimensiones SDD están cubiertas con decisiones conservadoras compatibles con los contratos anteriores.
-- El acceptance refinado cubre infraestructura reproducible, HTTPS, secretos, backup y restore, rollback por digest, reinicio idempotente, runbooks, congelación de scoring/precios, PWA productiva y segunda `competition_season`.
-- El comando `prepare` indicado en `HARNESS.md` no existe en el CLI actual; se usó la ruta documentada de entrevista más `force-ready`.
+| intento | resultado | gate fallido | tts(s) | coste |
+|--:|--|--|--:|--:|
+| 1 | OK | — | 888.1 | — |

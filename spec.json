@@ -2256,7 +2256,7 @@
     {
       "id": "sprint-24-production-1-0",
       "name": "Sprint 24 - Production 1.0",
-      "status": "spec_ready",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "1.0.0",
       "dependencies": [

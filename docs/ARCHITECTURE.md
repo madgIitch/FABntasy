@@ -790,3 +790,42 @@ Descubrir periódicamente todas las competiciones publicadas por FAB, conservar 
 - **edge_cases:** Cubre reinicios, concurrencia operativa, credenciales, pool, migraciones, backup/restore y segunda competición.
 - **ui_states:** Verifica PWA y panel existentes en estados normales y degradados, sin introducir una feature visual nueva.
 
+<!-- harness:sprint-25-production-push-notifications -->
+## sprint-25-production-push-notifications · Configuración productiva de Web Push en Supabase y PWA
+
+Completar la configuración operativa de las notificaciones Web Push ya iniciadas en Sprint 16, conectando Supabase, secretos VAPID, PWA, dispatcher y dispositivos reales de forma segura y observable.
+
+### Scope aprobado
+
+  - `apps/web/app/api/notifications/**`
+  - `apps/web/app/app/perfil/**`
+  - `apps/web/src/server/notifications.ts`
+  - `apps/web/src/server/web-push-sender.ts`
+  - `apps/web/src/server/observability/**`
+  - `apps/web/public/sw.js`
+  - `apps/web/e2e/pwa-notifications.spec.ts`
+  - `apps/web/src/**/*.test.ts`
+  - `packages/domain/notifications/**`
+  - `prisma/schema.prisma`
+  - `prisma/migrations/**`
+  - `tests/**`
+  - `infrastructure/**`
+  - `.github/workflows/**`
+  - `.env.example`
+  - `docs/PWA_NOTIFICATIONS.md`
+  - `docs/SECURITY_PRIVACY.md`
+  - `docs/BETA_OBSERVABILITY_RUNBOOK.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/DECISIONS.md`
+  - `spec/**`
+  - `progress/**`
+  - `.harness/**`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** Se define una extensión aditiva de NotificationDelivery con nextAttemptAt, claimedAt, claimToken y lastAttemptAt; PENDING con claim anterior a 5 minutos es recuperable. La deduplicación autoritativa permanece en (pushSubscriptionId, intent, eventKey). PushSubscription conserva endpoint activo único, propietario inmutable y vapidKeyVersion pública, sin persistir claves privadas.
+- **external_contracts:** Quedan definidos el contrato interno v1 de los productores, eventKey determinista, disparo tras commit, job server-side autenticado, ausencia de dispatch público y prueba autenticada por dispositivo con validación de origen/CSRF. Antes de aprobar falta fijar valores concretos del rate limit de la prueba y del job, así como límites operativos del proveedor Web Push —timeout, concurrencia y tamaño máximo aceptado— y su configuración.
+- **edge_cases:** Antes del sender se revalidan actividad, propietario y preferencia. Logout revoca solo el dispositivo actual; un cambio de cuenta exige revocación previa y nunca transfiere endpoints activos. La instalación usa un UUID local aleatorio que rota al reinstalar, mientras endpoint y propietario son la identidad server-side autoritativa.
+- **ui_states:** Las preferencias por intención son globales y la suscripción es por dispositivo. La fuente visual autoritativa combina soporte, Notification.permission y PushManager.getSubscription(), con transiciones y acciones definidas para no compatible, default, granted sin suscripción, suscrito, denied, error, reintento y recuperación al estado real derivado.
+

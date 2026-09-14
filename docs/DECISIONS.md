@@ -539,3 +539,16 @@ Decisiones registradas:
 - **tests:** Incluye gates, smoke productivo, idempotencia, degradación, rollback, secretos, backup/restore y segunda competición.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-25-production-push-notifications -->
+## 2026-09-14 · sprint-25-production-push-notifications aprobado
+
+Contexto: se aprobó el spec `sprint-25-production-push-notifications` (Configuración productiva de Web Push en Supabase y PWA).
+
+Decisiones registradas:
+
+- **auth_secrets:** La identidad siempre deriva de Supabase Auth; RLS impide acceso cruzado y solo la clave VAPID pública llega al cliente. Claves privadas, auth, p256dh, endpoints completos, payloads privados y PII quedan fuera de bundles, respuestas, logs, métricas y evidencias.
+- **rollback_compat:** Se elige invalidación explícita sin ventana dual de envío: VAPID_KEY_VERSION detecta el desajuste, elimina la suscripción anterior y requiere nuevo opt-in. El despliegue acepta filas sin versión antes de rotar configuración; la clave anterior solo permanece temporalmente en el gestor para permitir rollback de configuración y nunca se guarda en repo, base de datos o evidencias.
+- **tests:** CI usa Supabase/PostgreSQL local aislado, sender falso, reloj controlado, dos dispatchers concurrentes y Playwright Chromium en 375x812 y 1440x900 sin Push real. El smoke exige recepción real con la PWA cerrada en Chromium de escritorio y Android Chrome/PWA instalada; Safari/iOS es compatibilidad observada no bloqueante. La evidencia saneada se conserva por fecha y commit.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

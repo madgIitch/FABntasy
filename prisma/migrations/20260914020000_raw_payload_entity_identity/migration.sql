@@ -6,3 +6,6 @@ ON "raw_fab_payloads"(
     "external_id",
     "checksum"
 );
+
+DROP INDEX IF EXISTS
+"raw_fab_payloads_endpoint_checksum_key";

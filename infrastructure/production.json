@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "fabntasy.production.v1",
+  "release": "1.0.0",
+  "canonicalOrigin": "https://fabntasy.es",
+  "regions": { "web": "vercel-fra1", "database": "eu-west-1", "ingestor": "europe-west4" },
+  "providers": { "dnsAndWeb": "vercel", "databaseAndAuth": "supabase", "ingestor": "railway", "images": "ghcr" },
+  "owners": { "release": "product-owner", "web": "web-on-call", "data": "data-on-call", "security": "security-owner" },
+  "artifacts": {
+    "commit": "SET_BY_RELEASE_WORKFLOW",
+    "webDigest": "sha256:SET_BY_RELEASE_WORKFLOW",
+    "ingestorDigest": "sha256:SET_BY_RELEASE_WORKFLOW",
+    "previousWebDigest": "sha256:SET_BEFORE_PROMOTION",
+    "previousIngestorDigest": "sha256:SET_BEFORE_PROMOTION"
+  },
+  "database": { "backupFrequencyHours": 24, "retentionDays": 30, "encrypted": true, "owner": "data-on-call", "rpoHours": 24, "rtoMinutes": 60 },
+  "deployment": { "migrationsAreSeparate": true, "digestOnly": true, "replicas": { "scheduler": 1, "worker": 1 } },
+  "pwa": { "supportedBrowsers": ["chromium", "firefox", "webkit"], "offlinePath": "/offline" }
+}

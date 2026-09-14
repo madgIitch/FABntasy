@@ -1,0 +1,75 @@
+name: production-release
+on:
+  workflow_dispatch:
+    inputs:
+      release: { description: "Semver release", required: true, default: "1.0.0" }
+      web_digest: { description: "Previously built immutable web sha256 digest", required: true }
+permissions: { contents: read, packages: write, id-token: write }
+concurrency: { group: production-release, cancel-in-progress: false }
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - uses: astral-sh/setup-uv@v5
+      - run: corepack pnpm install --frozen-lockfile
+      - run: corepack pnpm typecheck && corepack pnpm lint && corepack pnpm test
+      - run: corepack pnpm exec prisma validate
+      - run: corepack pnpm --filter @fabntasy/web audit:dependencies
+      - run: uv run --directory services/fab_ingestor python -m pytest
+      - run: uv run --directory services/fab_ingestor ruff check .
+      - run: node infrastructure/scripts/validate-production.mjs
+  migrate:
+    needs: gates
+    environment: production-migrations
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: corepack pnpm install --frozen-lockfile
+      - run: corepack pnpm exec prisma migrate deploy
+        env: { DIRECT_URL: "${{ secrets.DIRECT_URL }}", DATABASE_URL: "${{ secrets.DIRECT_URL }}" }
+  build:
+    needs: gates
+    runs-on: ubuntu-latest
+    outputs: { ingestor_digest: "${{ steps.ingestor.outputs.digest }}" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with: { registry: ghcr.io, username: "${{ github.actor }}", password: "${{ secrets.GITHUB_TOKEN }}" }
+      - id: ingestor
+        uses: docker/build-push-action@v6
+        with:
+          context: services/fab_ingestor
+          push: true
+          tags: ghcr.io/${{ github.repository }}/fab-ingestor:${{ github.sha }}
+          build-args: VCS_REF=${{ github.sha }}
+      - uses: aquasecurity/trivy-action@v0.36.0
+        with: { image-ref: "ghcr.io/${{ github.repository }}/fab-ingestor@${{ steps.ingestor.outputs.digest }}", severity: "CRITICAL,HIGH", exit-code: "1", ignore-unfixed: true }
+  promote:
+    needs: [migrate, build]
+    environment: production
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Promote immutable artifacts
+        env:
+          INGESTOR_DIGEST: "${{ needs.build.outputs.ingestor_digest }}"
+          WEB_DIGEST: "${{ inputs.web_digest }}"
+          WEB_DEPLOY_HOOK: "${{ secrets.VERCEL_DEPLOY_HOOK }}"
+          RAILWAY_TOKEN: "${{ secrets.RAILWAY_API_TOKEN }}"
+        run: |
+          test "${INGESTOR_DIGEST#sha256:}" != "$INGESTOR_DIGEST"
+          test "${WEB_DIGEST#sha256:}" != "$WEB_DIGEST"
+          curl --fail --silent --show-error -X POST "$WEB_DEPLOY_HOOK" -H "x-fabntasy-commit: $GITHUB_SHA" -H "x-fabntasy-image-digest: $WEB_DIGEST"
+          image="ghcr.io/${GITHUB_REPOSITORY,,}/fab-ingestor@${INGESTOR_DIGEST}"
+          npx -y @railway/cli@latest service source connect --image "$image" --service FABntasy
+          npx -y @railway/cli@latest redeploy --service FABntasy --yes
+      - run: node infrastructure/scripts/smoke-https.mjs
+        env: { PRODUCTION_ORIGIN: "https://fabntasy.es" }

@@ -1,0 +1,32 @@
+name: encrypted-database-backup
+on:
+  schedule: [{ cron: "17 2 * * *" }]
+  workflow_dispatch:
+permissions: { contents: read, id-token: write }
+jobs:
+  backup:
+    environment: production-backup
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create encrypted custom-format backup
+        env:
+          DATABASE_URL: "${{ secrets.BACKUP_DATABASE_URL }}"
+          AGE_RECIPIENT: "${{ vars.BACKUP_AGE_RECIPIENT }}"
+        run: |
+          sudo apt-get update && sudo apt-get install -y postgresql-client age
+          test -n "$DATABASE_URL" && test -n "$AGE_RECIPIENT"
+          umask 077
+          pg_dump "$DATABASE_URL" --format=custom --no-owner --no-acl --file=backup.dump
+          test -s backup.dump
+          age --recipient "$AGE_RECIPIENT" --output "fabntasy-${GITHUB_RUN_ID}.dump.age" backup.dump
+          rm backup.dump
+      - uses: actions/upload-artifact@v4
+        with: { name: "encrypted-backup-${{ github.run_id }}", path: "*.dump.age", retention-days: 30, if-no-files-found: error }
+  alert:
+    needs: backup
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl --fail --silent --show-error -X POST "${{ secrets.OPERATIONS_ALERT_WEBHOOK }}" -H 'content-type: application/json' --data '{"event":"database_backup_failed","run":"${{ github.run_id }}"}'

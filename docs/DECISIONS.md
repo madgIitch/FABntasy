@@ -71,6 +71,13 @@ Decisiones registradas:
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
 
+<!-- implementation:sprint-24-production-1-0 -->
+## 2026-09-15 · Contrato operativo de producción 1.0
+
+Decisión: `infrastructure/production.json` es el manifiesto versionado del entorno y `docs/operations/PRODUCTION_1_0_RUNBOOK.md` su índice operativo autoritativo. La release se separa en gates, migración y promoción por digest; los backups diarios se cifran antes de abandonar el runner y cualquier restore se rechaza salvo destino explícitamente aislado. El scheduler permanece singleton y PostgreSQL conserva cola, auditoría y publicaciones durante rollback.
+
+Consecuencia: cambiar origen, proveedor, región, responsables, política de backup, topología o versiones congeladas requiere actualizar el manifiesto, este ADR y las pruebas antes de promover otro release.
+
 ## 2026-09-14 · ADR-002 alojamiento productivo del ingestor
 
 Se aprueba Railway Hobby en región EU West, una réplica permanente de 1 vCPU/512 MiB con supervisor PID 1, volumen privado de 1 GiB y despliegue OCI por digest. El presupuesto de conexiones es 2 persistentes + 1 release + 1 reserva (máximo 4); migraciones se ejecutan como release job y el rollback no revierte datos. Detalle y alternativas en `docs/operations/ADR-002-INGESTOR-PRODUCTION-HOSTING.md`.

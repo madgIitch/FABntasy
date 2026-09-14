@@ -88,6 +88,7 @@ def _urllib_transport(url: str, fields: Mapping[str, str], timeout: float) -> tu
 
 
 class FabClient:
+    DIAGNOSTIC_BODY_LIMIT: ClassVar[int] = 4096
     SEARCH_ACTIONS: ClassVar[dict[str, str]] = {
         "match": "buscarPartido",
         "category": "buscarCategoria",
@@ -175,6 +176,7 @@ class FabClient:
         payload = self._post(
             "/v2/envivo/estadisticas.ashx",
             {"id_partido": match_id},
+            response_error_sink=payload_sink,
         )
         if payload_sink is not None:
             payload_sink(payload)
@@ -376,20 +378,42 @@ class FabClient:
                 return value
         raise FabResponseError("FAB search returned an invalid response")
 
-    def _post(self, path: str, fields: Mapping[str, str], *, authenticated: bool = True) -> dict:
+    def _post(
+        self,
+        path: str,
+        fields: Mapping[str, str],
+        *,
+        authenticated: bool = True,
+        response_error_sink: Callable[[dict], None] | None = None,
+    ) -> dict:
         credentials = self._store.load() if authenticated else None
         if authenticated and credentials is None:
             raise FabResponseError("FAB credentials are not configured")
-        payload = self._request_json(path, fields, credentials)
+        payload = self._request_json(
+            path,
+            fields,
+            credentials,
+            response_error_sink=response_error_sink,
+        )
         self._rotate_key(payload)
         if authenticated and self._is_auth_signal(payload):
             if not self._auto_refresh_credentials:
                 raise FabAuthExpiredError("FAB authentication may have expired")
-            return self._refresh_and_replay(path, fields, credentials)
+            return self._refresh_and_replay(
+                path,
+                fields,
+                credentials,
+                response_error_sink=response_error_sink,
+            )
         return payload
 
     def _request_json(
-        self, path: str, fields: Mapping[str, str], credentials: Credentials | None
+        self,
+        path: str,
+        fields: Mapping[str, str],
+        credentials: Credentials | None,
+        *,
+        response_error_sink: Callable[[dict], None] | None = None,
     ) -> dict:
         request_fields = dict(fields)
         if credentials is not None:
@@ -416,8 +440,16 @@ class FabClient:
             try:
                 payload = json.loads(raw)
             except (json.JSONDecodeError, UnicodeDecodeError) as error:
+                if response_error_sink is not None:
+                    response_error_sink(
+                        self._response_diagnostic(status, raw, credentials, "invalid_json")
+                    )
                 raise FabResponseError("FAB returned invalid JSON") from error
             if not isinstance(payload, dict):
+                if response_error_sink is not None:
+                    response_error_sink(
+                        self._response_diagnostic(status, raw, credentials, "non_object_json")
+                    )
                 raise FabResponseError("FAB returned an invalid response")
             return payload
         raise AssertionError("retry loop exhausted")
@@ -447,7 +479,12 @@ class FabClient:
         raise FabContractError("FAB authentication probe returned an invalid contract")
 
     def _refresh_and_replay(
-        self, path: str, fields: Mapping[str, str], rejected: Credentials | None
+        self,
+        path: str,
+        fields: Mapping[str, str],
+        rejected: Credentials | None,
+        *,
+        response_error_sink: Callable[[dict], None] | None = None,
     ) -> dict:
         if rejected is None:
             raise FabAuthExpiredError("FAB authentication has expired")
@@ -463,11 +500,40 @@ class FabClient:
                     current = self.register_device()
                 except FabError as error:
                     raise FabAuthRefreshError("FAB credential refresh failed") from error
-            replay = self._request_json(path, fields, current)
+            replay = self._request_json(
+                path,
+                fields,
+                current,
+                response_error_sink=response_error_sink,
+            )
             self._rotate_key(replay)
             if self._is_auth_signal(replay):
                 raise FabAuthRefreshError("FAB rejected refreshed credentials")
             return replay
+
+    @classmethod
+    def _response_diagnostic(
+        cls,
+        status: int,
+        raw: bytes,
+        credentials: Credentials | None,
+        parse_error: str,
+    ) -> dict:
+        body = raw.decode("utf-8", errors="replace")
+        if credentials is not None:
+            for secret in (credentials.device_id, credentials.key):
+                if secret:
+                    body = body.replace(secret, "[REDACTED]")
+        truncated = len(body) > cls.DIAGNOSTIC_BODY_LIMIT
+        if truncated:
+            body = body[: cls.DIAGNOSTIC_BODY_LIMIT]
+        return {
+            "_diagnostic": True,
+            "http_status": status,
+            "body": body,
+            "body_truncated": truncated,
+            "parse_error": parse_error,
+        }
 
     def _rotate_key(self, payload: dict) -> None:
         new_key = payload.get("key")

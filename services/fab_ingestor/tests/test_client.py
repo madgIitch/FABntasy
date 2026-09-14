@@ -294,6 +294,56 @@ def test_match_stats_rejects_incomplete_responses(payload):
         client.get_match_stats("opaque-game")
 
 
+@pytest.mark.parametrize(
+    ("raw", "parse_error"),
+    [
+        (b"<html>temporarily unavailable</html>", "invalid_json"),
+        (b"[]", "non_object_json"),
+    ],
+)
+def test_match_stats_captures_safe_pre_json_diagnostic(raw, parse_error):
+    captured = []
+    if parse_error == "invalid_json":
+        raw += b" device-secret key-secret"
+    client = FabClient(
+        MemoryCredentialStore(Credentials("device-secret", "key-secret")),
+        transport=lambda *_: (200, raw),
+        min_interval=0,
+    )
+
+    with pytest.raises(FabResponseError):
+        client.get_match_stats("opaque-game", payload_sink=captured.append)
+
+    assert captured == [
+        {
+            "_diagnostic": True,
+            "http_status": 200,
+            "body": (
+                "<html>temporarily unavailable</html> [REDACTED] [REDACTED]"
+                if parse_error == "invalid_json"
+                else "[]"
+            ),
+            "body_truncated": False,
+            "parse_error": parse_error,
+        }
+    ]
+
+
+def test_match_stats_truncates_pre_json_diagnostic_body():
+    captured = []
+    client = FabClient(
+        MemoryCredentialStore(Credentials("device", "secret")),
+        transport=lambda *_: (200, b"x" * (FabClient.DIAGNOSTIC_BODY_LIMIT + 1)),
+        min_interval=0,
+    )
+
+    with pytest.raises(FabResponseError):
+        client.get_match_stats("opaque-game", payload_sink=captured.append)
+
+    assert len(captured[0]["body"]) == FabClient.DIAGNOSTIC_BODY_LIMIT
+    assert captured[0]["body_truncated"] is True
+
+
 def test_file_store_replaces_credentials_atomically(tmp_path):
     path = tmp_path / "private" / "credentials.json"
     store = FileCredentialStore(path)

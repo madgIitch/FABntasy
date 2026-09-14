@@ -87,7 +87,7 @@ def _sync_game_stats_unlocked(
                     endpoint="/v2/envivo/estadisticas.ashx",
                     entity_type="game_statistics",
                     external_id=external_game_id,
-                    http_status=200,
+                    http_status=_diagnostic_http_status(captured[0]),
                     payload=captured[0],
                 )
 
@@ -337,10 +337,7 @@ def _sync_game_stats_unlocked(
                 values = {
                     "game_id": context["game_id"],
                     "player_registration_id": registration_id,
-                    **_map_stats(
-                        row,
-                        partial=not is_final,
-                    ),
+                    **_map_stats(row, partial=not is_final),
                 }
 
                 repository.upsert_from_external(
@@ -454,6 +451,11 @@ def _stats_rows(stats: dict[str, Any], *keys: str) -> list[Any]:
         if isinstance(value, list):
             return value
     return []
+
+
+def _diagnostic_http_status(payload: dict) -> int:
+    status = payload.get("http_status") if payload.get("_diagnostic") is True else None
+    return status if isinstance(status, int) and 100 <= status <= 599 else 200
 
 
 def _player_rows(stats: dict[str, Any], *keys: str) -> list[Any]:

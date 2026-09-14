@@ -99,6 +99,20 @@ class InvalidResponseClient:
             "FAB match statistics returned an invalid response"
         )
 
+
+class PreJsonInvalidResponseClient:
+    def get_match_stats(self, match_id, *, payload_sink):
+        payload_sink(
+            {
+                "_diagnostic": True,
+                "http_status": 200,
+                "body": "<html>upstream error</html>",
+                "body_truncated": False,
+                "parse_error": "invalid_json",
+            }
+        )
+        raise FabResponseError("FAB returned invalid JSON")
+
 def test_finished_schedule_wins_over_stale_live_status():
     payload = json.loads(json.dumps(FIXTURE))
     payload["partido"]["estado_partido"] = "COMENZADO"
@@ -141,6 +155,33 @@ def test_finished_game_can_fall_back_to_last_valid_raw_payload():
         row["payload"].get("resultado") == "error"
         for row in repository.raw
     )
+
+
+def test_pre_json_failure_is_preserved_with_its_http_status():
+    repository = Repository()
+
+    with pytest.raises(FabResponseError, match="invalid JSON"):
+        sync_game_stats(
+            PreJsonInvalidResponseClient(),
+            repository,
+            external_game_id="opaque-game",
+        )
+
+    assert repository.raw == [
+        {
+            "endpoint": "/v2/envivo/estadisticas.ashx",
+            "entity_type": "game_statistics",
+            "external_id": "opaque-game",
+            "http_status": 200,
+            "payload": {
+                "_diagnostic": True,
+                "http_status": 200,
+                "body": "<html>upstream error</html>",
+                "body_truncated": False,
+                "parse_error": "invalid_json",
+            },
+        }
+    ]
 
 def test_cached_snapshot_cannot_finalize_with_wrong_score():
     cached = json.loads(json.dumps(FIXTURE))

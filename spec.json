@@ -1988,7 +1988,7 @@
     {
       "id": "sprint-22b-ingestor-production-deployment",
       "name": "Sprint 22B - Ingestor Production Deployment",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.9.5",
       "dependencies": [

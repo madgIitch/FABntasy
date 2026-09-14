@@ -2069,7 +2069,7 @@
       "id": "hotfix-partial-round-fantasy-lifecycle",
       "name": "Hotfix - Partial Round Fantasy Lifecycle",
       "title": "Procesamiento fantasy de jornadas parcialmente sincronizadas",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "milestone": "0.9.6",
       "dependencies": [

@@ -41,8 +41,18 @@ jobs:
       - name: Verify non-root, revision and tests
         run: |
           test "$(docker run --rm --entrypoint id fab-ingestor:test -u)" = "10001"
-          test "$(docker image inspect fab-ingestor:test --format '{{ index .Config.Labels \"org.opencontainers.image.revision\" }}')" = "$GITHUB_SHA"
-          docker run --rm --entrypoint sh -v "$PWD/services/fab_ingestor/tests:/tests:ro" fab-ingestor:test -c "pip install --quiet pytest && python -m pytest /tests"
+
+          actual_revision="$(docker image inspect \
+            --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' \
+            fab-ingestor:test)"
+
+          test "$actual_revision" = "$GITHUB_SHA"
+
+          docker run --rm \
+            --entrypoint sh \
+            -v "$PWD/services/fab_ingestor/tests:/tests:ro" \
+            fab-ingestor:test \
+            -c "pip install --quiet pytest && python -m pytest /tests"
       - name: Canary secret scan
         run: |
           mkdir -p release-scan

@@ -77,10 +77,16 @@ jobs:
       - id: build
         name: Publish the exact tested image and expose digest
         run: |
-          target="ghcr.io/${GITHUB_REPOSITORY}/fab-ingestor:${GITHUB_SHA}"
+          repository="${GITHUB_REPOSITORY,,}"
+          target="ghcr.io/${repository}/fab-ingestor:${GITHUB_SHA}"
+
           docker tag fab-ingestor:test "$target"
           docker push "$target"
-          digest="$(docker inspect --format='{{index .RepoDigests 0}}' "$target" | cut -d@ -f2)"
+
+          digest="$(docker inspect \
+            --format='{{index .RepoDigests 0}}' \
+            "$target" | cut -d@ -f2)"
+
           test -n "$digest"
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
   migrate-and-promote:
@@ -97,5 +103,11 @@ jobs:
         env: { DIRECT_URL: "${{ secrets.DIRECT_URL }}", DATABASE_URL: "${{ secrets.DIRECT_URL }}" }
         run: corepack pnpm exec prisma migrate deploy
       - name: Promote exactly the published digest
-        env: { RAILWAY_TOKEN: "${{ secrets.RAILWAY_TOKEN }}" }
-        run: railway redeploy --image "ghcr.io/${{ github.repository }}/fab-ingestor@${{ needs.build-test-publish.outputs.digest }}" --yes
+        env:
+          RAILWAY_TOKEN: "${{ secrets.RAILWAY_TOKEN }}"
+          IMAGE_DIGEST: "${{ needs.build-test-publish.outputs.digest }}"
+        run: |
+          repository="${GITHUB_REPOSITORY,,}"
+          railway redeploy \
+            --image "ghcr.io/${repository}/fab-ingestor@${IMAGE_DIGEST}" \
+            --yes

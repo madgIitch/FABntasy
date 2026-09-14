@@ -1,11 +1,22 @@
 name: ingestor-production
+
 on:
   workflow_dispatch:
     inputs:
-      environment: { description: Environment, required: true, default: production }
+      environment:
+        description: Environment
+        required: true
+        default: production
+
   push:
-    branches: [main]
-    paths: ["services/fab_ingestor/**", "infrastructure/**", "scripts/deployment/**", "prisma/migrations/**"]
+    branches:
+      - main
+    paths:
+      - "services/fab_ingestor/**"
+      - "infrastructure/**"
+      - "scripts/deployment/**"
+      - "prisma/migrations/**"
+      - ".github/workflows/ingestor-production.yml"
 
 permissions:
   contents: read
@@ -41,7 +52,7 @@ jobs:
           if python scripts/deployment/secret-scan.py release-scan --canary 'CANARY-FAB-DEVICE-22B'; then exit 1; fi
           rm release-scan/negative-control.log
       - name: Scan image
-        uses: aquasecurity/trivy-action@v0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: fab-ingestor:test
           severity: CRITICAL,HIGH

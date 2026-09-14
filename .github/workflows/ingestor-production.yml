@@ -104,11 +104,22 @@ jobs:
         run: corepack pnpm exec prisma migrate deploy
       - name: Promote exactly the published digest
         env:
-          RAILWAY_TOKEN: "${{ secrets.RAILWAY_TOKEN }}"
+          RAILWAY_API_TOKEN: "${{ secrets.RAILWAY_API_TOKEN }}"
           IMAGE_DIGEST: "${{ needs.build-test-publish.outputs.digest }}"
+          RAILWAY_PROJECT_ID: "c9bd1d9c-f2ee-4c47-8e0c-dfb52c164ada"
         run: |
+          test -n "$RAILWAY_API_TOKEN" || {
+            echo "RAILWAY_API_TOKEN is missing"
+            exit 1
+          }
+
           repository="${GITHUB_REPOSITORY,,}"
           image="ghcr.io/${repository}/fab-ingestor@${IMAGE_DIGEST}"
+
+          npx -y @railway/cli@latest link \
+            --project "$RAILWAY_PROJECT_ID" \
+            --environment production \
+            --service FABntasy
 
           npx -y @railway/cli@latest service source connect \
             --image "$image" \

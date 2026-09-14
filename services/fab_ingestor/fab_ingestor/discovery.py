@@ -8,6 +8,8 @@ from typing import Any
 from .client import FabClient
 from .repository import SportsRepository
 
+CATALOG_DISCOVERY_SEEDS = tuple("abcdefghijklmnñopqrstuvwxyz0123456789")
+
 
 class CompetitionDiscoveryError(RuntimeError):
     pass
@@ -71,6 +73,12 @@ def sync_competition_catalog(
     scan_id = repository.start_catalog_scan()
     try:
         candidates = discover_categories(client, "", payload_sink=raw_pages.append)
+        if not candidates:
+            by_id: dict[str, CategoryCandidate] = {}
+            for seed in CATALOG_DISCOVERY_SEEDS:
+                for candidate in discover_categories(client, seed, payload_sink=raw_pages.append):
+                    by_id[candidate.opaque_id] = candidate
+            candidates = list(by_id.values())
         if not candidates:
             raise CompetitionDiscoveryError("FAB competition catalog was empty")
         discovered = changed = 0

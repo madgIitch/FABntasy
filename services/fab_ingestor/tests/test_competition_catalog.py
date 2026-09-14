@@ -23,9 +23,17 @@ class Repository:
 class Client:
     def __init__(self, items): self.items = items
     def search_category(self, query, payload_sink=None):
-        assert query == ""
         if payload_sink: payload_sink({"categorias": self.items})
         return self.items
+
+
+class SeedClient:
+    def __init__(self): self.queries = []
+    def search_category(self, query, payload_sink=None):
+        self.queries.append(query)
+        items = [candidate("10468", "Liga Nacional")] if query == "a" else []
+        if payload_sink: payload_sink({"categorias": items})
+        return items
 
 
 def test_catalog_discovers_then_detects_metadata_changes():
@@ -34,6 +42,14 @@ def test_catalog_discovers_then_detects_metadata_changes():
     second = sync_competition_catalog(Client([candidate("10468", "N1 Masculina")]), repository)
     assert (first.discovered, first.changed) == (1, 0)
     assert (second.discovered, second.changed) == (0, 1)
+
+
+def test_catalog_falls_back_to_exhaustive_character_index_and_deduplicates():
+    repository = Repository(); client = SeedClient()
+    result = sync_competition_catalog(client, repository)
+    assert client.queries[0] == ""
+    assert "a" in client.queries and "ñ" in client.queries and "9" in client.queries
+    assert (result.observed, result.discovered) == (1, 1)
 
 
 def test_empty_catalog_is_failed_and_non_authoritative():

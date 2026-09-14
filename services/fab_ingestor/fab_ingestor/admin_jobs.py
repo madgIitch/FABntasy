@@ -6,7 +6,7 @@ import socket
 from typing import Any
 
 from .boxscore import sync_competition_stats, sync_game_stats
-from .client import FabCancelledError, FabClient
+from .client import FabCancelledError, FabClient, FabResponseError
 from .discovery import sync_competition_teams
 from .fantasy_lifecycle import FantasyLifecycleTransportError
 from .repository import SportsRepository
@@ -72,40 +72,114 @@ def execute_job(job: dict[str, Any], client: FabClient, repository: SportsReposi
     return {"teams": teams.teams, "games": games.games, "rejected": stats.rejected}
 
 
-def run_one_job(client: FabClient, repository: SportsRepository, worker_id: str) -> bool:
+def run_one_job(
+    client: FabClient,
+    repository: SportsRepository,
+    worker_id: str,
+) -> bool:
     heartbeat(repository, worker_id)
+
     job = claim_job(repository, worker_id)
     if job is None:
         return False
+
     try:
         counters = execute_job(job, client, repository)
+
         repository.connection.execute(
-            """UPDATE ingestion_jobs SET status='SUCCEEDED', counters=%s,
-            finished_at=CURRENT_TIMESTAMP, heartbeat_at=CURRENT_TIMESTAMP WHERE id=%s""",
-            (json.dumps(counters), job["id"]),
+            """UPDATE ingestion_jobs
+            SET status='SUCCEEDED',
+                counters=%s,
+                finished_at=CURRENT_TIMESTAMP,
+                heartbeat_at=CURRENT_TIMESTAMP
+            WHERE id=%s""",
+            (
+                json.dumps(counters),
+                job["id"],
+            ),
         )
+
         repository.connection.execute(
-            """INSERT INTO admin_audit_events (id, actor_profile_id, action, resource_type, resource_id, result)
-            VALUES (gen_random_uuid(), %s, 'INGESTION_JOB_COMPLETE', 'INGESTION_JOB', %s, 'SUCCESS')""",
-            (job["requested_by_id"], job["id"]),
+            """INSERT INTO admin_audit_events
+            (
+                id,
+                actor_profile_id,
+                action,
+                resource_type,
+                resource_id,
+                result
+            )
+            VALUES (
+                gen_random_uuid(),
+                %s,
+                'INGESTION_JOB_COMPLETE',
+                'INGESTION_JOB',
+                %s,
+                'SUCCESS'
+            )""",
+            (
+                job["requested_by_id"],
+                job["id"],
+            ),
         )
-    except Exception as error:  # noqa: BLE001 - every job failure must reach a terminal state
+
+    except Exception as error:  # noqa: BLE001
         if isinstance(error, FabCancelledError):
             code = "WORKER_TERMINATED"
+
         elif isinstance(error, FantasyLifecycleTransportError):
             code = "FANTASY_LIFECYCLE_TRANSPORT"
+
+        elif isinstance(error, FabResponseError):
+            code = getattr(
+                error,
+                "code",
+                "FAB_RESPONSE",
+            )
+
         else:
             code = type(error).__name__.upper()[:64]
+
         repository.connection.execute(
-            """UPDATE ingestion_jobs SET status='FAILED', error_code=%s,
-            finished_at=CURRENT_TIMESTAMP, heartbeat_at=CURRENT_TIMESTAMP WHERE id=%s""",
-            (code, job["id"]),
+            """UPDATE ingestion_jobs
+            SET status='FAILED',
+                error_code=%s,
+                finished_at=CURRENT_TIMESTAMP,
+                heartbeat_at=CURRENT_TIMESTAMP
+            WHERE id=%s""",
+            (
+                code,
+                job["id"],
+            ),
         )
+
         repository.connection.execute(
-            """INSERT INTO admin_audit_events (id, actor_profile_id, action, resource_type, resource_id, result, reason)
-            VALUES (gen_random_uuid(), %s, 'INGESTION_JOB_COMPLETE', 'INGESTION_JOB', %s, 'FAILED', %s)""",
-            (job["requested_by_id"], job["id"], code),
+            """INSERT INTO admin_audit_events
+            (
+                id,
+                actor_profile_id,
+                action,
+                resource_type,
+                resource_id,
+                result,
+                reason
+            )
+            VALUES (
+                gen_random_uuid(),
+                %s,
+                'INGESTION_JOB_COMPLETE',
+                'INGESTION_JOB',
+                %s,
+                'FAILED',
+                %s
+            )""",
+            (
+                job["requested_by_id"],
+                job["id"],
+                code,
+            ),
         )
+
     return True
 
 

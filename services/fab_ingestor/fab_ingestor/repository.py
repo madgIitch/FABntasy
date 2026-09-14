@@ -317,7 +317,8 @@ class SportsRepository:
         row = self.connection.execute(
             """
             SELECT g.id, g.competition_season_id, g.home_team_id, g.away_team_id,
-                   home.id, away.id, g.status, g.has_statistics
+            home.id, away.id, g.status, g.has_statistics,
+            g.home_score, g.away_score
             FROM external_ids ids
             JOIN games g ON g.id = ids.entity_id
             JOIN team_registrations home
@@ -341,6 +342,8 @@ class SportsRepository:
             "away_registration_id": row[5],
             "status": row[6],
             "has_statistics": row[7],
+            "home_score": row[8],
+            "away_score": row[9],
         }
 
     def list_eligible_stats_games(
@@ -501,13 +504,32 @@ class SportsRepository:
     ) -> UUID:
         sanitized, checksum = canonical_payload(payload)
         payload_id = uuid4()
+
         row = self.connection.execute(
             """
             INSERT INTO raw_fab_payloads
-                (id, endpoint, entity_type, external_id, http_status, checksum, payload)
-            VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb)
+                (
+                    id,
+                    endpoint,
+                    entity_type,
+                    external_id,
+                    http_status,
+                    checksum,
+                    payload
+                )
+            VALUES (
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s,
+                %s::jsonb
+            )
             ON CONFLICT (endpoint, checksum) DO UPDATE
-            SET retrieved_at = CURRENT_TIMESTAMP, http_status = EXCLUDED.http_status
+            SET
+                retrieved_at = CURRENT_TIMESTAMP,
+                http_status = EXCLUDED.http_status
             RETURNING id
             """,
             (
@@ -517,29 +539,94 @@ class SportsRepository:
                 external_id,
                 http_status,
                 checksum,
-                json.dumps(sanitized, ensure_ascii=False),
+                json.dumps(
+                    sanitized,
+                    ensure_ascii=False,
+                ),
             ),
         ).fetchone()
+
         assert row is not None
+
         return row[0]
+
+    def get_latest_valid_game_statistics_payload(
+        self,
+        external_game_id: str,
+    ) -> dict[str, Any] | None:
+        row = self.connection.execute(
+            """
+            SELECT payload
+            FROM raw_fab_payloads
+            WHERE endpoint = '/v2/envivo/estadisticas.ashx'
+              AND entity_type = 'game_statistics'
+              AND external_id = %s
+              AND lower(
+                    COALESCE(
+                        payload->>'resultado',
+                        ''
+                    )
+                  ) = 'correcto'
+              AND jsonb_typeof(
+                    payload->'partido'
+                  ) = 'object'
+              AND jsonb_typeof(
+                    payload->'estadisticas'
+                  ) = 'object'
+            ORDER BY retrieved_at DESC
+            LIMIT 1
+            """,
+            (external_game_id,),
+        ).fetchone()
+
+        if row is None:
+            return None
+
+        payload = row[0]
+
+        # Psycopg normalmente devuelve JSONB ya decodificado.
+        if isinstance(payload, dict):
+            return payload
+
+        # Fallback defensivo por si el driver devuelve texto.
+        return json.loads(payload)
 
 
 def _psycopg_url(database_url: str) -> str:
     """Remove Prisma-only URL options without logging connection secrets."""
     database_url = database_url.strip()
+
     if (
         len(database_url) >= 2
         and database_url[0] == database_url[-1]
         and database_url[0] in {"'", '"'}
     ):
-        # Docker's --env-file keeps surrounding quotes, unlike dotenv loaders.
+        # Docker's --env-file keeps surrounding quotes,
+        # unlike dotenv loaders.
         database_url = database_url[1:-1]
+
     parts = urlsplit(database_url)
+
     query = urlencode(
         [
             (key, value)
-        for key, value in parse_qsl(parts.query, keep_blank_values=True)
-        if key not in {"pgbouncer", "schema"}
+            for key, value in parse_qsl(
+                parts.query,
+                keep_blank_values=True,
+            )
+            if key not in {
+                "pgbouncer",
+                "schema",
+            }
         ]
     )
-    return urlunsplit((parts.scheme, parts.netloc, parts.path, query, parts.fragment))
+
+    return urlunsplit(
+        (
+            parts.scheme,
+            parts.netloc,
+            parts.path,
+            query,
+            parts.fragment,
+        )
+    )

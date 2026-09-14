@@ -6,11 +6,14 @@ from pathlib import Path
 import pytest
 
 from fab_ingestor.boxscore import BoxscoreContractError, sync_game_stats
+from fab_ingestor.client import FabResponseError
 
 FIXTURE = json.loads(
     (Path(__file__).parent / "fixtures" / "fab_boxscore.json").read_text(encoding="utf-8")
 )
 
+FIXTURE["partido"]["tanteo_local"] = 12
+FIXTURE["partido"]["tanteo_visitante"] = 8
 
 class Connection:
     def transaction(self):
@@ -36,6 +39,10 @@ class Repository:
         self.final = False
         self.partial = False
         self.live = []
+        self.cached_payload = None
+
+    def get_latest_valid_game_statistics_payload(self, external_game_id):
+        return self.cached_payload
 
     def get_game_stats_context(self, external_game_id):
         return {
@@ -45,6 +52,8 @@ class Repository:
             "away_registration_id": "away-registration",
             "status": "finished",
             "has_statistics": True,
+            "home_score": 12,
+            "away_score": 8,
         }
 
     def advisory_game_lock(self, external_game_id):
@@ -80,6 +89,90 @@ class Repository:
             if value["player_registration_id"] in registration_ids
         }
 
+class InvalidResponseClient:
+    def __init__(self, payload):
+        self.payload = payload
+
+    def get_match_stats(self, match_id, *, payload_sink):
+        payload_sink(self.payload)
+        raise FabResponseError(
+            "FAB match statistics returned an invalid response"
+        )
+
+def test_finished_schedule_wins_over_stale_live_status():
+    payload = json.loads(json.dumps(FIXTURE))
+    payload["partido"]["estado_partido"] = "COMENZADO"
+
+    repository = Repository()
+
+    sync_game_stats(
+        Client(payload),
+        repository,
+        external_game_id="opaque-game",
+    )
+
+    assert repository.live[-1]["status"] == "finished"
+    assert repository.final is True
+    assert repository.partial is False
+
+def test_finished_game_can_fall_back_to_last_valid_raw_payload():
+    cached = json.loads(json.dumps(FIXTURE))
+    cached["partido"]["estado_partido"] = "COMENZADO"
+
+    repository = Repository()
+    repository.cached_payload = cached
+
+    rejected = {
+        "resultado": "error",
+        "error": "statistics unavailable",
+    }
+
+    result = sync_game_stats(
+        InvalidResponseClient(rejected),
+        repository,
+        external_game_id="opaque-game",
+    )
+
+    assert result.games == 1
+    assert repository.final is True
+
+    # La respuesta inválida actual también queda guardada para diagnóstico.
+    assert any(
+        row["payload"].get("resultado") == "error"
+        for row in repository.raw
+    )
+
+def test_cached_snapshot_cannot_finalize_with_wrong_score():
+    cached = json.loads(json.dumps(FIXTURE))
+
+    repository = Repository()
+    repository.cached_payload = cached
+
+    original_context = repository.get_game_stats_context
+
+    def context(game_id):
+        values = original_context(game_id)
+        values["home_score"] = 999
+        return values
+
+    repository.get_game_stats_context = context
+
+    rejected = {
+        "resultado": "error",
+        "error": "statistics unavailable",
+    }
+
+    with pytest.raises(
+        BoxscoreContractError,
+        match="does not match final schedule",
+    ):
+        sync_game_stats(
+            InvalidResponseClient(rejected),
+            repository,
+            external_game_id="opaque-game",
+        )
+
+    assert repository.final is False
 
 def test_boxscore_maps_nullable_stats_and_is_idempotent():
     repository = Repository()
@@ -139,12 +232,32 @@ def test_player_on_wrong_team_is_rejected():
 
 def test_player_totals_must_match_authoritative_scoreboard():
     payload = json.loads(json.dumps(FIXTURE))
+
     payload["partido"]["tanteo_local"] = 6
     payload["partido"]["tanteo_visitante"] = 4
+
     repository = Repository()
 
-    with pytest.raises(BoxscoreContractError, match="do not match"):
-        sync_game_stats(Client(payload), repository, external_game_id="opaque-game")
+    original_context = repository.get_game_stats_context
+
+    def context(game_id):
+        values = original_context(game_id)
+        values["home_score"] = 6
+        values["away_score"] = 4
+        return values
+
+    repository.get_game_stats_context = context
+
+    with pytest.raises(
+        BoxscoreContractError,
+        match="do not match",
+    ):
+        sync_game_stats(
+            Client(payload),
+            repository,
+            external_game_id="opaque-game",
+        )
+
     assert len(repository.raw) == 1
     assert repository.stats == {}
     assert repository.final is False

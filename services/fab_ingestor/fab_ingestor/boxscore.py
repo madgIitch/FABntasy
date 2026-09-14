@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
-from .client import FabClient
+from .client import FabClient, FabResponseError
 from .repository import SportsRepository
 
 
@@ -61,116 +61,324 @@ def sync_game_stats(
 
 
 def _sync_game_stats_unlocked(
-    client: FabClient, repository: SportsRepository, *, external_game_id: str
+    client: FabClient,
+    repository: SportsRepository,
+    *,
+    external_game_id: str,
 ) -> BoxscoreSyncSummary:
     context = repository.get_game_stats_context(external_game_id)
+
     if not context["has_statistics"]:
         raise BoxscoreContractError("game does not expose statistics")
 
     captured: list[dict] = []
-    payload = client.get_match_stats(external_game_id, payload_sink=captured.append)
-    with repository.connection.transaction():
-        repository.save_raw_payload(
-            endpoint="/v2/envivo/estadisticas.ashx",
-            entity_type="game_statistics",
-            external_id=external_game_id,
-            http_status=200,
-            payload=captured[0],
+
+    try:
+        payload = client.get_match_stats(
+            external_game_id,
+            payload_sink=captured.append,
         )
 
+    except FabResponseError:
+        # Conservar también la respuesta inválida para diagnóstico.
+        if captured:
+            with repository.connection.transaction():
+                repository.save_raw_payload(
+                    endpoint="/v2/envivo/estadisticas.ashx",
+                    entity_type="game_statistics",
+                    external_id=external_game_id,
+                    http_status=200,
+                    payload=captured[0],
+                )
+
+        # Solo usamos un snapshot anterior si el schedule
+        # ya confirmó que el partido terminó.
+        if context["status"] != "finished":
+            raise
+
+        cached_payload = (
+            repository.get_latest_valid_game_statistics_payload(
+                external_game_id
+            )
+        )
+
+        if cached_payload is None:
+            raise
+
+        payload = cached_payload
+
+    else:
+        # Respuesta actual válida: conservar el RAW normalmente.
+        if captured:
+            with repository.connection.transaction():
+                repository.save_raw_payload(
+                    endpoint="/v2/envivo/estadisticas.ashx",
+                    entity_type="game_statistics",
+                    external_id=external_game_id,
+                    http_status=200,
+                    payload=captured[0],
+                )
+
+    # IMPORTANTE:
+    # a partir de aquí estamos FUERA del else.
+    # Este código debe ejecutarse tanto con la respuesta actual
+    # como con un cached_payload recuperado.
     stats = payload["estadisticas"]
     game_payload = payload["partido"]
-    live_status = _normalize_live_status(game_payload.get("estado_partido"), context["status"])
-    live_updated_at = _parse_fab_timestamp(game_payload.get("fechaultimaactualizacion"))
+
+    reported_status = _normalize_live_status(
+        game_payload.get("estado_partido"),
+        context["status"],
+    )
+
+    # El estado del partido es monotónico.
+    effective_status = (
+        "finished"
+        if context["status"] == "finished"
+        else reported_status
+    )
+
+    live_updated_at = _parse_fab_timestamp(
+        game_payload.get("fechaultimaactualizacion")
+    )
+
     periods = game_payload.get("periodos")
     if periods is not None and not isinstance(periods, list):
-        raise BoxscoreContractError("FAB live periods are invalid")
-    home_score = _optional_int(game_payload.get("tanteo_local"), "tanteo_local")
-    away_score = _optional_int(game_payload.get("tanteo_visitante"), "tanteo_visitante")
+        raise BoxscoreContractError(
+            "FAB live periods are invalid"
+        )
+
+    home_score = _optional_int(
+        game_payload.get("tanteo_local"),
+        "tanteo_local",
+    )
+
+    away_score = _optional_int(
+        game_payload.get("tanteo_visitante"),
+        "tanteo_visitante",
+    )
+
+    # Si convertimos un snapshot en definitivo, su marcador
+    # debe coincidir con el final confirmado por el schedule.
+    if context["status"] == "finished":
+        final_home_score = context.get("home_score")
+        final_away_score = context.get("away_score")
+
+        if (
+            final_home_score is not None
+            and home_score != int(final_home_score)
+        ):
+            raise BoxscoreContractError(
+                "FAB boxscore home score does not match final schedule"
+            )
+
+        if (
+            final_away_score is not None
+            and away_score != int(final_away_score)
+        ):
+            raise BoxscoreContractError(
+                "FAB boxscore away score does not match final schedule"
+            )
+
     with repository.connection.transaction():
         repository.reconcile_live_game(
-            context["game_id"], status=live_status,
-            source_status=_text(game_payload.get("estado_partido")),
-            home_score=home_score, away_score=away_score,
+            context["game_id"],
+            status=effective_status,
+            source_status=_text(
+                game_payload.get("estado_partido")
+            ),
+            home_score=home_score,
+            away_score=away_score,
             score_by_period=periods,
-            source_score={"ResultadoLocal": home_score, "ResultadoVisitante": away_score,
-                          "ResultadosPeriodo": periods} if home_score is not None or away_score is not None else None,
+            source_score={
+                "ResultadoLocal": home_score,
+                "ResultadoVisitante": away_score,
+                "ResultadosPeriodo": periods,
+            }
+            if home_score is not None
+            or away_score is not None
+            else None,
             updated_at=live_updated_at,
         )
-    is_final = live_status == "finished"
+
+    is_final = effective_status == "finished"
+
     sides = (
         (
             "home",
-            _player_rows(stats, "estadisticasequipolocal", "estadisticasEquipoLocal"),
+            _player_rows(
+                stats,
+                "estadisticasequipolocal",
+                "estadisticasEquipoLocal",
+            ),
             context["home_registration_id"],
             _text(game_payload.get("idlocal")),
         ),
         (
             "away",
-            _player_rows(stats, "estadisticasequipovisitante", "estadisticasEquipoVisitante"),
+            _player_rows(
+                stats,
+                "estadisticasequipovisitante",
+                "estadisticasEquipoVisitante",
+            ),
             context["away_registration_id"],
             _text(game_payload.get("idvisitante")),
         ),
     )
-    if is_final and any(not rows for _, rows, _, _ in sides):
-        raise BoxscoreContractError("FAB boxscore is incomplete")
+
+    if is_final and any(
+        not rows for _, rows, _, _ in sides
+    ):
+        raise BoxscoreContractError(
+            "FAB boxscore is incomplete"
+        )
+
     if is_final:
-        _validate_score_totals(game_payload, sides)
+        _validate_score_totals(
+            game_payload,
+            sides,
+        )
 
     stable_ids: set[str] = set()
     seen_registration_ids = set()
-    created = updated = 0
+
+    created = 0
+    updated = 0
+
     with repository.connection.transaction():
-        for side, rows, team_registration_id, expected_team_id in sides:
+        for (
+            side,
+            rows,
+            team_registration_id,
+            expected_team_id,
+        ) in sides:
             assert isinstance(rows, list)
+
             for index, row in enumerate(rows):
                 if not isinstance(row, dict):
-                    raise BoxscoreContractError("FAB boxscore contains an invalid player")
+                    raise BoxscoreContractError(
+                        "FAB boxscore contains an invalid player"
+                    )
+
                 name = _text(row.get("nombre"))
+
                 if name is None:
-                    raise BoxscoreContractError("FAB boxscore player has no name")
-                row_team_id = _text(row.get("idequipo"))
-                if expected_team_id and row_team_id and row_team_id != expected_team_id:
-                    raise BoxscoreContractError("FAB boxscore player belongs to the wrong team")
-                component_id = _text(row.get("componente_id"))
+                    raise BoxscoreContractError(
+                        "FAB boxscore player has no name"
+                    )
+
+                row_team_id = _text(
+                    row.get("idequipo")
+                )
+
+                if (
+                    expected_team_id
+                    and row_team_id
+                    and row_team_id
+                    != expected_team_id
+                ):
+                    raise BoxscoreContractError(
+                        "FAB boxscore player belongs to the wrong team"
+                    )
+
+                component_id = _text(
+                    row.get("componente_id")
+                )
+
                 if component_id:
-                    player_external_id = f"component:{component_id}"
-                    if player_external_id in stable_ids:
-                        raise BoxscoreContractError("FAB boxscore repeats a stable player identity")
-                    stable_ids.add(player_external_id)
+                    player_external_id = (
+                        f"component:{component_id}"
+                    )
+
+                    if (
+                        player_external_id
+                        in stable_ids
+                    ):
+                        raise BoxscoreContractError(
+                            "FAB boxscore repeats a stable player identity"
+                        )
+
+                    stable_ids.add(
+                        player_external_id
+                    )
+
                     provisional = False
+
                 else:
-                    player_external_id = f"provisional:{external_game_id}:{side}:{index}"
+                    player_external_id = (
+                        f"provisional:"
+                        f"{external_game_id}:"
+                        f"{side}:"
+                        f"{index}"
+                    )
+
                     provisional = True
-                registration_id, was_created = repository.upsert_player_registration(
+
+                (
+                    registration_id,
+                    was_created,
+                ) = repository.upsert_player_registration(
                     player_external_id=player_external_id,
                     display_name=name,
                     provisional=provisional,
                     team_registration_id=team_registration_id,
-                    competition_season_id=context["competition_season_id"],
-                    shirt_number=_text(row.get("dorsal")),
+                    competition_season_id=context[
+                        "competition_season_id"
+                    ],
+                    shirt_number=_text(
+                        row.get("dorsal")
+                    ),
                 )
-                seen_registration_ids.add(registration_id)
+
+                seen_registration_ids.add(
+                    registration_id
+                )
+
                 values = {
                     "game_id": context["game_id"],
                     "player_registration_id": registration_id,
-                    **_map_stats(row, partial=not is_final),
+                    **_map_stats(
+                        row,
+                        partial=not is_final,
+                    ),
                 }
+
                 repository.upsert_from_external(
                     source="FAB",
                     entity_type="player_game_stat",
-                    external_id=f"{external_game_id}:{registration_id}",
+                    external_id=(
+                        f"{external_game_id}:"
+                        f"{registration_id}"
+                    ),
                     values=values,
                 )
-                created += int(was_created)
-                updated += int(not was_created)
-        if is_final:
-            repository.delete_game_stats_except(context["game_id"], seen_registration_ids)
-            repository.mark_game_stats_final(context["game_id"])
-        elif seen_registration_ids:
-            repository.mark_game_stats_partial(context["game_id"])
-    return BoxscoreSyncSummary(1, created, updated, 0)
 
+                created += int(was_created)
+                updated += int(
+                    not was_created
+                )
+
+        if is_final:
+            repository.delete_game_stats_except(
+                context["game_id"],
+                seen_registration_ids,
+            )
+
+            repository.mark_game_stats_final(
+                context["game_id"]
+            )
+
+        elif seen_registration_ids:
+            repository.mark_game_stats_partial(
+                context["game_id"]
+            )
+
+    return BoxscoreSyncSummary(
+        games=1,
+        players_created=created,
+        players_updated=updated,
+        rejected=0,
+    )
 
 def _validate_score_totals(game_payload: dict[str, Any], sides: tuple) -> None:
     """Reject internally inconsistent payloads instead of guessing player stats.

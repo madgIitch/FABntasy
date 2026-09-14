@@ -26,7 +26,14 @@ class SportsRepository:
     @classmethod
     @contextmanager
     def connect(cls, database_url: str):
-        with psycopg.connect(_psycopg_url(database_url), autocommit=True) as connection:
+        # Supabase's transaction pooler can move consecutive statements between
+        # backend connections. Client-side prepared statements therefore cannot
+        # be reused safely across executions.
+        with psycopg.connect(
+            _psycopg_url(database_url),
+            autocommit=True,
+            prepare_threshold=None,
+        ) as connection:
             yield cls(connection)
 
     def upsert_federation(self, *, name: str, country_code: str = "ES") -> UUID:

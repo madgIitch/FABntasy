@@ -762,3 +762,31 @@ Descubrir periódicamente todas las competiciones publicadas por FAB, conservar 
 - **edge_cases:** Se definen resultados para aplazamientos, finales sin boxscore, boxscores parciales, DNP confirmado, correcciones concurrentes con publicación, doble resync y fallos entre cálculo y publicación. Se preservan nulls, atomicidad, idempotencia, una única revisión vigente y la última publicación completa.
 - **ui_states:** Inicio, Jornada, partido, Mi equipo y clasificación distinguen mediante texto los estados vacío, parcial o live, pendiente de estadísticas, calculado no publicado, publicado, corregido, degradado y error. Conservan la última revisión completa, muestran frescura o revisión cuando sea relevante, bloquean acciones inválidas y limitan las acciones administrativas a roles autorizados.
 
+<!-- harness:sprint-24-production-1-0 -->
+## sprint-24-production-1-0 · Sprint 24 - Production 1.0
+
+
+
+### Scope aprobado
+
+  - `apps/web/**`
+  - `services/fab_ingestor/**`
+  - `packages/**`
+  - `prisma/**`
+  - `infrastructure/**`
+  - `tests/**`
+  - `.github/workflows/**`
+  - `.env.example`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+  - `.harness/**`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** Reutiliza el modelo vigente; solo admite cambios aditivos y verifica aislamiento y habilitación de una segunda competition_season.
+- **external_contracts:** Exige infraestructura reproducible, contratos de hosting/base de datos y backup restaurable en aislamiento.
+- **edge_cases:** Cubre reinicios, concurrencia operativa, credenciales, pool, migraciones, backup/restore y segunda competición.
+- **ui_states:** Verifica PWA y panel existentes en estados normales y degradados, sin introducir una feature visual nueva.
+

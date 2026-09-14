@@ -2256,7 +2256,7 @@
     {
       "id": "sprint-24-production-1-0",
       "name": "Sprint 24 - Production 1.0",
-      "status": "pending",
+      "status": "spec_ready",
       "sdd": true,
       "milestone": "1.0.0",
       "dependencies": [
@@ -2284,14 +2284,19 @@
       ],
       "deliverable": "FABntasy 1.0 está desplegado como PWA y listo para una competición activa real.",
       "acceptance": [
-        "AC1: Producción usa HTTPS y cookies seguras.",
-        "AC2: Existe backup automático y se ha probado al menos una restauración completa.",
-        "AC3: Las credenciales FAB y de base de datos no existen en bundles cliente ni repositorio.",
-        "AC4: El ingestor puede reiniciarse sin duplicar datos ni perder el estado de la competición.",
-        "AC5: La versión de scoring activa y precios queda congelada/documentada para el inicio de la competición salvo migración explícita.",
-        "AC6: Existe runbook para caída de FAB, DB, ingestor y frontend.",
-        "AC7: La release 1.0 no depende de Google Play ni App Store.",
-        "AC8: La arquitectura permite habilitar una segunda competition_season sin migración destructiva del modelo central."
+        "El entorno productivo queda identificado mediante dominio canónico, proveedores, regiones, responsables, release, commit y digests inmutables de web e ingestor; su configuración reproducible vive en `infrastructure/` y ningún paso rutinario depende de una máquina personal.",
+        "Todas las rutas públicas y privadas de producción usan HTTPS; las cookies de sesión son HttpOnly, SameSite y Secure en producción, y los headers defensivos y la política same-origin pasan un smoke automatizado sobre el dominio canónico.",
+        "DATABASE_URL, DIRECT_URL, claves Supabase privilegiadas, credenciales FAB y secretos internos existen únicamente en gestores server-side con acceso mínimo y rotación documentada; escaneos de repositorio, imagen, bundles, logs y evidencias no encuentran sus valores ni patrones prohibidos.",
+        "PostgreSQL dispone de backups automáticos cifrados con frecuencia, retención, propietario y alertas documentados. Una restauración completa se ejecuta en un entorno aislado, verifica esquema, recuentos e invariantes críticas y registra RPO y RTO sin sobrescribir producción.",
+        "Web e ingestor se despliegan por digest después de gates y migraciones separadas. Un ensayo restaura ambos digests anteriores sin revertir migraciones destructivamente ni perder datos, auditoría, revisiones publicadas, cola o credenciales persistentes.",
+        "Reiniciar o redesplegar el ingestor en reposo y durante un job deja exactamente un scheduler activo, conserva los jobs y converge sin duplicar entidades, estadísticas, puntuaciones, movimientos económicos ni notificaciones deduplicables; heartbeat, locks y eventos permiten diagnosticar cualquier interrupción.",
+        "Existe un runbook único o un índice verificable para caída de FAB, PostgreSQL, ingestor y frontend, además de backup/restore, despliegue, rollback y rotación de secretos. Otro operador puede seguir cada procedimiento usando comandos, umbrales, responsables, escalado y criterios de cierre explícitos.",
+        "Las versiones activas del ruleset de scoring y del algoritmo de precios, sus hashes/configuración, fecha efectiva y procedimiento de cambio quedan congeladas y documentadas para el inicio de la competición; cualquier cambio posterior exige nueva versión y migración o recomputación explícita y auditable.",
+        "La PWA instalada funciona desde el dominio HTTPS en los navegadores soportados, conserva shell/estado offline aprobado y no depende de Google Play ni App Store; autenticación, home, jornada, equipo, mercado, ligas y ranking superan un smoke productivo saneado.",
+        "Una segunda competition_season puede descubrirse, sincronizarse y habilitarse mediante configuración y datos, sin migración destructiva ni duplicación de lógica central; las consultas, jobs, puntuaciones, precios y ligas permanecen aislados por competition_season y la competición primaria conserva su identidad.",
+        "Fallos simulados de FAB, PostgreSQL, lifecycle, ingestor y frontend producen estados y alertas coherentes, aplican backoff acotado, preservan datos ya publicados y se recuperan según los umbrales vigentes sin intervención destructiva ni exposición de secretos.",
+        "El checklist de lanzamiento 1.0.0 incluye preflight, DNS/HTTPS, migraciones, digests, backups, restore probado, secretos, observabilidad, smoke, defectos, rollback, responsables y go/no-go firmado; se publica un changelog 1.0.0 sin datos sensibles.",
+        "Typecheck, lint, tests web, pytest, ruff, Prisma validate, pruebas PostgreSQL aisladas, auditoría de dependencias, inspección de imágenes/bundles, smoke HTTPS/PWA, backup/restore, reinicio idempotente, rollback y diff-scope terminan con código cero para el release promovido."
       ],
       "scope": [
         "apps/web/**",
@@ -2300,10 +2305,21 @@
         "prisma/**",
         "infrastructure/**",
         "tests/**",
+        ".github/workflows/**",
+        ".env.example",
         "docs/**",
+        "spec/**",
+        "progress/**",
+        ".harness/**",
         "spec.json"
       ],
-      "spec_approved": false
+      "spec_approved": true,
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-09-14T22:21:04.349Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:a27058b9c8b749372c391c0bbdc3123d99a7266b33c458a0d2e9c8975f7566b5",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-14T22:24:09.861Z"
     },
     {
       "id": "sprint-25-production-push-notifications",

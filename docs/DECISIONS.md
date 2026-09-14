@@ -519,3 +519,16 @@ Decisiones registradas:
 - **tests:** La matriz cubre autenticación, ligas privadas, mercado y roster, alineación y cutoff, jornada parcial, publicación y ranking, corrección y republicación, y degradación. Se ejecuta en las versiones soportadas de Chromium, Firefox y WebKit mediante Playwright, en 375x812 y 1440x900, usando la suite determinista 14F y un smoke sobre la jornada FAB real fijada. El informe incluye trazabilidad del candidato, evidencias saneadas y registro firmado de defectos y aceptaciones.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-24-production-1-0 -->
+## 2026-09-14 · sprint-24-production-1-0 aprobado
+
+Contexto: se aprobó el spec `sprint-24-production-1-0` (Sprint 24 - Production 1.0).
+
+Decisiones registradas:
+
+- **auth_secrets:** Fija HTTPS, cookies seguras, gestores de secretos, mínimo privilegio, rotación y controles de fuga.
+- **rollback_compat:** Despliegue y rollback por digest, migraciones compatibles, datos persistentes y jobs auditables.
+- **tests:** Incluye gates, smoke productivo, idempotencia, degradación, rollback, secretos, backup/restore y segunda competición.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

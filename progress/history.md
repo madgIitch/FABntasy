@@ -1,5 +1,9 @@
 # Historial de sesiones
 
+## 2026-09-15T00:00:00.000+02:00 — #sprint-23-release-candidate Sprint 23 - Release Candidate → done
+- Cierre confirmado explícitamente por el responsable del proyecto.
+- Las validaciones operativas reales no ejecutadas permanecen documentadas como riesgo conocido; no se consideran evidencia superada.
+
 ## 2026-09-12T20:31:05.000+02:00 — #sprint-20-performance-reliability → review_pending
 - Gate realistic ejecutado con 20 clientes concurrentes y 40 muestras por operación sobre PostgreSQL temporal aislado.
 - P95 frío: home 180,88 ms; mercado 170,88 ms; ranking 51,43 ms. P95 caliente: 74,22/101,79/81,43 ms.

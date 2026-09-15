@@ -19,6 +19,11 @@ export async function revokeCurrentPushDevice(){
  if(!response.ok)throw new Error("PUSH_DEVICE_REVOCATION_FAILED");
 }
 
+export async function saveNotificationPreference(intent:NotificationIntent,enabled:boolean,fetcher:typeof fetch=fetch){
+ const response=await fetcher("/api/notifications",{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({intent,enabled})});
+ if(!response.ok)throw new Error("PREFERENCE_UPDATE_FAILED");
+}
+
 export function PwaSettings({vapidPublicKey,section="all"}:{vapidPublicKey:string;section?:"all"|"install"|"notifications"}){
  const [prompt,setPrompt]=useState<InstallPrompt|null>(null),[standalone,setStandalone]=useState(false),[ios,setIos]=useState(false),[deviceState,setDeviceState]=useState<DeviceState>("pending"),[prefs,setPrefs]=useState<Record<string,boolean>>({}),[busy,setBusy]=useState(false),[message,setMessage]=useState("");
  const refresh=useCallback(async(recovered=false)=>{
@@ -38,7 +43,7 @@ export function PwaSettings({vapidPublicKey,section="all"}:{vapidPublicKey:strin
  async function enableDevice(){setBusy(true);setMessage("");try{if(!await ensureSubscription())setMessage(Notification.permission==="denied"?"Permite las notificaciones en los ajustes del sitio.":"No se pudo registrar este dispositivo.")}catch{setDeviceState("error");setMessage("No se pudo registrar este dispositivo. Comprueba los permisos y reintenta.")}finally{setBusy(false)}}
  async function disableDevice(){setBusy(true);setMessage("");try{const registration=await navigator.serviceWorker.ready,subscription=await registration.pushManager.getSubscription();await revokeCurrentPushDevice();await subscription?.unsubscribe();setDeviceState("unsubscribed")}catch{setDeviceState("error");setMessage("No se pudo desactivar este dispositivo.")}finally{setBusy(false)}}
  async function testDevice(){setBusy(true);setMessage("");try{const response=await fetch("/api/notifications/test",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({deviceId:currentPushDeviceId()})});if(!response.ok)throw new Error();setMessage("Prueba enviada. Puedes cerrar la PWA para verificar la recepción.")}catch{setMessage("No se pudo enviar la prueba. Espera y vuelve a intentarlo.")}finally{setBusy(false)}}
- async function toggle(intent:NotificationIntent){const next=!prefs[intent];setBusy(true);setMessage("");try{if(next&&deviceState!=="subscribed"&&deviceState!=="recovered"&&!(await ensureSubscription()))return;const response=await fetch("/api/notifications",{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({intent,enabled:next})});if(!response.ok)throw new Error();setPrefs(current=>({...current,[intent]:next}))}catch{setMessage("No pudimos guardar el cambio. Inténtalo de nuevo.")}finally{setBusy(false)}}
+ async function toggle(intent:NotificationIntent){const next=!prefs[intent];setBusy(true);setMessage("");try{await saveNotificationPreference(intent,next);setPrefs(current=>({...current,[intent]:next}))}catch{setMessage("No pudimos guardar el cambio. Inténtalo de nuevo.")}finally{setBusy(false)}}
  const supported=deviceState!=="unsupported",active=deviceState==="subscribed"||deviceState==="recovered";
  return <>
   {section!=="notifications"&&!standalone&&(prompt||ios)?<section className="profile-group" aria-labelledby="install-title"><div className="profile-group-heading"><h2 id="install-title">{ios?"Añadir a pantalla de inicio":"Instalar Canastio"}</h2></div><div className="profile-list pwa-action"><div><strong>Acceso rápido desde tu dispositivo</strong><small>{ios?"En Safari, pulsa Compartir → Añadir a pantalla de inicio.":"Instala Canastio para abrirlo como una aplicación."}</small></div>{prompt?<button className="primary-action" onClick={install}>Instalar</button>:null}</div></section>:null}

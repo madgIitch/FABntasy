@@ -57,3 +57,6 @@
 ## 2026-09-15T14:26:00.000+02:00 — transición Sprint 27 → Sprint 28
 - Sprint 27 marcado `done` por confirmación explícita del responsable.
 - Sprint 28 entrevistado y preparado hasta `spec_ready`; permanece `spec_approved: false` y sin implementación.
+
+## 2026-09-15T12:58:32.342Z — #sprint-28-manager-profile-rivalries Sprint 28 - Manager Profile and Rivalries → review_pending
+- 2 intento(s) · agente codex

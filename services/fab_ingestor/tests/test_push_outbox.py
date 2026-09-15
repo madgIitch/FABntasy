@@ -15,6 +15,11 @@ def test_worker_contract_is_durable_and_concurrency_safe():
     assert push_outbox.MAX_ATTEMPTS == 3
 
 
+def test_psycopg_url_drops_prisma_options_and_preserves_tls():
+    source = "postgresql://user:pass@db.example:6543/postgres?pgbouncer=true&connection_limit=1&sslmode=require"
+    assert push_outbox.psycopg_database_url(source) == "postgresql://user:pass@db.example:6543/postgres?sslmode=require"
+
+
 def test_settings_require_distinct_secrets_and_https(monkeypatch):
     values = {"DATABASE_URL": "postgresql://db", "CANASTIO_PUSH_DISPATCH_URL": "https://web.example/dispatch",
               "CANASTIO_PUSH_JOB_SECRET": "same", "CANASTIO_PUSH_WAKE_SECRET": "same"}

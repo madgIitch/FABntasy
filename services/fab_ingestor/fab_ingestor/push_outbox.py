@@ -6,6 +6,7 @@ import json
 import os
 import threading
 import urllib.error
+import urllib.parse
 import urllib.request
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -17,6 +18,15 @@ BACKOFF_SECONDS = (60, 300, 900)
 MAX_ATTEMPTS = 3
 SWEEP_SECONDS = 60
 CLAIM_LEASE_SECONDS = 300
+PRISMA_ONLY_DATABASE_PARAMETERS = {"connection_limit", "pgbouncer", "pool_timeout", "schema"}
+
+
+def psycopg_database_url(database_url: str) -> str:
+    """Remove Prisma-only URL options while preserving PostgreSQL/libpq options."""
+    parsed = urllib.parse.urlsplit(database_url)
+    query = [(key, value) for key, value in urllib.parse.parse_qsl(parsed.query, keep_blank_values=True)
+             if key not in PRISMA_ONLY_DATABASE_PARAMETERS]
+    return urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, parsed.path, urllib.parse.urlencode(query), parsed.fragment))
 
 
 @dataclass(frozen=True)
@@ -108,7 +118,7 @@ class PushOutboxWorker:
 
     def drain(self) -> int:
         processed = 0
-        with self.connect(self.settings.database_url) as connection:
+        with self.connect(psycopg_database_url(self.settings.database_url)) as connection:
             while batch := _claim_batch(connection):
                 for event_id, payload in batch:
                     delivered, transient, code = _dispatch(self.settings.dispatch_url, self.settings.job_secret, payload)

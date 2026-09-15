@@ -2546,6 +2546,74 @@
       "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
       "approved_by": "peorr",
       "approved_at": "2026-09-15T11:23:28.910Z"
+    },
+    {
+      "id": "sprint-28-manager-profile-rivalries",
+      "name": "Sprint 28 - Manager Profile and Rivalries",
+      "title": "Perfil fantasy completo, palmarés y acceso a rivalidades",
+      "status": "backlog",
+      "sdd": true,
+      "spec_approved": false,
+      "priority": "P2",
+      "milestone": "1.3.0",
+      "dependencies": [
+        "sprint-27-social-league-experience"
+      ],
+      "description": "Completar el perfil social de cada manager dentro de una liga privada siguiendo la referencia visual aprobada, con identidad real, palmarés verificable, histórico y acceso contextual a comparativas y rivalidades.",
+      "objective": "Dar a cada manager una identidad fantasy reconocible y compartible sin introducir publicaciones manuales, comentarios ni información ajena a la liga autorizada.",
+      "user_stories": [
+        {
+          "id": "HU28.1",
+          "story": "Como miembro de una liga quiero abrir el perfil de otro manager para entender su trayectoria, logros y estado competitivo."
+        },
+        {
+          "id": "HU28.2",
+          "story": "Como manager quiero compartir una tarjeta de mi perfil fantasy sin revelar información privada de mi cuenta o liga."
+        },
+        {
+          "id": "HU28.3",
+          "story": "Como manager quiero iniciar desde un perfil una comparativa Head-to-Head o consultar una rivalidad existente."
+        }
+      ],
+      "tasks": [
+        "Añadir navegación desde Miembros hacia una pantalla individual de manager.",
+        "Mostrar el avatar autorizado del usuario con fallback accesible.",
+        "Construir palmarés visual y listado de logros recientes desde concesiones auditables.",
+        "Calcular rachas mediante reglas deterministas sobre jornadas publicadas.",
+        "Exponer un histórico completo, paginado y vinculado a temporada y revisiones publicadas.",
+        "Generar y compartir una tarjeta saneada del perfil fantasy.",
+        "Conectar el perfil con Head-to-Head y Rivalidad dentro de la misma liga."
+      ],
+      "deliverable": "Cada miembro puede abrir un perfil fantasy individual con avatar, métricas, palmarés, rachas, histórico, tarjeta compartible y accesos a Head-to-Head y Rivalidad.",
+      "acceptance": [
+        "Al pulsar un manager desde Miembros o desde un evento de Actividad se abre una pantalla individual dentro del contexto de la liga, con navegación atrás que conserva la sección y posición anteriores.",
+        "El perfil muestra el avatar autorizado del usuario; si falta, no carga o deja de estar permitido, utiliza un fallback accesible basado en la identidad pública sin exponer rutas internas ni metadatos privados.",
+        "El encabezado diferencia nombre público, nombre del equipo, posición vigente, valor actual de plantilla y pertenencia a la liga; los datos provisionales, publicados y no disponibles se etiquetan explícitamente.",
+        "Palmarés y logros recientes proceden exclusivamente de concesiones auditables y reglas versionadas; muestran tipo, temporada o jornada, fecha y magnitud cuando corresponda, y una corrección revoca o sustituye resultados sin borrar el historial.",
+        "La racha se calcula de forma determinista sobre jornadas publicadas consecutivas, define victoria, empate, interrupción y ausencia de datos, e identifica la versión de regla y el rango utilizado.",
+        "El histórico completo se pagina con cursor estable, se agrupa por temporada y jornada y permite rastrear cada resultado a su revisión publicada sin mezclar periodos no comparables.",
+        "El botón Compartir perfil usa Web Share cuando esté disponible y ofrece descarga o copia accesible como alternativa; la tarjeta contiene solo identidad fantasy, marca, temporada y agregados publicados, y no concede acceso a la liga ni revela email, IDs internos, secretos o presencia.",
+        "Desde el perfil puede elegirse Head-to-Head contra el manager autenticado y abrir Rivalidad cuando las reglas vigentes la detecten; ambos destinos validan que los dos usuarios siguen siendo miembros activos de la misma liga.",
+        "Los estados de carga, vacío, error, avatar roto, manager expulsado, perfil propio y ausencia de histórico funcionan desde 320 px, por teclado y con lector de pantalla.",
+        "Tests unitarios, de integración PostgreSQL/RLS y E2E cubren autorización entre ligas, agregados, rachas, correcciones, paginación, compartir, accesibilidad y responsive; typecheck, lint, test, Prisma validate y diff-scope terminan con código cero."
+      ],
+      "scope": [
+        "apps/web/app/app/ligas/**",
+        "apps/web/app/api/leagues/**",
+        "apps/web/src/components/**",
+        "apps/web/src/server/**",
+        "packages/domain/**",
+        "prisma/schema.prisma",
+        "prisma/migrations/**",
+        "tests/**",
+        "docs/ARCHITECTURE.md",
+        "docs/CONVENTIONS.md",
+        "docs/DECISIONS.md",
+        "spec/**",
+        "progress/**",
+        ".harness/**",
+        "spec.json"
+      ]
     }
   ]
 }

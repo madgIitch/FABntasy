@@ -42,3 +42,6 @@ Perfil ofrece “Enviar prueba” con origen y sesión validados, solo para el U
 | pendiente | pendiente | Android compatible | Chrome estable, PWA instalada | PENDIENTE: no afirmar entrega hasta observarla cerrada |
 
 Safari/iOS se registra como compatibilidad observada no bloqueante. Si Push API, service worker o permiso no están disponibles, Perfil muestra “No compatible” o instrucciones de permisos; ese estado no equivale a entrega.
+## Seguimiento de jugadores y actividad social
+
+`player_follows` conserva el opt-in por usuario e inscripción del jugador en una temporada. Cualquier productor de avisos destacados debe deduplicar por usuario, jugador, jornada, revisión y tipo, comprobar la preferencia Push vigente y omitir eventos marcados `backfill`. La tarjeta descargable no es una credencial ni concede acceso a la liga.

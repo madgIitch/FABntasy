@@ -3,6 +3,8 @@ import { calculateRoundScore, rankTeams, type PlayerScoreStatus } from "../../..
 import { db } from "./db";
 import { cached, cacheTags, invalidateCache, measured, privateCacheKey } from "./performance";
 import { enqueuePushEvent, wakePushWorker } from "./push-outbox";
+import { appendLeagueEvent } from "./social-league";
+import { SOCIAL_RULES_VERSION } from "../../../../packages/domain/social-league";
 
 export const ROUND_RANKING_SCHEMA_VERSION = "fantasy-round-ranking-api.v1";
 export class RoundRankingError extends Error { constructor(public code: string, public status = 409) { super(code); } }
@@ -43,13 +45,17 @@ export async function recomputeRoundRankings(competitionSeasonId: string, roundN
       if (status === "PUBLISHED") published++; else provisional++;
     }
     await rebuildTotals(tx, competitionSeasonId);
-    return { roundNumber, teams: lineups.length, published, provisional, affectedLeagueIds: [...new Set(lineups.map((lineup) => lineup.fantasyTeam.leagueId))] };
+    const affectedLeagueIds=[...new Set(lineups.map((lineup) => lineup.fantasyTeam.leagueId))];
+    if(published)for(const leagueId of affectedLeagueIds)await publishSocialRound(tx,leagueId,roundNumber);
+    return { roundNumber, teams: lineups.length, published, provisional, affectedLeagueIds };
   }, {
     isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
     maxWait: 10_000,
     timeout: 30_000,
   })).then(({ affectedLeagueIds, ...result }) => { for (const leagueId of affectedLeagueIds) invalidateCache(cacheTags({ leagueId, roundNumber })); invalidateCache(cacheTags({ leagueId: competitionSeasonId, roundNumber })); if(result.published)void wakePushWorker(); return result; });
 }
+
+async function publishSocialRound(tx:Prisma.TransactionClient,leagueId:string,roundNumber:number){const scores=await tx.fantasyRoundScore.findMany({where:{leagueId,roundNumber,status:"PUBLISHED",supersededAt:null},include:{fantasyTeam:{include:{userProfile:true}}},orderBy:[{points:"desc"},{fantasyTeamId:"asc"}]});if(!scores.length)return;const revision=Math.max(...scores.map(score=>score.revision));await appendLeagueEvent(tx,{leagueId,type:"ROUND_PUBLISHED",sourceType:"ROUND_REVISION",sourceId:`${roundNumber}:${revision}`,payload:{affectedName:`Jornada ${roundNumber}`,revision,destination:`/app/ligas/${leagueId}`}});const best=Number(scores[0].points);const winners=scores.filter(score=>Number(score.points)===best);await tx.leagueAchievementAward.updateMany({where:{leagueId,achievementType:"ROUND_CHAMPION",roundNumber,status:"ACTIVE",revision:{lt:revision}},data:{status:"REVOKED",revokedAt:new Date()}});for(const winner of winners){const name=winner.fantasyTeam.userProfile.username?`@${winner.fantasyTeam.userProfile.username}`:winner.fantasyTeam.userProfile.displayName??winner.fantasyTeam.name;const award=await tx.leagueAchievementAward.upsert({where:{leagueId_achievementType_userProfileId_roundNumber_revision:{leagueId,achievementType:"ROUND_CHAMPION",userProfileId:winner.fantasyTeam.userProfileId,roundNumber,revision}},create:{leagueId,userProfileId:winner.fantasyTeam.userProfileId,achievementType:"ROUND_CHAMPION",ruleVersion:SOCIAL_RULES_VERSION,roundNumber,revision,inputs:{score:best,tie:winners.length>1,scoreIds:winners.map(item=>item.id)}},update:{status:"ACTIVE",revokedAt:null}});await appendLeagueEvent(tx,{leagueId,type:"ROUND_WINNER",actorProfileId:winner.fantasyTeam.userProfileId,sourceType:"ROUND_AWARD",sourceId:award.id,payload:{affectedName:name,magnitude:best,unit:"points",revision,destination:`/app/ligas/${leagueId}`}});await appendLeagueEvent(tx,{leagueId,type:"ACHIEVEMENT_EARNED",actorProfileId:winner.fantasyTeam.userProfileId,sourceType:"ACHIEVEMENT_AWARD",sourceId:award.id,payload:{affectedName:"Campeón de jornada",revision,destination:`/app/ligas/${leagueId}?tab=members`}});}}
 
 type Tx = Prisma.TransactionClient;
 async function rebuildTotals(tx: Tx, competitionSeasonId: string) {

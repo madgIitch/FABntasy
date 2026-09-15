@@ -31,6 +31,11 @@ model UserProfile {
   adminAuditEvents        AdminAuditEvent[]
   sportsDataRevisions     SportsDataRevision[]     @relation("SportsDataRevisionActor")
   feedback                UserFeedback[]
+  leagueActivityEvents    LeagueActivityEvent[]    @relation("LeagueActivityActor")
+  leagueReactions         LeagueEventReaction[]
+  leaguePresence          LeaguePresence[]
+  followedPlayers         PlayerFollow[]
+  achievementAwards       LeagueAchievementAward[]
 
   @@map("user_profiles")
 }
@@ -54,21 +59,21 @@ model UserFeedback {
 }
 
 model PushSubscription {
-  id            String                 @id @default(uuid()) @db.Uuid
-  userProfileId String                 @map("user_profile_id") @db.Uuid
-  endpoint      String                 @unique @db.Text
-  p256dh        String                 @db.Text
-  auth          String                 @db.Text
-  vapidKeyVersion String?              @map("vapid_key_version") @db.VarChar(32)
-  deviceId      String?                @map("device_id") @db.Uuid
-  userAgent     String?                @map("user_agent") @db.VarChar(512)
-  lastSeenAt    DateTime               @default(now()) @map("last_seen_at") @db.Timestamptz(3)
-  revokedAt     DateTime?              @map("revoked_at") @db.Timestamptz(3)
-  revokedReason String?                @map("revoked_reason") @db.VarChar(24)
-  createdAt     DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt     DateTime               @updatedAt @map("updated_at") @db.Timestamptz(3)
-  userProfile   UserProfile            @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
-  deliveries    NotificationDelivery[]
+  id              String                 @id @default(uuid()) @db.Uuid
+  userProfileId   String                 @map("user_profile_id") @db.Uuid
+  endpoint        String                 @unique @db.Text
+  p256dh          String                 @db.Text
+  auth            String                 @db.Text
+  vapidKeyVersion String?                @map("vapid_key_version") @db.VarChar(32)
+  deviceId        String?                @map("device_id") @db.Uuid
+  userAgent       String?                @map("user_agent") @db.VarChar(512)
+  lastSeenAt      DateTime               @default(now()) @map("last_seen_at") @db.Timestamptz(3)
+  revokedAt       DateTime?              @map("revoked_at") @db.Timestamptz(3)
+  revokedReason   String?                @map("revoked_reason") @db.VarChar(24)
+  createdAt       DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime               @updatedAt @map("updated_at") @db.Timestamptz(3)
+  userProfile     UserProfile            @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+  deliveries      NotificationDelivery[]
 
   @@index([userProfileId, revokedAt])
   @@map("push_subscriptions")
@@ -122,7 +127,7 @@ model PushOutboxEvent {
   nextAttemptAt DateTime    @default(now()) @map("next_attempt_at") @db.Timestamptz(3)
   claimedAt     DateTime?   @map("claimed_at") @db.Timestamptz(3)
   lastErrorCode String?     @map("last_error_code") @db.VarChar(64)
-  deliveredAt  DateTime?   @map("delivered_at") @db.Timestamptz(3)
+  deliveredAt   DateTime?   @map("delivered_at") @db.Timestamptz(3)
   createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt     DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
   userProfile   UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
@@ -347,6 +352,7 @@ model PlayerRegistration {
   priceEvents         PlayerPriceEvent[]
   marketTransactions  MarketTransaction[]
   marketProtections   MarketProtection[]
+  followers           PlayerFollow[]
   createdAt           DateTime            @default(now()) @map("created_at")
   updatedAt           DateTime            @updatedAt @map("updated_at")
 
@@ -430,6 +436,9 @@ model FantasyLeague {
   fantasyRosterSlots  FantasyRosterSlot[]
   roundScores         FantasyRoundScore[]
   teamTotals          FantasyTeamTotal[]
+  activityEvents      LeagueActivityEvent[]
+  presenceSessions    LeaguePresence[]
+  achievementAwards   LeagueAchievementAward[]
 
   @@index([competitionSeasonId, status])
   @@index([ownerProfileId])
@@ -450,6 +459,91 @@ model LeagueMembership {
   @@unique([leagueId, userProfileId])
   @@index([userProfileId, status])
   @@map("league_memberships")
+}
+
+model LeagueActivityEvent {
+  id             String                @id @default(uuid()) @db.Uuid
+  leagueId       String                @map("league_id") @db.Uuid
+  type           String                @db.VarChar(32)
+  occurredAt     DateTime              @map("occurred_at") @db.Timestamptz(3)
+  actorProfileId String?               @map("actor_profile_id") @db.Uuid
+  payloadVersion Int                   @default(1) @map("payload_version")
+  payload        Json
+  sourceType     String                @map("source_type") @db.VarChar(40)
+  sourceId       String                @map("source_id") @db.VarChar(191)
+  backfill       Boolean               @default(false)
+  createdAt      DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  league         FantasyLeague         @relation(fields: [leagueId], references: [id], onDelete: Restrict)
+  actorProfile   UserProfile?          @relation("LeagueActivityActor", fields: [actorProfileId], references: [id], onDelete: SetNull)
+  reactions      LeagueEventReaction[]
+
+  @@unique([leagueId, sourceType, sourceId, type])
+  @@index([leagueId, occurredAt(sort: Desc), id(sort: Desc)])
+  @@map("league_activity_events")
+}
+
+model LeagueEventReaction {
+  id            String              @id @default(uuid()) @db.Uuid
+  eventId       String              @map("event_id") @db.Uuid
+  userProfileId String              @map("user_profile_id") @db.Uuid
+  emoji         String              @db.VarChar(8)
+  createdAt     DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  event         LeagueActivityEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userProfile   UserProfile         @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userProfileId, emoji])
+  @@index([eventId, emoji])
+  @@map("league_event_reactions")
+}
+
+model LeaguePresence {
+  id            String        @id @default(uuid()) @db.Uuid
+  leagueId      String        @map("league_id") @db.Uuid
+  userProfileId String        @map("user_profile_id") @db.Uuid
+  sessionId     String        @map("session_id") @db.Uuid
+  expiresAt     DateTime      @map("expires_at") @db.Timestamptz(3)
+  updatedAt     DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  league        FantasyLeague @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  userProfile   UserProfile   @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([leagueId, userProfileId, sessionId])
+  @@index([leagueId, expiresAt])
+  @@map("league_presence")
+}
+
+model PlayerFollow {
+  id                   String             @id @default(uuid()) @db.Uuid
+  userProfileId        String             @map("user_profile_id") @db.Uuid
+  playerRegistrationId String             @map("player_registration_id") @db.Uuid
+  competitionSeasonId  String             @map("competition_season_id") @db.Uuid
+  createdAt            DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  userProfile          UserProfile        @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+  playerRegistration   PlayerRegistration @relation(fields: [playerRegistrationId], references: [id], onDelete: Cascade)
+
+  @@unique([userProfileId, playerRegistrationId])
+  @@index([competitionSeasonId, playerRegistrationId])
+  @@map("player_follows")
+}
+
+model LeagueAchievementAward {
+  id              String        @id @default(uuid()) @db.Uuid
+  leagueId        String        @map("league_id") @db.Uuid
+  userProfileId   String        @map("user_profile_id") @db.Uuid
+  achievementType String        @map("achievement_type") @db.VarChar(40)
+  ruleVersion     String        @map("rule_version") @db.VarChar(32)
+  roundNumber     Int?          @map("round_number")
+  revision        Int
+  inputs          Json
+  status          String        @default("ACTIVE") @db.VarChar(16)
+  supersedesId    String?       @map("supersedes_id") @db.Uuid
+  awardedAt       DateTime      @default(now()) @map("awarded_at") @db.Timestamptz(3)
+  revokedAt       DateTime?     @map("revoked_at") @db.Timestamptz(3)
+  league          FantasyLeague @relation(fields: [leagueId], references: [id], onDelete: Restrict)
+  userProfile     UserProfile   @relation(fields: [userProfileId], references: [id], onDelete: Restrict)
+
+  @@unique([leagueId, achievementType, userProfileId, roundNumber, revision])
+  @@index([leagueId, status, awardedAt(sort: Desc)])
+  @@map("league_achievement_awards")
 }
 
 model LeagueInvite {

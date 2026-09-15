@@ -17,3 +17,6 @@ CI debe ejecutar `corepack pnpm --filter @fabntasy/web audit:dependencies`. El c
 La sesión Supabase determina siempre el actor. Las rutas rechazan `userId` del cuerpo, validan origen en mutaciones y RLS aplica el mismo aislamiento a SELECT/INSERT/UPDATE/DELETE. El endpoint de dispatch usa un secreto independiente server-side y el de prueba exige sesión, origen, dispositivo propio y rate limit.
 
 Endpoint completo, `p256dh`, `auth`, payload, usuario, liga, claves VAPID y texto libre de excepciones están prohibidos en logs, respuestas, métricas y evidencias. Los errores se reducen a códigos estables; las métricas solo usan resultado y bucket temporal. Las claves privadas actuales o anteriores nunca se almacenan en base de datos ni repositorio.
+## Aislamiento social de ligas
+
+Eventos, reacciones, presencia, premios, perfiles y comparativas requieren una membresía activa comprobada en cada petición. Las tablas sociales activan RLS con la misma condición; abandonar o ser expulsado revoca el acceso inmediatamente. Las respuestas son privadas y no se cachean de forma compartida. La presencia expone solo un total reciente, nunca identidades ni histórico.

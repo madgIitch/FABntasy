@@ -1,0 +1,3 @@
+import { togglePlayerFollow } from "../../../../../src/server/social-league";
+import { requireSocialActor, socialError, socialOk } from "../../../../../src/server/social-league-http";
+export async function PUT(request:Request,{params}:{params:Promise<{playerRegistrationId:string}>}){try{const actor=await requireSocialActor();const {playerRegistrationId}=await params;const body=await request.json() as {following?:unknown};if(typeof body.following!=="boolean")throw new Error("INVALID_INPUT");return socialOk(await togglePlayerFollow(actor,playerRegistrationId,body.following));}catch(error){return socialError(error);}}

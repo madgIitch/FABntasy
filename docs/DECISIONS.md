@@ -18,6 +18,14 @@ Consecuencia: Canastio no genera ni permite configurar avisos de lesiones mientr
 
 <!-- Nuevas entradas debajo -->
 
+## 2026-09-15 · Stream social derivado y presencia efímera
+
+Contexto: la experiencia social de Liga debe sobrevivir a reintentos y correcciones sin convertirse en una segunda fuente de verdad ni exponer actividad entre ligas.
+
+Decisión: los eventos se insertan dentro de la transacción de la operación o revisión autoritativa y se deduplican por liga, tipo y referencia fuente. El payload mínimo usa versión explícita; las reacciones solo aceptan catálogo cerrado. La presencia vive en una tabla separada con TTL de 90 segundos y las consultas vuelven a validar membresía activa, además de RLS.
+
+Consecuencia: un rollback de aplicación conserva stream, reacciones, seguimientos y premios; el backfill solo puede usar fuentes deterministas y queda marcado para no generar Push. La presencia nunca sirve como histórico ni revela identidades.
+
 ## 2026-09-15 · Outbox transaccional y wake-up no autoritativo
 
 Contexto: la entrega Push automática debe sobrevivir a caídas de red, reinicios y despliegues sin acoplar las transacciones de negocio a Railway.

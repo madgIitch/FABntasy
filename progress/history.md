@@ -49,3 +49,7 @@
 - 1 intento(s) · agente codex
 ## 2026-09-15T02:50:00.000Z — #sprint-26-push-outbox-railway-worker Sprint 26 - Push Outbox Railway Worker → review_pending
 - 1 intento · outbox transaccional, worker Railway y wake-up autenticado; gates aprobados.
+
+## 2026-09-15T13:41:00.000+02:00 — #sprint-27-social-league-experience Sprint 27 - Social League Experience → in_progress
+- Primer corte: stream social, feed, reacciones, presencia, miembros, H2H de servicio, eventos de mercado/jornada y tarjeta SVG.
+- Batería completa de gates aprobada; la feature permanece abierta porque varios criterios funcionales y pruebas específicas todavía no están completos.

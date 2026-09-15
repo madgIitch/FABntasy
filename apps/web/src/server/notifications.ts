@@ -11,7 +11,9 @@ export async function profileIdForAuth(authUserId: string) { const profile = awa
 export function parseSubscription(input: unknown) {
   const wrapper = input as { subscription?: unknown; deviceId?: unknown };
   const value = (wrapper?.subscription ?? input) as { endpoint?: unknown; keys?: { p256dh?: unknown; auth?: unknown } };
-  if (!value || typeof value.endpoint !== "string" || value.endpoint.length > 4096 || !value.endpoint.startsWith("https://")) throw new NotificationError("INVALID_SUBSCRIPTION");
+  if (!value || typeof value.endpoint !== "string" || value.endpoint.length > 4096) throw new NotificationError("INVALID_SUBSCRIPTION");
+  try { const endpoint = new URL(value.endpoint); if (endpoint.protocol !== "https:" || !endpoint.hostname || endpoint.username || endpoint.password) throw new Error(); }
+  catch { throw new NotificationError("INVALID_SUBSCRIPTION"); }
   const p256dh = value.keys?.p256dh, auth = value.keys?.auth;
   if (typeof p256dh !== "string" || typeof auth !== "string" || !p256dh || !auth || p256dh.length > 512 || auth.length > 512) throw new NotificationError("INVALID_SUBSCRIPTION");
   const deviceId = wrapper?.deviceId;
@@ -54,7 +56,7 @@ export async function setPreference(authUserId: string, intentValue: unknown, en
 export type PushEvent = { userProfileId: string; leagueId?: string; intent: NotificationIntent; eventKey: string; title: string; body: string; destination?: string };
 export type PushSender = (subscription: { endpoint: string; p256dh: string; auth: string }, payload: string) => Promise<void>;
 type PushFailure = Error & { statusCode?: number; headers?: Record<string, string | string[] | undefined> };
-function retryAfter(error: PushFailure) { const raw = error.headers?.["retry-after"], seconds = Number(Array.isArray(raw) ? raw[0] : raw); return Number.isFinite(seconds) && seconds >= 0 ? seconds : null; }
+function retryAfter(error: PushFailure, now: Date) { const rawValue = error.headers?.["retry-after"], raw = Array.isArray(rawValue) ? rawValue[0] : rawValue; if (!raw) return null; const seconds = Number(raw); if (Number.isFinite(seconds) && seconds >= 0) return seconds; const date = Date.parse(raw); return Number.isFinite(date) ? Math.max(0, Math.ceil((date - now.getTime()) / 1_000)) : null; }
 function permanentStatus(status: number) { return [400, 401, 403, 404, 410, 413].includes(status); }
 
 export async function sendDeviceTest(authUserId:string,deviceId:unknown,send:PushSender){
@@ -99,7 +101,7 @@ export async function dispatchNotification(event: PushEvent, send: PushSender, c
       if (status === 404 || status === 410) await db.pushSubscription.updateMany({ where: { id: subscription.id, userProfileId: event.userProfileId }, data: { revokedAt: now, revokedReason:"EXPIRED" } });
       const current = await db.notificationDelivery.findUnique({ where: { id: deliveryId }, select: { attemptCount: true } });
       const attempts = (current?.attemptCount ?? 0) + 1, terminal = permanentStatus(status) || attempts >= PUSH_MAX_ATTEMPTS;
-      await db.notificationDelivery.updateMany({ where: { id: deliveryId, claimToken }, data: { status: status === 404 || status === 410 ? "EXPIRED" : terminal ? "FAILED" : "RETRYABLE", attemptCount: { increment: 1 }, lastAttemptAt: now, nextAttemptAt: new Date(now.getTime() + pushRetryDelay(attempts, status === 429 ? retryAfter(error) : null)), claimedAt: null, claimToken: null, lastErrorCode: sanitizedPushError(status) } });
+      await db.notificationDelivery.updateMany({ where: { id: deliveryId, claimToken }, data: { status: status === 404 || status === 410 ? "EXPIRED" : terminal ? "FAILED" : "RETRYABLE", attemptCount: { increment: 1 }, lastAttemptAt: now, nextAttemptAt: new Date(now.getTime() + pushRetryDelay(attempts, status === 429 ? retryAfter(error, now) : null)), claimedAt: null, claimToken: null, lastErrorCode: sanitizedPushError(status) } });
     }
   }
   return { delivered, skipped: false };

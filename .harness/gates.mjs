@@ -8,18 +8,22 @@ function run(cmd) {
   try { return { ok: true, out: execSync(cmd, { stdio: "pipe", encoding: "utf8" }) }; }
   catch (e) { return { ok: false, out: (e.stdout ?? "") + (e.stderr ?? "") }; }
 }
-function diffScopeGate(task) {
+export function diffScopeGate(task) {
   const declared = task.scope ?? [];
   if (declared.length === 0) return { ok: true, out: "" };
   const changed = execSync("git status --porcelain -uall", { encoding: "utf8" })
     .split("\n").map((l) => unquoteStatusPath(l.slice(3).trim())).filter(Boolean)
     .map((p) => (p.includes(" -> ") ? p.split(" -> ")[1] : p)); // archivos modificados Y nuevos
   const allowed = [...declared, ...ALWAYS];
-  const outside = changed.filter((f) => !allowed.some((p) => {
-    const prefix = p.replace(/\/\*\*?$/, "/").replace(/\*$/, "");
-    return f.startsWith(prefix);
-  }));
+  const outside = changed.filter((f) => !allowed.some((p) => matchesScope(f, p)));
   return outside.length === 0 ? { ok: true, out: "" } : { ok: false, out: `Archivos fuera de scope: ${outside.join(", ")}` };
+}
+function matchesScope(path, pattern) {
+  if (!pattern.includes("*")) return path === pattern || (pattern.endsWith("/") && path.startsWith(pattern));
+  if (pattern.endsWith("/**")) return path.startsWith(pattern.slice(0, -2));
+  const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, "\\$&");
+  const expression = escaped.replace(/\*\*\//g, "(?:.*/)?").replace(/\*\*/g, ".*").replace(/\*/g, "[^/]*");
+  return new RegExp(`^${expression}$`).test(path);
 }
 function unquoteStatusPath(path) {
   if (path.startsWith('"') && path.endsWith('"')) {

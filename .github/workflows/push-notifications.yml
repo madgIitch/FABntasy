@@ -1,0 +1,60 @@
+name: push-notifications
+on:
+  pull_request:
+    paths:
+      - "apps/web/app/api/notifications/**"
+      - "apps/web/app/app/perfil/**"
+      - "apps/web/public/sw.js"
+      - "apps/web/src/server/**notification*"
+      - "packages/domain/notifications/**"
+      - "prisma/**"
+      - "tests/production_push_rls.sql"
+      - "infrastructure/**push*"
+  workflow_dispatch:
+permissions: { contents: read }
+
+jobs:
+  deterministic-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: corepack pnpm install --frozen-lockfile
+      - run: corepack pnpm typecheck && corepack pnpm lint && corepack pnpm test
+      - run: corepack pnpm exec prisma validate
+      - name: Validate production Push preflight with non-secret fixtures
+        run: node infrastructure/scripts/validate-push-config.mjs
+        env:
+          NEXT_PUBLIC_VAPID_PUBLIC_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+          VAPID_PRIVATE_KEY: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+          VAPID_SUBJECT: mailto:ci@example.test
+          VAPID_KEY_VERSION: ci-v1
+          CANASTIO_PUSH_JOB_SECRET: ci-only-not-a-secret-000000000000000
+      - run: corepack pnpm --filter @fabntasy/web exec playwright install --with-deps chromium
+      - name: PWA Push contract in mobile and desktop Chromium
+        working-directory: apps/web
+        run: corepack pnpm test:e2e e2e/pwa-notifications.spec.ts --project=chromium-mobile --project=chromium-desktop
+
+  supabase-rls:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - uses: supabase/setup-cli@v1
+        with: { version: latest }
+      - run: corepack pnpm install --frozen-lockfile
+      - run: supabase init && supabase start
+      - name: Apply additive Prisma migrations
+        run: corepack pnpm exec prisma migrate deploy
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+      - name: Verify two-user Push RLS matrix
+        run: |
+          db_container="$(docker ps --filter name=supabase_db --format '{{.ID}}' | head -n 1)"
+          test -n "$db_container"
+          docker exec -i "$db_container" psql -v ON_ERROR_STOP=1 -U postgres -d postgres < tests/production_push_rls.sql

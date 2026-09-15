@@ -5,7 +5,7 @@ import { createClient } from "../../../src/lib/supabase/server";
 import { avatarUrl, profileInitial } from "../../../src/lib/avatar";
 import { getUserProfileOverview } from "../../../src/server/user-profile";
 import { Icon } from "../../../src/components/ui/icon";
-import { LogoutControl } from "../account-controls";
+import { ProfileLogoutControl } from "./logout-control";
 import { APP_LOCALE } from "../../../src/lib/preferences";
 
 const points = new Intl.NumberFormat(APP_LOCALE, { maximumFractionDigits: 1 });
@@ -24,7 +24,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
     <HubGroup title="Preferencias"><HubLink href="/app/perfil/preferencias" title="Apariencia e idioma" detail="Tema, idioma y zona horaria" /><HubLink href="/app/perfil/notificaciones" title="Notificaciones" detail="Permisos y tipos de aviso" /></HubGroup>
     <HubGroup title="Seguridad y privacidad"><HubLink href="/app/perfil/seguridad" title="Seguridad" detail="Correo, contraseña y sesiones" /><HubLink href="/app/perfil/privacidad" title="Privacidad y datos" detail="Visibilidad, exportación y eliminación" /></HubGroup>
     <HubGroup title="Ayuda"><HubLink href="/app/perfil/feedback" title="Enviar feedback" detail="Cuéntanos un problema o comparte una idea" /></HubGroup>
-    <div className="profile-logout setting-row"><Icon name="logout" /><LogoutControl /></div>
+    <div className="profile-logout setting-row"><Icon name="logout" /><ProfileLogoutControl /></div>
   </main>;
 }
 

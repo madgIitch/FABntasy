@@ -16,6 +16,10 @@ ALTER TABLE "push_subscriptions" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "notification_preferences" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "notification_deliveries" ENABLE ROW LEVEL SECURITY;
 
+GRANT SELECT, INSERT, UPDATE, DELETE ON "push_subscriptions" TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON "notification_preferences" TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON "notification_deliveries" TO authenticated;
+
 CREATE POLICY "push_subscriptions_owner_all" ON "push_subscriptions" FOR ALL
   USING (EXISTS (SELECT 1 FROM "user_profiles" p WHERE p.id = user_profile_id AND p.auth_user_id = auth.uid()))
   WITH CHECK (EXISTS (SELECT 1 FROM "user_profiles" p WHERE p.id = user_profile_id AND p.auth_user_id = auth.uid()));
@@ -23,5 +27,11 @@ CREATE POLICY "notification_preferences_owner_all" ON "notification_preferences"
   USING (EXISTS (SELECT 1 FROM "user_profiles" p WHERE p.id = user_profile_id AND p.auth_user_id = auth.uid()))
   WITH CHECK (EXISTS (SELECT 1 FROM "user_profiles" p WHERE p.id = user_profile_id AND p.auth_user_id = auth.uid()));
 CREATE POLICY "notification_deliveries_owner_all" ON "notification_deliveries" FOR ALL
-  USING (EXISTS (SELECT 1 FROM "user_profiles" p WHERE p.id = user_profile_id AND p.auth_user_id = auth.uid()))
-  WITH CHECK (EXISTS (SELECT 1 FROM "user_profiles" p WHERE p.id = user_profile_id AND p.auth_user_id = auth.uid()));
+  USING (
+    EXISTS (SELECT 1 FROM "user_profiles" p WHERE p.id = user_profile_id AND p.auth_user_id = auth.uid())
+    AND EXISTS (SELECT 1 FROM "push_subscriptions" s WHERE s.id = push_subscription_id AND s.user_profile_id = user_profile_id)
+  )
+  WITH CHECK (
+    EXISTS (SELECT 1 FROM "user_profiles" p WHERE p.id = user_profile_id AND p.auth_user_id = auth.uid())
+    AND EXISTS (SELECT 1 FROM "push_subscriptions" s WHERE s.id = push_subscription_id AND s.user_profile_id = user_profile_id)
+  );

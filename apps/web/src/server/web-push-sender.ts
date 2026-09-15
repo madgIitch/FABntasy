@@ -7,10 +7,11 @@ export function validateVapidConfiguration(env: NodeJS.ProcessEnv = process.env)
   const publicKey = env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim(), privateKey = env.VAPID_PRIVATE_KEY?.trim(), subject = env.VAPID_SUBJECT?.trim(), keyVersion = env.VAPID_KEY_VERSION?.trim() || "v1";
   if (!publicKey || !/^[A-Za-z0-9_-]{80,100}$/.test(publicKey)) throw new Error("VAPID_PUBLIC_KEY_INVALID");
   if (!privateKey || !/^[A-Za-z0-9_-]{40,60}$/.test(privateKey)) throw new Error("VAPID_PRIVATE_KEY_INVALID");
-  if (!subject || (!subject.startsWith("mailto:") && !subject.startsWith("https://"))) throw new Error("VAPID_SUBJECT_INVALID");
+  if (!subject || !validSubject(subject)) throw new Error("VAPID_SUBJECT_INVALID");
   if (!/^[A-Za-z0-9._-]{1,32}$/.test(keyVersion)) throw new Error("VAPID_KEY_VERSION_INVALID");
   return { publicKey, privateKey, subject, keyVersion };
 }
+function validSubject(subject: string) { if (subject.startsWith("mailto:")) return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(subject.slice(7)); try { const url = new URL(subject); return url.protocol === "https:" && Boolean(url.hostname) && !url.username && !url.password; } catch { return false; } }
 export function createWebPushSender(): PushSender {
   const { publicKey, privateKey, subject } = validateVapidConfiguration();
   if (!configured) { webpush.setVapidDetails(subject, publicKey, privateKey); configured = true; }

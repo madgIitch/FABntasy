@@ -6,7 +6,7 @@ Sprint 16 añade instalación PWA y Web Push opt-in desde **Perfil**.
 
 Genera un par VAPID y configura `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` y `VAPID_SUBJECT`. La clave privada solo se lee en servidor. Sin estas variables, Perfil muestra un estado neutral y el resto de la aplicación continúa operativo.
 
-Aplica la migración `20260911000100_pwa_push_notifications` antes de activar Push. Una cuenta puede tener varios dispositivos; al cerrar sesión se revocan sus suscripciones activas.
+Aplica la migración `20260911000100_pwa_push_notifications` antes de activar Push. Una cuenta puede tener varios dispositivos; el cierre de sesión iniciado desde Perfil revoca primero únicamente el UUID/endpoint del navegador actual y conserva los demás.
 
 ## Contratos de seguridad
 
@@ -22,7 +22,7 @@ El dispatcher `dispatchNotification` recibe eventos de dominio normalizados y un
 
 Custodia `VAPID_PRIVATE_KEY` y `CANASTIO_PUSH_JOB_SECRET` exclusivamente en el gestor de secretos del servidor. `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_SUBJECT` y `VAPID_KEY_VERSION` son configuración; solo la primera clave puede entrar al bundle cliente. El despliegue ejecuta `node infrastructure/scripts/validate-push-config.mjs` y falla sin imprimir valores cuando falta o es inválida alguna variable.
 
-Aplica `20260915000100_production_push_notifications` con el rol de migraciones antes de promover web. La migración es aditiva, habilita RLS y crea políticas por `auth.uid()` para suscripciones, preferencias y entregas. Ejecuta `psql "$DIRECT_URL" -v ON_ERROR_STOP=1 -f tests/production_push_rls.sql` en el proyecto aislado con Supabase Auth disponible.
+Aplica `20260915000100_production_push_notifications` con el rol de migraciones antes de promover web. La migración es aditiva, concede al rol `authenticated` sólo las operaciones protegidas, habilita RLS y crea políticas por `auth.uid()` para suscripciones, preferencias y entregas; una entrega además debe referenciar una suscripción del mismo propietario. Ejecuta `psql "$DIRECT_URL" -v ON_ERROR_STOP=1 -f tests/production_push_rls.sql` en el proyecto aislado con Supabase Auth disponible. El workflow `push-notifications` levanta Supabase local y ejecuta la matriz SELECT/INSERT/UPDATE/DELETE con dos usuarios.
 
 Cada instalación conserva un UUID aleatorio local. El endpoint y su propietario inmutable siguen siendo la autoridad: otro usuario recibe `SUBSCRIPTION_OWNED_BY_ANOTHER_USER`; logout/opt-out envía endpoint y UUID del dispositivo actual y nunca revoca los demás. Las respuestas solo incluyen estado y recuentos, jamás endpoint, `p256dh` o `auth`.
 

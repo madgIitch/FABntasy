@@ -558,3 +558,12 @@ Decisiones registradas:
 - **tests:** CI usa Supabase/PostgreSQL local aislado, sender falso, reloj controlado, dos dispatchers concurrentes y Playwright Chromium en 375x812 y 1440x900 sin Push real. El smoke exige recepción real con la PWA cerrada en Chromium de escritorio y Android Chrome/PWA instalada; Safari/iOS es compatibilidad observada no bloqueante. La evidencia saneada se conserva por fecha y commit.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-26-push-outbox-railway-worker -->
+## 2026-09-15 · sprint-26-push-outbox-railway-worker aprobado
+
+Contexto: se aprobó el spec `sprint-26-push-outbox-railway-worker` (Entrega automática de notificaciones mediante outbox y Railway).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

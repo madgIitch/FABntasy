@@ -829,3 +829,25 @@ Completar la configuración operativa de las notificaciones Web Push ya iniciada
 - **edge_cases:** Antes del sender se revalidan actividad, propietario y preferencia. Logout revoca solo el dispositivo actual; un cambio de cuenta exige revocación previa y nunca transfiere endpoints activos. La instalación usa un UUID local aleatorio que rota al reinstalar, mientras endpoint y propietario son la identidad server-side autoritativa.
 - **ui_states:** Las preferencias por intención son globales y la suscripción es por dispositivo. La fuente visual autoritativa combina soporte, Notification.permission y PushManager.getSubscription(), con transiciones y acciones definidas para no compatible, default, granted sin suscripción, suscrito, denied, error, reintento y recuperación al estado real derivado.
 
+<!-- harness:sprint-26-push-outbox-railway-worker -->
+## sprint-26-push-outbox-railway-worker · Entrega automática de notificaciones mediante outbox y Railway
+
+Conectar los eventos de dominio a una outbox transaccional en Supabase y procesarlos desde el worker permanente de Railway, con activación inmediata por webhook y barrido periódico de respaldo.
+
+### Scope aprobado
+
+  - `apps/web/**`
+  - `services/fab_ingestor/**`
+  - `packages/domain/notifications/**`
+  - `prisma/schema.prisma`
+  - `prisma/migrations/**`
+  - `tests/**`
+  - `infrastructure/**`
+  - `.github/workflows/**`
+  - `.env.example`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+  - `.harness/**`
+  - `spec.json`
+

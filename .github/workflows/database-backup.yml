@@ -15,8 +15,15 @@ jobs:
           DATABASE_URL: "${{ secrets.BACKUP_DATABASE_URL }}"
           AGE_RECIPIENT: "${{ vars.BACKUP_AGE_RECIPIENT }}"
         run: |
+          if [[ -z "$DATABASE_URL" ]]; then
+            echo "::error::BACKUP_DATABASE_URL is not configured in the production-backup environment"
+            exit 1
+          fi
+          if [[ -z "$AGE_RECIPIENT" ]]; then
+            echo "::error::BACKUP_AGE_RECIPIENT is not configured in the production-backup environment"
+            exit 1
+          fi
           sudo apt-get update && sudo apt-get install -y postgresql-client age
-          test -n "$DATABASE_URL" && test -n "$AGE_RECIPIENT"
           umask 077
           pg_dump "$DATABASE_URL" --format=custom --no-owner --no-acl --file=backup.dump
           test -s backup.dump
@@ -30,6 +37,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          curl --fail --silent --show-error -X POST "${{ secrets.OPERATIONS_ALERT_WEBHOOK }}" \
+          if [[ -z "$OPERATIONS_ALERT_WEBHOOK" ]]; then
+            echo "::warning::OPERATIONS_ALERT_WEBHOOK is not configured; skipping backup alert"
+            exit 0
+          fi
+          curl --fail --silent --show-error -X POST "$OPERATIONS_ALERT_WEBHOOK" \
             -H 'content-type: application/json' \
             --data '{"event":"database_backup_failed","run":"${{ github.run_id }}"}'
+        env:
+          OPERATIONS_ALERT_WEBHOOK: "${{ secrets.OPERATIONS_ALERT_WEBHOOK }}"

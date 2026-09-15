@@ -2550,7 +2550,7 @@
     {
       "id": "sprint-28-manager-profile-rivalries",
       "name": "Sprint 28 - Manager Profile and Rivalries",
-      "title": "Perfil fantasy completo, palmarés y acceso a rivalidades",
+      "title": "Perfil fantasy completo, palmarés visual y acceso a rivalidades",
       "status": "spec_ready",
       "sdd": true,
       "spec_approved": false,
@@ -2559,8 +2559,8 @@
       "dependencies": [
         "sprint-27-social-league-experience"
       ],
-      "description": "Completar el perfil social de cada manager dentro de una liga privada siguiendo la referencia visual aprobada, con identidad real, palmarés verificable, histórico y acceso contextual a comparativas y rivalidades.",
-      "objective": "Dar a cada manager una identidad fantasy reconocible y compartible sin introducir publicaciones manuales, comentarios ni información ajena a la liga autorizada.",
+      "description": "Completar el perfil social de cada manager dentro de una liga privada siguiendo la referencia visual, con identidad real, palmarés verificable, siete iconos aportados por producto, histórico y acceso contextual a comparativas y rivalidades.",
+      "objective": "Dar a cada manager una identidad fantasy reconocible y compartible, donde los méritos y deméritos competitivos se entiendan de un vistazo, sin introducir publicaciones manuales, comentarios ni información ajena a la liga autorizada.",
       "user_stories": [
         {
           "id": "HU28.1",
@@ -2578,19 +2578,77 @@
       "tasks": [
         "Añadir navegación desde Miembros hacia una pantalla individual de manager.",
         "Mostrar el avatar autorizado del usuario con fallback accesible.",
-        "Construir palmarés visual y listado de logros recientes desde concesiones auditables.",
+        "Importar los siete PNG suministrados como assets versionados, optimizados y con nombre semántico, sin alterar su transparencia ni sustituirlos por emojis.",
+        "Construir palmarés visual y listado de logros recientes desde concesiones auditables y la taxonomía trophy-icons.v1.",
+        "Conceder de forma determinista podio final, último puesto final, líder vigente, MVP de jornada y último de jornada.",
         "Calcular rachas mediante reglas deterministas sobre jornadas publicadas.",
         "Exponer un histórico completo, paginado y vinculado a temporada y revisiones publicadas.",
         "Generar y compartir una tarjeta saneada del perfil fantasy.",
         "Conectar el perfil con Head-to-Head y Rivalidad dentro de la misma liga."
       ],
-      "deliverable": "Cada miembro puede abrir un perfil fantasy individual con avatar, métricas, palmarés, rachas, histórico, tarjeta compartible y accesos a Head-to-Head y Rivalidad.",
+      "visual_assets": [
+        {
+          "code": "LEAGUE_LAST_PLACE",
+          "source_file": "ChatGPT Image 15 sept 2026, 14_22_35.png",
+          "target_file": "apps/web/public/images/achievements/trophy-league-last-place.png",
+          "meaning": "Trofeo permanente para el último clasificado al cierre de la liga",
+          "label": "Último de la liga"
+        },
+        {
+          "code": "ROUND_LAST_PLACE",
+          "source_file": "ChatGPT Image 15 sept 2026, 14_22_18.png",
+          "target_file": "apps/web/public/images/achievements/achievement-round-last-place.png",
+          "meaning": "Logro por obtener la menor puntuación de una jornada publicada",
+          "label": "Último de la jornada"
+        },
+        {
+          "code": "CURRENT_LEAGUE_LEADER",
+          "source_file": "ChatGPT Image 15 sept 2026, 14_19_58 (4).png",
+          "target_file": "apps/web/public/images/achievements/badge-current-league-leader.png",
+          "meaning": "Insignia temporal del líder vigente de la liga",
+          "label": "Líder actual"
+        },
+        {
+          "code": "ROUND_MVP",
+          "source_file": "ChatGPT Image 15 sept 2026, 14_19_57 (3).png",
+          "target_file": "apps/web/public/images/achievements/achievement-round-mvp.png",
+          "meaning": "Una estrella permanente por cada jornada con la mayor puntuación",
+          "label": "MVP de jornada"
+        },
+        {
+          "code": "LEAGUE_SECOND_PLACE",
+          "source_file": "ChatGPT Image 15 sept 2026, 14_19_57 (2).png",
+          "target_file": "apps/web/public/images/achievements/trophy-league-second-place.png",
+          "meaning": "Trofeo permanente para el segundo clasificado al cierre de la liga",
+          "label": "Segundo de la liga"
+        },
+        {
+          "code": "LEAGUE_FIRST_PLACE",
+          "source_file": "ChatGPT Image 15 sept 2026, 14_19_56 (1).png",
+          "target_file": "apps/web/public/images/achievements/trophy-league-first-place.png",
+          "meaning": "Trofeo permanente para el primer clasificado al cierre de la liga",
+          "label": "Campeón de la liga"
+        },
+        {
+          "code": "LEAGUE_THIRD_PLACE",
+          "source_file": "ChatGPT Image 15 sept 2026, 14_29_08.png",
+          "target_file": "apps/web/public/images/achievements/trophy-league-third-place.png",
+          "meaning": "Trofeo permanente de cobre para el tercer clasificado al cierre de la liga",
+          "label": "Tercero de la liga"
+        }
+      ],
+      "deliverable": "Cada miembro puede abrir un perfil fantasy individual con avatar, métricas, palmarés visual basado en los siete assets suministrados, rachas, histórico, tarjeta compartible y accesos a Head-to-Head y Rivalidad.",
       "acceptance": [
-        "Existe una ruta canónica de perfil bajo la liga que solo responde para actor y manager objetivo con membresía ACTIVE en esa misma liga; los casos de otra liga, expulsión e identificadores inexistentes siguen el contrato 403/404 aprobado sin filtrar existencia.",
+        "Existe una ruta canónica de perfil bajo la liga que solo responde para actor y manager objetivo con membresía ACTIVE en esa misma liga; otra liga, expulsión e identificadores inexistentes devuelven 404 RESOURCE_NOT_FOUND sin filtrar existencia.",
         "Los enlaces desde Miembros y Actividad transportan un estado de retorno validado; Atrás restaura pestaña, filtros, cursor, scroll y foco, y un retorno ausente o inválido degrada a la sección Liga sin redirección abierta.",
         "El encabezado devuelve identidad pública autorizada, equipo, posición vigente, valor de plantilla y liga, con un estado explícito PUBLISHED, PROVISIONAL o UNAVAILABLE para cada métrica aplicable.",
         "El avatar usa únicamente una URL autorizada y saneada; ausencia, error de carga o revocación producen un fallback con iniciales derivadas de la identidad pública, texto alternativo útil y ninguna ruta, UUID o metadata privada.",
-        "Cada premio expuesto incluye tipo, ruleVersion, status, awardedAt, contexto de temporada o jornada, magnitud opcional y referencia pública de revisión; una corrección crea una concesión sustitutiva o revoca la anterior sin eliminar filas auditables.",
+        "La taxonomía trophy-icons.v1 usa exactamente los siete PNG suministrados y los importa en las rutas semánticas declaradas en visual_assets: montón de mierdas para LEAGUE_LAST_PLACE, mierda para ROUND_LAST_PLACE, corona para CURRENT_LEAGUE_LEADER, estrella para ROUND_MVP y copas de oro, plata y cobre para LEAGUE_FIRST_PLACE, LEAGUE_SECOND_PLACE y LEAGUE_THIRD_PLACE; no se sustituyen por emojis ni iconos genéricos.",
+        "LEAGUE_FIRST_PLACE, LEAGUE_SECOND_PLACE, LEAGUE_THIRD_PLACE y LEAGUE_LAST_PLACE son trofeos permanentes concedidos una vez se cierra la liga usando el orden canónico final; hay exactamente un receptor por puesto y, si hay empate a puntos, se respeta el desempate ya publicado por la clasificación autoritativa.",
+        "CURRENT_LEAGUE_LEADER es una insignia temporal y exclusiva del manager que ocupa el primer puesto en la clasificación autoritativa vigente; se mueve al publicar o corregir una jornada, no forma parte del palmarés permanente y nunca convive en dos perfiles de la misma liga.",
+        "ROUND_MVP concede y conserva una estrella por cada jornada publicada en la que el manager obtiene la puntuación máxima, y ROUND_LAST_PLACE concede el logro de mierda por cada jornada con la puntuación mínima; si varios managers empatan exactamente en el máximo o mínimo, todos reciben la concesión correspondiente y el perfil muestra el total y el detalle de jornadas.",
+        "Cada premio expuesto incluye type, ruleVersion, status, awardedAt, leagueSeasonId, roundNumber nullable, magnitud opcional y referencia pública de revisión; una corrección crea una concesión sustitutiva o revoca la anterior sin eliminar filas auditables y recalcula corona y logros de jornada desde la revisión vigente.",
+        "Cada icono se muestra con su etiqueta textual, texto alternativo contextual y recuento cuando pueda repetirse; su significado no depende solo del color, las imágenes conservan proporción sin recorte y se sirven en tamaños responsive sin provocar saltos de layout.",
         "La función de racha implementa la regla versionada aprobada y devuelve tipo, longitud, temporada, primera y última jornada y revisiones fuente; unit tests fijan victoria, empate, interrupción, ausencia, hueco, cambio de temporada y corrección retroactiva.",
         "El histórico usa orden total inmutable por temporada, jornada, revisión e ID opaco, cursor versionado y límite máximo; no duplica ni omite elementos al paginar y separa periodos no comparables.",
         "Compartir genera una tarjeta según un contrato versionado y allowlist de campos; tests inspeccionan que no contiene email, UUID internos, secretos, código o contraseña de liga, presencia ni URLs que concedan acceso.",
@@ -2606,6 +2664,7 @@
         "apps/web/app/api/leagues/**",
         "apps/web/src/components/**",
         "apps/web/src/server/**",
+        "apps/web/public/**",
         "packages/domain/**",
         "prisma/schema.prisma",
         "prisma/migrations/**",

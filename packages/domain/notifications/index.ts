@@ -1,6 +1,6 @@
 export const NOTIFICATION_GROUPS = {
   Mercado: ["MARKET_PRICE", "MARKET_OFFER", "MARKET_OUTBID", "MARKET_SOLD"],
-  "Mi equipo": ["TEAM_INJURY", "TEAM_CUTOFF", "TEAM_LINEUP"],
+  "Mi equipo": ["TEAM_CUTOFF", "TEAM_LINEUP"],
   Liga: ["LEAGUE_CLAUSE", "LEAGUE_ACTIVITY", "LEAGUE_MESSAGE"],
   Jornada: ["ROUND_START", "ROUND_RESULT"],
 } as const;

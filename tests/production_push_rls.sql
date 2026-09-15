@@ -22,6 +22,8 @@ BEGIN
   PERFORM set_config('request.jwt.claim.sub',user_a::text,true);
   SET LOCAL ROLE authenticated;
 
+  BEGIN INSERT INTO notification_preferences(user_profile_id,intent,enabled,updated_at) VALUES(profile_a,'TEAM_INJURY',true,now()); RAISE EXCEPTION 'retired TEAM_INJURY preference allowed'; EXCEPTION WHEN check_violation THEN NULL; END;
+
   IF EXISTS(SELECT 1 FROM push_subscriptions WHERE user_profile_id=profile_b) THEN RAISE EXCEPTION 'push_subscriptions cross-user SELECT allowed'; END IF;
   IF EXISTS(SELECT 1 FROM notification_preferences WHERE user_profile_id=profile_b) THEN RAISE EXCEPTION 'notification_preferences cross-user SELECT allowed'; END IF;
   IF EXISTS(SELECT 1 FROM notification_deliveries WHERE user_profile_id=profile_b) THEN RAISE EXCEPTION 'notification_deliveries cross-user SELECT allowed'; END IF;

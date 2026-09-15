@@ -4,6 +4,14 @@ Formato por entrada: **fecha · título** — contexto, decisión y consecuencia
 El harness añade entradas cuando se aprueba un spec; el agente también debe añadir entradas cuando toma
 una decisión de arquitectura relevante durante implementación.
 
+## 2026-09-15 · Retirada de notificaciones de lesiones
+
+Contexto: FAB no publica partes ni una señal fiable de lesiones; una preferencia de este tipo prometería información que la fuente no puede proporcionar.
+
+Decisión: se retira `TEAM_INJURY` de la taxonomía, la UI y las nuevas escrituras de PostgreSQL. Ausencia y DNP no se interpretan como lesión. Las entregas históricas se conservan como auditoría y los eventos pendientes heredados se cierran como fallidos.
+
+Consecuencia: Canastio no genera ni permite configurar avisos de lesiones mientras no exista una fuente explícita, fiable y aprobada para ese dato.
+
 ## Pendientes de decisión
 
 - (rellenar) Decisiones que aún no deben asumirse automáticamente.

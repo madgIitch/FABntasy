@@ -4,7 +4,7 @@ import { NOTIFICATION_GROUPS, type NotificationIntent } from "../../../../../pac
 
 type InstallPrompt = Event & { prompt(): Promise<void>; userChoice: Promise<{ outcome: "accepted" | "dismissed" }> };
 type DeviceState = "pending"|"unsupported"|"granted-unsubscribed"|"denied"|"subscribed"|"unsubscribed"|"error"|"recovered";
-const LABELS:Record<NotificationIntent,string>={MARKET_PRICE:"Cambios importantes de precio",MARKET_OFFER:"Ofertas recibidas",MARKET_OUTBID:"Pujas superadas",MARKET_SOLD:"Jugador vendido",TEAM_INJURY:"Lesiones",TEAM_CUTOFF:"Aviso antes del cierre",TEAM_LINEUP:"Recordatorio de alineación",LEAGUE_CLAUSE:"Clausulazos",LEAGUE_ACTIVITY:"Actividad importante",LEAGUE_MESSAGE:"Mensajes",ROUND_START:"Comienzo de mis partidos",ROUND_RESULT:"Resultados"};
+const LABELS:Record<NotificationIntent,string>={MARKET_PRICE:"Cambios importantes de precio",MARKET_OFFER:"Ofertas recibidas",MARKET_OUTBID:"Pujas superadas",MARKET_SOLD:"Jugador vendido",TEAM_CUTOFF:"Aviso antes del cierre",TEAM_LINEUP:"Recordatorio de alineación",LEAGUE_CLAUSE:"Clausulazos",LEAGUE_ACTIVITY:"Actividad importante",LEAGUE_MESSAGE:"Mensajes",ROUND_START:"Comienzo de mis partidos",ROUND_RESULT:"Resultados"};
 const STATE_LABEL:Record<DeviceState,string>={pending:"Comprobando…",unsupported:"No compatible","granted-unsubscribed":"Permiso concedido, sin suscripción",denied:"Permiso denegado",subscribed:"Suscrito",unsubscribed:"Desuscrito",error:"Error de configuración",recovered:"Recuperado"};
 const decode=(value:string)=>{const pad="=".repeat((4-value.length%4)%4);return Uint8Array.from(atob((value+pad).replace(/-/g,"+").replace(/_/g,"/")),c=>c.charCodeAt(0))};
 const DEVICE_STORAGE_KEY="canastio.push.device.v1";

@@ -2,6 +2,8 @@
 
 Sprint 16 añade instalación PWA y Web Push opt-in desde **Perfil**.
 
+La taxonomía admite once preferencias de mercado, equipo, liga y jornada. No ofrece avisos de lesiones: FAB no publica una señal de lesiones y Canastio no infiere ese estado a partir de ausencias o DNP.
+
 ## Configuración
 
 Genera un par VAPID y configura `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` y `VAPID_SUBJECT`. La clave privada solo se lee en servidor. Sin estas variables, Perfil muestra un estado neutral y el resto de la aplicación continúa operativo.

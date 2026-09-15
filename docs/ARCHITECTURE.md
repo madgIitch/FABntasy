@@ -478,6 +478,7 @@ Originado por el incidente documentado en docs/operations/INCIDENT_2026-09-10_FA
 <!-- harness:sprint-16-pwa-install-and-notifications -->
 ## sprint-16-pwa-install-and-notifications · Sprint 16 - PWA Install and Notifications
 
+La taxonomía Push contiene once intenciones verificables. No modela lesiones porque FAB no publica partes ni una señal específica; DNP y ausencia no deben convertirse en una inferencia médica. PostgreSQL rechaza nuevas preferencias, entregas y eventos outbox que no pertenezcan a la taxonomía vigente.
 
 
 ### Scope aprobado
@@ -850,4 +851,3 @@ Conectar los eventos de dominio a una outbox transaccional en Supabase y procesa
   - `progress/**`
   - `.harness/**`
   - `spec.json`
-

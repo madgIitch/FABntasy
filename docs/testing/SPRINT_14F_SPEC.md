@@ -141,12 +141,12 @@ El generador debe garantizar:
 - 200 minutos agregados por equipo, salvo prórroga explícita;
 - intentos de tiro mayores o iguales que aciertos;
 - marcador igual a la suma de puntos normalizados de jugadores;
-- DNP, lesión, ausencia, partido aplazado y partido sin estadísticas como estados distintos;
+- DNP, ausencia, partido aplazado y partido sin estadísticas como estados distintos;
 - perfiles de rendimiento persistentes para que la forma y el precio evolucionen con continuidad;
 - boxscore parcial, final y corregido con revisiones distinguibles;
 - nombres y usernames sintéticos, estables y reconocibles en UI.
 
-Perfiles mínimos de jugador: estrella estable, jugador barato emergente, titular medio, suplente irregular, lesionado, recién inscrito, sin muestra suficiente, baja/cambio de equipo y jugador corregido posteriormente.
+Perfiles mínimos de jugador: estrella estable, jugador barato emergente, titular medio, suplente irregular, recién inscrito, sin muestra suficiente, baja/cambio de equipo y jugador corregido posteriormente.
 
 ## Personas y comportamiento
 

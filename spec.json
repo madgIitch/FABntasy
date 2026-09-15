@@ -2325,7 +2325,7 @@
       "id": "sprint-25-production-push-notifications",
       "name": "Sprint 25 - Production Push Notifications",
       "title": "Configuración productiva de Web Push en Supabase y PWA",
-      "status": "spec_ready",
+      "status": "review_pending",
       "sdd": true,
       "milestone": "1.1.0",
       "dependencies": [

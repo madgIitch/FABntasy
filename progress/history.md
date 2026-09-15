@@ -44,3 +44,6 @@
 
 ## 2026-09-14T22:39:28.136Z — #sprint-24-production-1-0 Sprint 24 - Production 1.0 → review_pending
 - 1 intento(s) · agente codex
+
+## 2026-09-15T00:14:18.423Z — #sprint-25-production-push-notifications Sprint 25 - Production Push Notifications → review_pending
+- 1 intento(s) · agente codex

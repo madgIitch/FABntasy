@@ -53,3 +53,7 @@
 ## 2026-09-15T13:41:00.000+02:00 — #sprint-27-social-league-experience Sprint 27 - Social League Experience → in_progress
 - Primer corte: stream social, feed, reacciones, presencia, miembros, H2H de servicio, eventos de mercado/jornada y tarjeta SVG.
 - Batería completa de gates aprobada; la feature permanece abierta porque varios criterios funcionales y pruebas específicas todavía no están completos.
+
+## 2026-09-15T14:26:00.000+02:00 — transición Sprint 27 → Sprint 28
+- Sprint 27 marcado `done` por confirmación explícita del responsable.
+- Sprint 28 entrevistado y preparado hasta `spec_ready`; permanece `spec_approved: false` y sin implementación.

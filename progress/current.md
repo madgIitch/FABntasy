@@ -1,23 +1,18 @@
 # Sesión actual
 
-Feature: **sprint-27-social-league-experience · Sprint 27 - Social League Experience** — estado: `in_progress`.
+Feature: **sprint-28-manager-profile-rivalries · Sprint 28 - Manager Profile and Rivalries** — estado: `spec_ready`.
 
 - agente: codex
 - rama: `main`
-- spec aprobado: sí
+- spec aprobado: no
 
-## Implementado en el primer corte
+## Resultado
 
-- Stream social versionado e idempotente, persistencia Prisma, migración y políticas RLS.
-- Eventos transaccionales para mercado, altas de miembros y publicación de jornadas.
-- Actividad de liga con reacciones cerradas, cursor, estados degradados y clausulazos destacados.
-- Vista Miembros con estadísticas publicadas y presencia anónima efímera.
-- API Head-to-Head, reglas deterministas de rivalidad, campeón de jornada auditable y seguimiento básico de jugadores.
-- Tarjeta SVG descargable para eventos autorizados.
-- Actividad adaptada a la referencia visual aprobada: lista editorial mobile-first, resumen de movimiento, avatares, importes jerarquizados, reacciones compactas y clausulazos en verde suave.
-- Todos los gates configurados pasan, incluidas 165 pruebas web, E2E, seeds, Python, Ruff, Prisma y diff-scope.
-- El gate completo volvió a pasar tras la adaptación visual; la inspección autenticada local quedó limitada porque el pool de Supabase no estaba accesible desde este entorno.
+- Sprint 27 cerrado como `done` por confirmación explícita del responsable.
+- Entrevista SDD de Sprint 28 completada con defaults conservadores.
+- Las ocho dimensiones técnicas están cubiertas y el spec está listo para revisión.
+- No se ha iniciado ninguna implementación del Sprint 28.
 
 ## Siguiente acción
 
-- Completar los criterios aún abiertos: perfil completo y UI Head-to-Head/rivalidades; catálogo completo de logros; experiencia de jornada en directo; alertas Push para jugadores seguidos; tarjetas públicas por tipo/Web Share; backfill y pruebas PostgreSQL/RLS, concurrencia, carga y E2E específicas.
+- Revisar las suposiciones registradas en la entrevista y, si el responsable está conforme, aprobar con `node .harness/spec.mjs approve sprint-28-manager-profile-rivalries` antes de implementar.

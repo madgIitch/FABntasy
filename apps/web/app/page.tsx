@@ -12,7 +12,7 @@ export default async function HomePage() {
     </nav>
     <section className="court-hero">
       <div className="court-lines" aria-hidden="true"><span /><span /></div>
-      <Image className="hero-logo" src="/canastio-logo.png" width={1254} height={1254} priority alt="" />
+      <Image className="hero-logo" src="/canastio-logo-sin-fondo.png" width={1254} height={1254} priority alt="" />
       <div className="hero-copy">
         <p className="eyebrow">Baloncesto federado andaluz</p>
         <h1>Tu liga.<br />Tu quinteto.</h1>

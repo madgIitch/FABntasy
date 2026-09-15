@@ -14,7 +14,9 @@ Feature: **sprint-27-social-league-experience · Sprint 27 - Social League Exper
 - Vista Miembros con estadísticas publicadas y presencia anónima efímera.
 - API Head-to-Head, reglas deterministas de rivalidad, campeón de jornada auditable y seguimiento básico de jugadores.
 - Tarjeta SVG descargable para eventos autorizados.
+- Actividad adaptada a la referencia visual aprobada: lista editorial mobile-first, resumen de movimiento, avatares, importes jerarquizados, reacciones compactas y clausulazos en verde suave.
 - Todos los gates configurados pasan, incluidas 165 pruebas web, E2E, seeds, Python, Ruff, Prisma y diff-scope.
+- El gate completo volvió a pasar tras la adaptación visual; la inspección autenticada local quedó limitada porque el pool de Supabase no estaba accesible desde este entorno.
 
 ## Siguiente acción
 

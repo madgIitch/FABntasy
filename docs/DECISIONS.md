@@ -597,6 +597,10 @@ Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
 
 Contexto: se aprobó el spec `sprint-27-social-league-experience` (Actividad social automática y competitiva dentro de ligas privadas).
 
+### Dirección visual de Liga social
+
+La experiencia adopta una composición mobile-first de lista editorial: superficies claras, divisores ligeros, avatares compactos, cifras competitivas alineadas y un único acento verde suave. Actividad evita mosaicos de tarjetas; los clausulazos usan una superficie destacada, mientras las reacciones permanecen como controles secundarios. Las transiciones de entrada y respuesta duran menos de 300 ms y se desactivan con `prefers-reduced-motion`.
+
 Decisiones registradas:
 
 - **auth_secrets:** Acceso limitado a miembros activos, aislamiento entre ligas y seasons, tarjetas sin concesión de acceso, payloads mínimos y preferencias Push respetadas.

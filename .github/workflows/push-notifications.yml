@@ -24,6 +24,9 @@ jobs:
       - run: corepack pnpm install --frozen-lockfile
       - run: corepack pnpm typecheck && corepack pnpm lint && corepack pnpm test
       - run: corepack pnpm exec prisma validate
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
       - name: Validate production Push preflight with non-secret fixtures
         run: node infrastructure/scripts/validate-push-config.mjs
         env:

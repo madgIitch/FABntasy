@@ -583,3 +583,16 @@ Contexto: se aprobó el spec `sprint-26-push-outbox-railway-worker` (Entrega aut
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-27-social-league-experience -->
+## 2026-09-15 · sprint-27-social-league-experience aprobado
+
+Contexto: se aprobó el spec `sprint-27-social-league-experience` (Actividad social automática y competitiva dentro de ligas privadas).
+
+Decisiones registradas:
+
+- **auth_secrets:** Acceso limitado a miembros activos, aislamiento entre ligas y seasons, tarjetas sin concesión de acceso, payloads mínimos y preferencias Push respetadas.
+- **rollback_compat:** Migraciones aditivas, feature flag, backfill determinista sin Push y conservación de datos sociales al revertir la aplicación.
+- **tests:** Unitarios, integración PostgreSQL/RLS, E2E, concurrencia, carga, accesibilidad y responsive, además de gates del repositorio.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

@@ -29,4 +29,7 @@ jobs:
     if: failure()
     runs-on: ubuntu-latest
     steps:
-      - run: curl --fail --silent --show-error -X POST "${{ secrets.OPERATIONS_ALERT_WEBHOOK }}" -H 'content-type: application/json' --data '{"event":"database_backup_failed","run":"${{ github.run_id }}"}'
+      - run: |
+          curl --fail --silent --show-error -X POST "${{ secrets.OPERATIONS_ALERT_WEBHOOK }}" \
+            -H 'content-type: application/json' \
+            --data '{"event":"database_backup_failed","run":"${{ github.run_id }}"}'

@@ -2451,7 +2451,7 @@
       "id": "sprint-27-social-league-experience",
       "name": "Sprint 27 - Social League Experience",
       "title": "Actividad social automática y competitiva dentro de ligas privadas",
-      "status": "in_progress",
+      "status": "done",
       "sdd": true,
       "priority": "P1",
       "milestone": "1.2.0",

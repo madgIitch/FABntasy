@@ -8,8 +8,9 @@ DECLARE
   sub_a uuid:=gen_random_uuid(); sub_b uuid:=gen_random_uuid();
   affected integer;
 BEGIN
-  INSERT INTO auth.users(id,created_at,updated_at) VALUES
-    (user_a,now(),now()),(user_b,now(),now());
+  INSERT INTO auth.users(id,raw_user_meta_data,created_at,updated_at) VALUES
+    (user_a,jsonb_build_object('username','rls_user_a'),now(),now()),
+    (user_b,jsonb_build_object('username','rls_user_b'),now(),now());
   SELECT id INTO profile_a FROM user_profiles WHERE auth_user_id=user_a;
   SELECT id INTO profile_b FROM user_profiles WHERE auth_user_id=user_b;
   INSERT INTO push_subscriptions(id,user_profile_id,endpoint,p256dh,auth,updated_at) VALUES

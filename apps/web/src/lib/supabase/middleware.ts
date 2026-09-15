@@ -32,6 +32,10 @@ export async function updateSession(request: NextRequest) {
     return secure(limited);
   }
   let response = NextResponse.next({ request });
+  const privateRoute = request.nextUrl.pathname === "/app" || request.nextUrl.pathname.startsWith("/app/");
+  // Public, anonymous assets and pages do not need an auth round-trip. Besides
+  // reducing latency, this keeps public PWA contract tests independent of Supabase.
+  if (!privateRoute && !sessionCookie) return secure(response);
   const { url, publishableKey } = getSupabaseEnv();
   const supabase = createServerClient(url, publishableKey, { cookies: {
     getAll: () => request.cookies.getAll(),
@@ -42,7 +46,6 @@ export async function updateSession(request: NextRequest) {
     },
   } });
   const { data: { user } } = await supabase.auth.getUser();
-  const privateRoute = request.nextUrl.pathname === "/app" || request.nextUrl.pathname.startsWith("/app/");
   if (privateRoute && !user) {
     const loginUrl = request.nextUrl.clone(); loginUrl.pathname = "/login"; loginUrl.search = "";
     return secure(NextResponse.redirect(loginUrl));

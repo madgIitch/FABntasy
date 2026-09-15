@@ -23,7 +23,7 @@ export default defineConfig({
   ],
   webServer: process.env.E2E_BASE_URL ? undefined : {
     command: "corepack pnpm dev",
-    url: "http://127.0.0.1:3000",
+    url: "http://127.0.0.1:3000/manifest.webmanifest",
     reuseExistingServer: true,
   },
 });

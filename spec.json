@@ -2553,7 +2553,7 @@
       "title": "Perfil fantasy completo, palmarés visual y acceso a rivalidades",
       "status": "spec_ready",
       "sdd": true,
-      "spec_approved": false,
+      "spec_approved": true,
       "priority": "P2",
       "milestone": "1.3.0",
       "dependencies": [
@@ -2680,7 +2680,10 @@
         "progress/**",
         ".harness/**",
         "spec.json"
-      ]
+      ],
+      "answers_hash": "sha256:f89d75780ba65e63142c328672bb3bf28dd73180d19f43bc2d29f220616d0ee1",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-15T12:44:18.348Z"
     }
   ]
 }

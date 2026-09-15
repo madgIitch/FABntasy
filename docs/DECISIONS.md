@@ -608,3 +608,16 @@ Decisiones registradas:
 - **tests:** Unitarios, integración PostgreSQL/RLS, E2E, concurrencia, carga, accesibilidad y responsive, además de gates del repositorio.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-28-manager-profile-rivalries -->
+## 2026-09-15 · sprint-28-manager-profile-rivalries aprobado
+
+Contexto: se aprobó el spec `sprint-28-manager-profile-rivalries` (Perfil fantasy completo, palmarés visual y acceso a rivalidades).
+
+Decisiones registradas:
+
+- **auth_secrets:** El actor procede de Supabase Auth; perfil, premios y comparativas exigen membresía ACTIVE en la misma liga mediante servidor y RLS. La tarjeta excluye correo, UUID, secretos, presencia y cualquier dato que conceda acceso. La expulsión revoca el acceso inmediatamente y se representa como 404 RESOURCE_NOT_FOUND.
+- **rollback_compat:** La entrega es estrictamente aditiva y compatible con Sprint 27, sin backfill bloqueante. Los premios antiguos incompletos se presentan como Histórico anterior, con los campos disponibles y UNAVAILABLE en los ausentes. Un flag server-side desactiva las rutas y entradas nuevas; el rollback conserva filas, premios y revisiones y mantiene operativas las superficies anteriores.
+- **tests:** La matriz bloqueante define fixtures PostgreSQL con dos ligas aisladas, miembros activos, expulsado, perfil propio, variantes de avatar, empate, hueco, jornada sin score, corrección supersedida y paginación bajo inserción concurrente. Unit cubre agregados y racha; integración cubre servicio y RLS; E2E Chromium cubre los cinco anchos, teclado, semántica accesible y los tres caminos de compartición con stubs deterministas.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

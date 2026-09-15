@@ -889,3 +889,38 @@ Convertir cada liga privada en un grupo social vivo mediante acontecimientos ver
 - **edge_cases:** Concurrencia, duplicados, empates, correcciones, eventos fuera de orden, backfill, nombres largos, importes grandes y periodos no comparables cubiertos.
 - **ui_states:** Liga contiene Clasificación, Actividad y Miembros; hitos destacados, feed continuo, perfiles, Head-to-Head, directo, seguimientos y tarjetas accesibles desde 320 px.
 
+<!-- harness:sprint-28-manager-profile-rivalries -->
+## sprint-28-manager-profile-rivalries · Perfil fantasy completo, palmarés visual y acceso a rivalidades
+
+Completar el perfil social de cada manager dentro de una liga privada siguiendo la referencia visual, con identidad real, palmarés verificable, siete iconos aportados por producto, histórico y acceso contextual a comparativas y rivalidades.
+
+### Scope aprobado
+
+  - `apps/web/app/app/ligas/**`
+  - `apps/web/app/api/leagues/**`
+  - `apps/web/src/components/**`
+  - `apps/web/src/server/**`
+  - `apps/web/public/**`
+  - `packages/domain/**`
+  - `prisma/schema.prisma`
+  - `prisma/migrations/**`
+  - `supabase/**`
+  - `tests/**`
+  - `docs/PRIVATE_LEAGUES.md`
+  - `docs/SECURITY_PRIVACY.md`
+  - `docs/ACCESSIBILITY_AND_LOCALE.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/CONVENTIONS.md`
+  - `docs/DECISIONS.md`
+  - `spec/**`
+  - `progress/**`
+  - `.harness/**`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** El perfil, histórico y racha se calculan bajo demanda desde FantasyRoundScore publicado y LeagueAchievementAward. La revisión vigente es la no supersedida de mayor revision para liga, temporada, jornada y equipo; las revisiones anteriores permanecen inmutables y enlazadas mediante supersedesId o el mecanismo vigente equivalente. No se añaden snapshots salvo que un gate de rendimiento lo justifique.
+- **external_contracts:** La tarjeta implementa manager-profile-share.v1 con una allowlist explícita. Se genera como PNG 1200x630 image/png, con nombre canastio-perfil-<slug-publico>.png, sin IDs ni URL de liga. El orden de fallback es Web Share con archivo cuando canShare lo admita, descarga PNG y copia de un resumen textual saneado.
+- **edge_cases:** La racha v1 cuenta jornadas publicadas consecutivas en las que el equipo termina como líder único o colíder. Un empate en el máximo cuenta como victoria compartida; una puntuación inferior, ausencia de score o hueco en la secuencia corta la racha. Nunca cruza temporadas y las correcciones retroactivas recalculan la secuencia usando exclusivamente revisiones vigentes.
+- **ui_states:** La URL canónica es /app/ligas/{leagueId}/managers/{publicManagerId}. El retorno usa returnTo restringido a rutas relativas allowlisted de la misma liga y un token local no sensible para restaurar pestaña, filtros, cursor, scroll y foco. Si falta, caduca o es inválido, la navegación vuelve a /app/ligas/{leagueId}?tab=members. Nunca se aceptan destinos absolutos aportados por el cliente.
+

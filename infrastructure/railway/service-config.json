@@ -8,6 +8,15 @@
   "startCommand": "python -m fab_ingestor run-production",
   "restart": { "policy": "on-failure", "maxRetries": 5 },
   "scaleToZero": false,
+  "pushOutbox": {
+    "wakePath": "/internal/push/wake",
+    "startupSweep": true,
+    "sweepSeconds": 60,
+    "batchSize": 50,
+    "claimStrategy": "FOR UPDATE SKIP LOCKED",
+    "requiredEnvironment": ["DATABASE_URL", "CANASTIO_PUSH_DISPATCH_URL", "CANASTIO_PUSH_JOB_SECRET", "CANASTIO_PUSH_WAKE_SECRET"],
+    "forbiddenEnvironment": ["VAPID_PRIVATE_KEY", "VAPID_SUBJECT", "NEXT_PUBLIC_VAPID_PUBLIC_KEY"]
+  },
   "volume": { "mountPath": "/var/lib/canastio", "sizeGiB": 1 },
   "alerts": ["heartbeat-stale", "backlog-10m", "job-failed", "scheduled-cycle-failed", "cost-usd-7"]
 }

@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { calculateRoundScore, rankTeams, type PlayerScoreStatus } from "../../../../packages/domain/round-scoring";
 import { db } from "./db";
 import { cached, cacheTags, invalidateCache, measured, privateCacheKey } from "./performance";
+import { enqueuePushEvent, wakePushWorker } from "./push-outbox";
 
 export const ROUND_RANKING_SCHEMA_VERSION = "fantasy-round-ranking-api.v1";
 export class RoundRankingError extends Error { constructor(public code: string, public status = 409) { super(code); } }
@@ -32,10 +33,13 @@ export async function recomputeRoundRankings(competitionSeasonId: string, roundN
       if (existing) { if (status === "PUBLISHED") published++; else provisional++; continue; }
       const current = await tx.fantasyRoundScore.findFirst({ where: { fantasyTeamId: lineup.fantasyTeamId, roundNumber, supersededAt: null }, orderBy: { revision: "desc" } });
       if (current) await tx.fantasyRoundScore.update({ where: { id: current.id }, data: { supersededAt: now } });
-      await tx.fantasyRoundScore.create({ data: { fantasyTeamId: lineup.fantasyTeamId, leagueId: lineup.fantasyTeam.leagueId,
+      const roundScore = await tx.fantasyRoundScore.create({ data: { fantasyTeamId: lineup.fantasyTeamId, leagueId: lineup.fantasyTeam.leagueId,
         competitionSeasonId, roundNumber, revision: (current?.revision ?? 0) + 1, lineupId: lineup.id, ruleSetId: ruleSet.id,
         inputRevision: calculation.inputRevision, status, points: status === "PUBLISHED" ? calculation.points : null,
         publishedAt: status === "PUBLISHED" ? now : null, breakdown: { starters: calculation.contributions } as unknown as Prisma.InputJsonValue } });
+      if (status === "PUBLISHED") await enqueuePushEvent(tx,{userProfileId:lineup.fantasyTeam.userProfileId,leagueId:lineup.fantasyTeam.leagueId,
+        intent:"ROUND_RESULT",eventKey:`round-result:${lineup.fantasyTeam.leagueId}:${roundNumber}:${roundScore.revision}:${lineup.fantasyTeamId}`,
+        title:"Resultado de jornada",body:`Tu resultado de la jornada ${roundNumber} ya está disponible.`,destination:"/app/jornada"});
       if (status === "PUBLISHED") published++; else provisional++;
     }
     await rebuildTotals(tx, competitionSeasonId);
@@ -44,7 +48,7 @@ export async function recomputeRoundRankings(competitionSeasonId: string, roundN
     isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
     maxWait: 10_000,
     timeout: 30_000,
-  })).then(({ affectedLeagueIds, ...result }) => { for (const leagueId of affectedLeagueIds) invalidateCache(cacheTags({ leagueId, roundNumber })); invalidateCache(cacheTags({ leagueId: competitionSeasonId, roundNumber })); return result; });
+  })).then(({ affectedLeagueIds, ...result }) => { for (const leagueId of affectedLeagueIds) invalidateCache(cacheTags({ leagueId, roundNumber })); invalidateCache(cacheTags({ leagueId: competitionSeasonId, roundNumber })); if(result.published)void wakePushWorker(); return result; });
 }
 
 type Tx = Prisma.TransactionClient;

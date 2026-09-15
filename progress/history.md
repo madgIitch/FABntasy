@@ -47,3 +47,5 @@
 
 ## 2026-09-15T00:14:18.423Z — #sprint-25-production-push-notifications Sprint 25 - Production Push Notifications → review_pending
 - 1 intento(s) · agente codex
+## 2026-09-15T02:50:00.000Z — #sprint-26-push-outbox-railway-worker Sprint 26 - Push Outbox Railway Worker → review_pending
+- 1 intento · outbox transaccional, worker Railway y wake-up autenticado; gates aprobados.

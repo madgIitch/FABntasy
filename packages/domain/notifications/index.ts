@@ -24,6 +24,8 @@ export function safeNotificationDestination(value: unknown): string {
 
 export const PUSH_MAX_ATTEMPTS = 3;
 export const PUSH_RETRY_DELAYS_MS = [60_000, 300_000, 900_000] as const;
+export const PUSH_OUTBOX_SWEEP_MS = 60_000;
+export const PUSH_OUTBOX_BATCH_SIZE = 50;
 export const PUSH_CLAIM_LEASE_MS = 300_000;
 export const PUSH_MAX_RETRY_AFTER_MS = 900_000;
 
@@ -58,3 +60,12 @@ export function roundResultEventId(leagueId: string, roundNumber: number, revisi
   if (!published) return null;
   return `round-result:${leagueId}:round:${roundNumber}:revision:${revision}`;
 }
+
+export type PushOutboxPayload = {
+  userProfileId: string;
+  leagueId?: string;
+  intent: NotificationIntent;
+  title: string;
+  body: string;
+  destination?: string;
+};

@@ -10,6 +10,14 @@ una decisión de arquitectura relevante durante implementación.
 
 <!-- Nuevas entradas debajo -->
 
+## 2026-09-15 · Outbox transaccional y wake-up no autoritativo
+
+Contexto: la entrega Push automática debe sobrevivir a caídas de red, reinicios y despliegues sin acoplar las transacciones de negocio a Railway.
+
+Decisión: los productores persisten un evento mínimo e idempotente dentro de su transacción; Railway reclama con `FOR UPDATE SKIP LOCKED`. El webhook autenticado solo despierta al worker y el barrido durable de arranque/60 segundos es la garantía de recuperación. Los secretos de wake y dispatch son distintos y VAPID queda en Vercel.
+
+Consecuencia: fallar al despertar no revierte negocio ni pierde eventos, dos workers pueden coexistir con exclusión por fila y el rollback conserva backlog compatible.
+
 ## 2026-09-14 · Scope de dependencias de Sprint 23
 
 Contexto: la auditoría de la release candidate detectó vulnerabilidades HIGH transitivas en PostCSS y deepmerge-ts, pero los manifests y el lockfile no estaban incluidos en el scope inicial.

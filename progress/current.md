@@ -1,6 +1,6 @@
 # Sesión actual
 
-Feature: **sprint-25-production-push-notifications · Sprint 25 - Production Push Notifications** — estado: `review_pending`.
+Feature: **sprint-26-push-outbox-railway-worker · Sprint 26 - Push Outbox Railway Worker** — estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,10 +8,10 @@ Feature: **sprint-25-production-push-notifications · Sprint 25 - Production Pus
 
 ## Siguiente acción
 
-- Revisar el diff del commit `feat(Sprint 25 - Production Push Notifications)` y cerrar con `node .harness/spec.mjs done sprint-25-production-push-notifications` (o `git revert` para descartarlo).
+- Desplegar la migración, configurar Railway/Vercel y completar el smoke test humano antes de cerrar con `node .harness/spec.mjs done sprint-26-push-outbox-railway-worker`.
 
 ## Último resultado
 
 | intento | resultado | gate fallido | tts(s) | coste |
 |--:|--|--|--:|--:|
-| 1 | OK | — | 1156.2 | — |
+| 1 | OK | — | — | — |

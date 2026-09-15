@@ -24,6 +24,7 @@ model UserProfile {
   pushSubscriptions       PushSubscription[]
   notificationPreferences NotificationPreference[]
   notificationDeliveries  NotificationDelivery[]
+  pushOutboxEvents        PushOutboxEvent[]
   adminGrants             AdminGrant[]             @relation("AdminGrantProfile")
   grantedAdminGrants      AdminGrant[]             @relation("AdminGrantGrantedBy")
   ingestionJobsRequested  IngestionJob[]
@@ -109,6 +110,25 @@ model NotificationDelivery {
   @@index([userProfileId, status, createdAt])
   @@index([status, nextAttemptAt, claimedAt])
   @@map("notification_deliveries")
+}
+
+model PushOutboxEvent {
+  id            String      @id @default(uuid()) @db.Uuid
+  userProfileId String      @map("user_profile_id") @db.Uuid
+  eventKey      String      @unique @map("event_key") @db.VarChar(191)
+  payload       Json
+  status        String      @default("PENDING") @db.VarChar(24)
+  attemptCount  Int         @default(0) @map("attempt_count")
+  nextAttemptAt DateTime    @default(now()) @map("next_attempt_at") @db.Timestamptz(3)
+  claimedAt     DateTime?   @map("claimed_at") @db.Timestamptz(3)
+  lastErrorCode String?     @map("last_error_code") @db.VarChar(64)
+  deliveredAt  DateTime?   @map("delivered_at") @db.Timestamptz(3)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+  userProfile   UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+
+  @@index([status, nextAttemptAt, claimedAt])
+  @@map("push_outbox_events")
 }
 
 model Federation {

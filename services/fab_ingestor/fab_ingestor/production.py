@@ -22,7 +22,10 @@ def _spawn(command: str) -> subprocess.Popen[bytes]:
 
 def run_production() -> None:
     """Run exactly one scheduler and worker; propagate TERM and cap restarts."""
-    children = [Child(command, _spawn(command)) for command in ("run-scheduler", "run-admin-worker")]
+    commands = ["run-scheduler", "run-admin-worker"]
+    if os.getenv("CANASTIO_PUSH_DISPATCH_URL"):
+        commands.append("run-push-worker")
+    children = [Child(command, _spawn(command)) for command in commands]
     stopping = False
 
     def stop(signum: int, _frame: object) -> None:

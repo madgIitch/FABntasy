@@ -2,6 +2,7 @@ import { Prisma, type PrismaClient } from "@prisma/client";
 import { COLD_START_RULES, FantasyTeamRuleError, isCutoffClosed, validateLineup, validateRoster } from "../../../../packages/domain/fantasy-team";
 import { createLeagueCode } from "../../../../packages/domain/private-league";
 import { db } from "./db";
+import { enqueuePushEvent, wakePushWorker } from "./push-outbox";
 import { cacheTags, invalidateCache } from "./performance";
 
 type Client = PrismaClient | Prisma.TransactionClient;
@@ -166,11 +167,15 @@ export async function putLineup(actor: TeamActor, competitionSeasonId: string, r
         return { fantasyLineupId: lineup.id, playerRegistrationId: id, role, ordinal, playerIdSnapshot: player.id, displayNameSnapshot: player.displayName,
           realTeamIdSnapshot: realTeam.id, realTeamNameSnapshot: realTeam.name, acquisitionPrice: slot.acquisitionPrice };
       }) });
+      await enqueuePushEvent(tx, { userProfileId: owner, leagueId: team.leagueId, intent: "TEAM_LINEUP",
+        eventKey: `lineup:${lineup.id}:revision:${lineup.revision}`, title: "Alineación guardada",
+        body: `Tu alineación para la jornada ${roundNumber} está preparada.`, destination: "/app/mi-equipo" });
       await tx.fantasyTeam.update({ where: { id: team.id, version: input.expectedVersion }, data: { version: { increment: 1 } } });
       return serializeTeam(tx, team.id, roundNumber);
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
     const changedTeam = await db.fantasyTeam.findUnique({ where: { id: result.teamId }, select: { leagueId: true } });
     if (changedTeam) invalidateCache(cacheTags({ leagueId: changedTeam.leagueId, roundNumber }));
+    void wakePushWorker();
     return result;
   } catch (error) { mapPrisma(error); }
 }

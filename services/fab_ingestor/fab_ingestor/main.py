@@ -19,6 +19,7 @@ from .orchestrator import (
     parse_journey_windows,
 )
 from .production import run_production
+from .push_outbox import run_push_worker
 from .repository import SportsRepository
 from .schedule import sync_competition_games
 
@@ -42,6 +43,7 @@ def main() -> None:
             "run-scheduler",
             "run-admin-worker",
             "run-production",
+            "run-push-worker",
             "grant-ingestion-admin",
         ),
         default="status",
@@ -63,6 +65,9 @@ def main() -> None:
     settings = Settings.from_env()
     if args.command == "run-production":
         run_production()
+        return
+    if args.command == "run-push-worker":
+        run_push_worker()
         return
     store = FileCredentialStore(settings.credentials_file)
     if settings.mode == "live":

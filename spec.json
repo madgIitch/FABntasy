@@ -2407,7 +2407,7 @@
       "id": "sprint-26-push-outbox-railway-worker",
       "name": "Sprint 26 - Push Outbox Railway Worker",
       "title": "Entrega automática de notificaciones mediante outbox y Railway",
-      "status": "spec_ready",
+      "status": "review_pending",
       "sdd": false,
       "priority": "P1",
       "milestone": "1.1.0",

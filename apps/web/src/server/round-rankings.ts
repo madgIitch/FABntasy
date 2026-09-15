@@ -4,7 +4,6 @@ import { db } from "./db";
 import { cached, cacheTags, invalidateCache, measured, privateCacheKey } from "./performance";
 import { enqueuePushEvent, wakePushWorker } from "./push-outbox";
 import { appendLeagueEvent } from "./social-league";
-import { SOCIAL_RULES_VERSION } from "../../../../packages/domain/social-league";
 
 export const ROUND_RANKING_SCHEMA_VERSION = "fantasy-round-ranking-api.v1";
 export class RoundRankingError extends Error { constructor(public code: string, public status = 409) { super(code); } }
@@ -55,7 +54,21 @@ export async function recomputeRoundRankings(competitionSeasonId: string, roundN
   })).then(({ affectedLeagueIds, ...result }) => { for (const leagueId of affectedLeagueIds) invalidateCache(cacheTags({ leagueId, roundNumber })); invalidateCache(cacheTags({ leagueId: competitionSeasonId, roundNumber })); if(result.published)void wakePushWorker(); return result; });
 }
 
-async function publishSocialRound(tx:Prisma.TransactionClient,leagueId:string,roundNumber:number){const scores=await tx.fantasyRoundScore.findMany({where:{leagueId,roundNumber,status:"PUBLISHED",supersededAt:null},include:{fantasyTeam:{include:{userProfile:true}}},orderBy:[{points:"desc"},{fantasyTeamId:"asc"}]});if(!scores.length)return;const revision=Math.max(...scores.map(score=>score.revision));await appendLeagueEvent(tx,{leagueId,type:"ROUND_PUBLISHED",sourceType:"ROUND_REVISION",sourceId:`${roundNumber}:${revision}`,payload:{affectedName:`Jornada ${roundNumber}`,revision,destination:`/app/ligas/${leagueId}`}});const best=Number(scores[0].points);const winners=scores.filter(score=>Number(score.points)===best);await tx.leagueAchievementAward.updateMany({where:{leagueId,achievementType:"ROUND_CHAMPION",roundNumber,status:"ACTIVE",revision:{lt:revision}},data:{status:"REVOKED",revokedAt:new Date()}});for(const winner of winners){const name=winner.fantasyTeam.userProfile.username?`@${winner.fantasyTeam.userProfile.username}`:winner.fantasyTeam.userProfile.displayName??winner.fantasyTeam.name;const award=await tx.leagueAchievementAward.upsert({where:{leagueId_achievementType_userProfileId_roundNumber_revision:{leagueId,achievementType:"ROUND_CHAMPION",userProfileId:winner.fantasyTeam.userProfileId,roundNumber,revision}},create:{leagueId,userProfileId:winner.fantasyTeam.userProfileId,achievementType:"ROUND_CHAMPION",ruleVersion:SOCIAL_RULES_VERSION,roundNumber,revision,inputs:{score:best,tie:winners.length>1,scoreIds:winners.map(item=>item.id)}},update:{status:"ACTIVE",revokedAt:null}});await appendLeagueEvent(tx,{leagueId,type:"ROUND_WINNER",actorProfileId:winner.fantasyTeam.userProfileId,sourceType:"ROUND_AWARD",sourceId:award.id,payload:{affectedName:name,magnitude:best,unit:"points",revision,destination:`/app/ligas/${leagueId}`}});await appendLeagueEvent(tx,{leagueId,type:"ACHIEVEMENT_EARNED",actorProfileId:winner.fantasyTeam.userProfileId,sourceType:"ACHIEVEMENT_AWARD",sourceId:award.id,payload:{affectedName:"Campeón de jornada",revision,destination:`/app/ligas/${leagueId}?tab=members`}});}}
+async function publishSocialRound(tx:Prisma.TransactionClient,leagueId:string,roundNumber:number){
+  const scores=await tx.fantasyRoundScore.findMany({where:{leagueId,roundNumber,status:"PUBLISHED",supersededAt:null},include:{fantasyTeam:{include:{userProfile:true}}},orderBy:[{points:"desc"},{fantasyTeamId:"asc"}]});
+  if(!scores.length)return;
+  const revision=Math.max(...scores.map(score=>score.revision));
+  await appendLeagueEvent(tx,{leagueId,type:"ROUND_PUBLISHED",sourceType:"ROUND_REVISION",sourceId:`${roundNumber}:${revision}`,payload:{affectedName:`Jornada ${roundNumber}`,revision,destination:`/app/ligas/${leagueId}`}});
+  const best=Number(scores[0].points),worst=Number(scores.at(-1)!.points);
+  const groups=[{type:"ROUND_MVP",label:"MVP de jornada",value:best,recipients:scores.filter(score=>Number(score.points)===best)},{type:"ROUND_LAST_PLACE",label:"Último de la jornada",value:worst,recipients:scores.filter(score=>Number(score.points)===worst)}];
+  for(const group of groups){
+    await tx.leagueAchievementAward.updateMany({where:{leagueId,achievementType:group.type,roundNumber,status:"ACTIVE",revision:{lt:revision}},data:{status:"REVOKED",revokedAt:new Date()}});
+    for(const recipient of group.recipients){
+      const award=await tx.leagueAchievementAward.upsert({where:{leagueId_achievementType_userProfileId_roundNumber_revision:{leagueId,achievementType:group.type,userProfileId:recipient.fantasyTeam.userProfileId,roundNumber,revision}},create:{leagueId,userProfileId:recipient.fantasyTeam.userProfileId,achievementType:group.type,ruleVersion:"trophy-icons.v1",roundNumber,revision,inputs:{score:group.value,tie:group.recipients.length>1,scoreIds:group.recipients.map(item=>item.id)}},update:{status:"ACTIVE",revokedAt:null}});
+      await appendLeagueEvent(tx,{leagueId,type:group.type==="ROUND_MVP"?"ROUND_WINNER":"ACHIEVEMENT_EARNED",actorProfileId:recipient.fantasyTeam.userProfileId,sourceType:"ACHIEVEMENT_AWARD",sourceId:award.id,payload:{affectedName:group.label,magnitude:group.value,unit:"points",revision,destination:`/app/ligas/${leagueId}?tab=members`}});
+    }
+  }
+}
 
 type Tx = Prisma.TransactionClient;
 async function rebuildTotals(tx: Tx, competitionSeasonId: string) {

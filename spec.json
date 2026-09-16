@@ -2755,6 +2755,71 @@
       "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
       "approved_by": "peorr",
       "approved_at": "2026-09-16T15:45:35.690Z"
+    },
+    {
+      "id": "sprint-30-railway-immediate-startup-sync",
+      "name": "Sprint 30 - Railway Immediate Startup Sync",
+      "title": "Sincronización inmediata tras desplegar en Railway",
+      "status": "spec_ready",
+      "sdd": true,
+      "spec_approved": false,
+      "priority": "P1",
+      "milestone": "1.3.2",
+      "dependencies": [
+        "sprint-29-monitored-competition-team-index"
+      ],
+      "description": "Formalizar y verificar que cada arranque del servicio productivo de Railway ejecuta inmediatamente un ciclo completo de ingesta antes de entrar en la espera periódica, sin crear un segundo scheduler ni saltarse las protecciones de idempotencia y exclusión existentes.",
+      "objective": "Conseguir que un deploy o reinicio de Railway refresque cuanto antes las competiciones monitorizadas y sus equipos, jugadores, calendarios y estadísticas, manteniendo después la cadencia normal del scheduler.",
+      "user_stories": [
+        {
+          "id": "HU30.1",
+          "story": "Como operador quiero que el ingestor lance una sincronización nada más arrancar una release de Railway para no esperar hasta el siguiente intervalo programado."
+        },
+        {
+          "id": "HU30.2",
+          "story": "Como operador quiero identificar en los runs y logs el ciclo de arranque y conocer su resultado sin que un redeploy duplique datos ni ejecute dos schedulers."
+        }
+      ],
+      "tasks": [
+        "Convertir la ejecución inmediata ya presente en Scheduler.run en un contrato explícito y probado de producción.",
+        "Añadir cobertura del camino run-production → run-scheduler → primer sync-all antes de cualquier espera periódica.",
+        "Etiquetar de forma segura el ciclo de arranque en observabilidad, sin almacenar secretos ni identificadores sensibles de Railway.",
+        "Documentar la semántica de deploy y restart, el cálculo del siguiente intervalo y la convivencia con advisory locks.",
+        "Actualizar el runbook de Railway con verificación y diagnóstico del primer ciclo tras desplegar.",
+        "Cubrir fallo inicial, SIGTERM durante el ciclo, reinicio del hijo y solapamiento accidental mediante tests deterministas."
+      ],
+      "deliverable": "El arranque productivo en Railway garantiza y deja evidencia de un sync-all inmediato y, al terminar, continúa con la cadencia normal usando un único scheduler protegido contra duplicados.",
+      "acceptance": [
+        "El comando productivo de Railway continúa siendo `python -m fab_ingestor run-production` y levanta exactamente un proceso `run-scheduler`; no se añade un cron, release command ni segundo servicio que pueda duplicar el ciclo.",
+        "Cada arranque del proceso scheduler, incluido deploy, restart manual o recuperación supervisada, invoca una vez `sync_all` antes de realizar la primera espera; la garantía es por arranque de proceso y no exactamente una vez por deployment de Railway.",
+        "El ciclo inmediato reutiliza el flujo normal de `sync_all`: actualiza las competiciones monitorizadas y solo ejecuta el barrido global de catálogo cuando la política de frescura vigente lo considera debido; no fuerza tráfico FAB adicional en cada deploy.",
+        "El siguiente intervalo se calcula desde el comienzo del ciclo inmediato igual que en los ciclos periódicos; si el trabajo dura más que el intervalo, el siguiente ciclo puede comenzar sin una espera negativa.",
+        "Los advisory locks y UPSERT idempotentes existentes siguen siendo obligatorios, de modo que un solapamiento temporal por restart o despliegue no duplica competiciones, equipos, jugadores, partidos, estadísticas ni resultados fantasy.",
+        "El ciclo de arranque genera evidencia observable con trigger `STARTUP` o equivalente estable, timestamps, estado y contadores seguros; no expone variables, credenciales FAB, DATABASE_URL, secretos, cabeceras ni payloads RAW.",
+        "Un fallo recuperable del primer ciclo se registra con su código seguro y respeta backoff/circuit breaker; no provoca un bucle agresivo de peticiones ni elimina datos sincronizados previamente.",
+        "SIGTERM durante el ciclo inmediato propaga la cancelación y permite el cierre dentro de la gracia configurada, dejando un run diagnosticable y sin reclamar trabajo nuevo.",
+        "Los tests prueban el orden sync-before-wait, una sola invocación inicial, cadencia posterior, restart del hijo, fallo inicial, cancelación y exclusión concurrente; no requieren Railway ni llamadas reales a FAB.",
+        "La documentación de despliegue incluye cómo verificar el run inicial tras un deploy y cómo distinguir un ciclo correcto, fallido, omitido por lock o cancelado.",
+        "Los gates Python, lint, tests, Prisma validate y diff-scope aplicables terminan con código cero y se preservan los contratos de Sprints 22B, 22C y 29."
+      ],
+      "scope": [
+        "services/fab_ingestor/fab_ingestor/orchestrator.py",
+        "services/fab_ingestor/fab_ingestor/production.py",
+        "services/fab_ingestor/fab_ingestor/main.py",
+        "services/fab_ingestor/tests/**",
+        "infrastructure/railway/**",
+        "docs/operations/INGESTOR_PRODUCTION_DEPLOYMENT_SPEC.md",
+        "docs/operations/RAILWAY_RUNBOOK.md",
+        "docs/ARCHITECTURE.md",
+        "docs/DECISIONS.md",
+        "spec/**",
+        "progress/**",
+        ".harness/**",
+        "spec.json"
+      ],
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-09-16T16:30:00.000Z",
+      "manual_spec_ready_reason": "El comportamiento existente y la topología Railway permiten fijar el contrato sin decisiones funcionales pendientes."
     }
   ]
 }

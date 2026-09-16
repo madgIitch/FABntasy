@@ -621,3 +621,16 @@ Decisiones registradas:
 - **tests:** La matriz bloqueante define fixtures PostgreSQL con dos ligas aisladas, miembros activos, expulsado, perfil propio, variantes de avatar, empate, hueco, jornada sin score, corrección supersedida y paginación bajo inserción concurrente. Unit cubre agregados y racha; integración cubre servicio y RLS; E2E Chromium cubre los cinco anchos, teclado, semántica accesible y los tres caminos de compartición con stubs deterministas.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-29-monitored-competition-team-index -->
+## 2026-09-16 · sprint-29-monitored-competition-team-index aprobado
+
+Contexto: se aprobó el spec `sprint-29-monitored-competition-team-index` (Índice de equipos y jugadores en competiciones monitorizadas).
+
+Decisiones registradas:
+
+- **auth_secrets:** La lectura exige INGESTION_ADMIN, conserva el 404 y excluye RAW, secretos, errores internos y datos personales.
+- **rollback_compat:** Cualquier cambio persistente es aditivo y la UI puede desactivarse sin borrar datos ni alterar las tarjetas previas.
+- **tests:** Se requieren pruebas unitarias, PostgreSQL, autorización, N+1, teclado, estados de cobertura y anchos de 320 a 1440 px.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

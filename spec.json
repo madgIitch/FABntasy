@@ -2760,7 +2760,7 @@
       "id": "sprint-30-railway-immediate-startup-sync",
       "name": "Sprint 30 - Railway Immediate Startup Sync",
       "title": "Sincronización inmediata tras desplegar en Railway",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "spec_approved": true,
       "priority": "P1",

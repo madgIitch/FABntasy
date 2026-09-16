@@ -7,7 +7,7 @@ from dataclasses import asdict, dataclass
 from datetime import datetime
 from datetime import time as wall_time
 from threading import Event
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
@@ -106,7 +106,13 @@ class IngestionOrchestrator:
         self.fantasy_lifecycle = fantasy_lifecycle
         self.observability = observability or Observability(enabled=False)
 
-    def sync_all(self, *, force_stats: bool = False, stop_event: Event | None = None) -> OrchestratorSummary:
+    def sync_all(
+        self,
+        *,
+        force_stats: bool = False,
+        stop_event: Event | None = None,
+        trigger: Literal["manual", "startup", "scheduled"] = "manual",
+    ) -> OrchestratorSummary:
         summary = OrchestratorSummary()
         catalog_scan_due = getattr(self.repository, "catalog_scan_due", lambda: False)
         if catalog_scan_due():
@@ -124,7 +130,9 @@ class IngestionOrchestrator:
         for competition_season_id, category_id in self.repository.list_selected_competitions():
             if stop_event is not None and stop_event.is_set():
                 break
-            run_id = self.repository.start_ingestion_run("sync_all", competition_season_id)
+            run_id = self.repository.start_ingestion_run(
+                f"sync_all_{trigger}", competition_season_id
+            )
             with self.repository.advisory_lock("sync_all", competition_season_id) as acquired:
                 if not acquired:
                     self.repository.finish_ingestion_run(run_id, status="skipped_locked")
@@ -260,9 +268,11 @@ class Scheduler:
         return self.active_seconds if active else 60 * self.idle_minutes
 
     def run(self, stop_event: Event) -> None:
+        trigger: Literal["startup", "scheduled"] = "startup"
         while not stop_event.is_set():
             cycle_started = self.monotonic()
-            self.orchestrator.sync_all(stop_event=stop_event)
+            self.orchestrator.sync_all(stop_event=stop_event, trigger=trigger)
+            trigger = "scheduled"
             elapsed = self.monotonic() - cycle_started
             stop_event.wait(max(0, self.interval_seconds() - elapsed))
 

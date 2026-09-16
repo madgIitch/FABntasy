@@ -15,6 +15,7 @@ Debe completarse después de observabilidad y antes de la release candidate. La 
 - Imagen base en `services/fab_ingestor/Dockerfile`.
 - CLI `python -m fab_ingestor` con `sync-all`, `run-scheduler`, `run-admin-worker`, `register-device`, `probe-auth` y `grant-ingestion-admin`.
 - Scheduler con intervalos de 60–180 minutos en reposo y 30–900 segundos en ventana de jornada, usando `Europe/Madrid`.
+- El scheduler ejecuta `sync_all` inmediatamente al arrancar y después conserva esos intervalos periódicos; los runs distinguen `sync_all_startup`, `sync_all_scheduled` y `sync_all_manual`.
 - Cola administrativa PostgreSQL, claim mediante `FOR UPDATE SKIP LOCKED`, advisory locks, heartbeat y estados persistidos.
 - Reintentos, backoff, circuit breaker y clasificación estable de errores FAB.
 - Renovación automática de identidad FAB y sustitución atómica del fichero de credenciales.

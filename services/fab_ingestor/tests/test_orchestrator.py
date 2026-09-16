@@ -75,6 +75,18 @@ def test_sync_all_runs_each_phase_and_records_only_counters(monkeypatch):
     ]
 
 
+def test_sync_all_records_safe_trigger_in_run_name(monkeypatch):
+    repository = Repository()
+    monkeypatch.setattr("fab_ingestor.orchestrator.sync_competition_teams", lambda *_, **__: {})
+    monkeypatch.setattr("fab_ingestor.orchestrator.sync_competition_games", lambda *_, **__: {})
+    monkeypatch.setattr("fab_ingestor.orchestrator.sync_competition_stats", lambda *_, **__: {})
+
+    IngestionOrchestrator(object(), repository).sync_all(trigger="startup")
+
+    assert repository.runs[0][1] == "sync_all_startup"
+    assert {job for _, job, _ in repository.runs[1:]} == {"competition", "schedule", "stats"}
+
+
 def test_sync_all_advances_fantasy_only_after_successful_stats(monkeypatch):
     repository = Repository()
     calls = []
@@ -207,6 +219,45 @@ def test_scheduler_counts_active_interval_from_cycle_start(monkeypatch):
     monkeypatch.setattr(stopped, "wait", waits.append)
     scheduler.run(stopped)
     assert waits == [18]
+
+
+def test_scheduler_runs_startup_once_then_continues_periodically(monkeypatch):
+    timezone = ZoneInfo("Europe/Madrid")
+    calls = []
+    sync_count = 0
+    clock = iter((100.0, 101.0, 200.0, 201.0))
+
+    class TwoCycleStop:
+        def is_set(self):
+            return sync_count >= 2
+
+        def wait(self, seconds):
+            calls.append(("wait", seconds))
+
+    stop = TwoCycleStop()
+
+    def sync_all(**kwargs):
+        nonlocal sync_count
+        sync_count += 1
+        calls.append(("sync", kwargs["trigger"]))
+
+    scheduler = Scheduler(
+        SimpleNamespace(sync_all=sync_all),
+        idle_minutes=60,
+        active_seconds=30,
+        windows=(),
+        now=lambda: datetime(2026, 9, 16, 12, 0, tzinfo=timezone),
+        monotonic=lambda: next(clock),
+    )
+
+    scheduler.run(stop)  # type: ignore[arg-type]
+
+    assert calls == [
+        ("sync", "startup"),
+        ("wait", 3599.0),
+        ("sync", "scheduled"),
+        ("wait", 3599.0),
+    ]
 
 
 def test_signal_handlers_request_controlled_stop(monkeypatch):

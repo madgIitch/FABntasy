@@ -635,3 +635,12 @@ Decisiones registradas:
 - **team_index_coverage:** El índice no persiste un agregado duplicado: lee el snapshot normalizado vigente y deriva cobertura/frescura de los runs `competition` y `stats`. Un éxito de equipos con más de 24 horas se considera `STALE`; el último fallo prevalece como `FAILED` y conserva filas previas sin convertir ausencia en cero. La agregación de todas las competiciones usa un número constante de consultas.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-30-railway-immediate-startup-sync -->
+## 2026-09-16 · sprint-30-railway-immediate-startup-sync aprobado
+
+Contexto: se aprobó el spec `sprint-30-railway-immediate-startup-sync` (Sincronización inmediata tras desplegar en Railway).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

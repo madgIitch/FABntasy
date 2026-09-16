@@ -956,3 +956,24 @@ Extender las tarjetas de competiciones monitorizadas de Administrar ingesta con 
 - **edge_cases:** Se fijan equipos homónimos, inscripciones multitemporada, aislamiento entre competiciones, orden estable y snapshots parciales o fallidos.
 - **ui_states:** El índice es desplegable y accesible, con carga, vacío, advertencia, error, reintento y comportamiento responsive definidos.
 
+<!-- harness:sprint-30-railway-immediate-startup-sync -->
+## sprint-30-railway-immediate-startup-sync · Sincronización inmediata tras desplegar en Railway
+
+Formalizar y verificar que cada arranque del servicio productivo de Railway ejecuta inmediatamente un ciclo completo de ingesta antes de entrar en la espera periódica, sin crear un segundo scheduler ni saltarse las protecciones de idempotencia y exclusión existentes.
+
+### Scope aprobado
+
+  - `services/fab_ingestor/fab_ingestor/orchestrator.py`
+  - `services/fab_ingestor/fab_ingestor/production.py`
+  - `services/fab_ingestor/fab_ingestor/main.py`
+  - `services/fab_ingestor/tests/**`
+  - `infrastructure/railway/**`
+  - `docs/operations/INGESTOR_PRODUCTION_DEPLOYMENT_SPEC.md`
+  - `docs/operations/RAILWAY_RUNBOOK.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/DECISIONS.md`
+  - `spec/**`
+  - `progress/**`
+  - `.harness/**`
+  - `spec.json`
+

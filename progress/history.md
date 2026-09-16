@@ -1,5 +1,8 @@
 # Historial de sesiones
 
+## 2026-09-16 — #sprint-30-railway-immediate-startup-sync → review_pending
+- Implementación y gates completos en el commit `c31e2c6`; pendiente de smoke test humano en Railway.
+
 ## 2026-09-15T00:00:00.000+02:00 — #sprint-23-release-candidate Sprint 23 - Release Candidate → done
 - Cierre confirmado explícitamente por el responsable del proyecto.
 - Las validaciones operativas reales no ejecutadas permanecen documentadas como riesgo conocido; no se consideran evidencia superada.

@@ -11,6 +11,7 @@ from fab_ingestor.client import (
     FabCancelledError,
     FabClient,
     FabContractError,
+    FabMatchUnavailableError,
     FabResponseError,
     FabTransportError,
     MemoryCredentialStore,
@@ -301,6 +302,22 @@ def test_match_stats_rejects_incomplete_responses(payload):
     )
     with pytest.raises(FabResponseError, match="invalid response"):
         client.get_match_stats("opaque-game")
+
+
+def test_match_stats_classifies_removed_match_without_exposing_payload():
+    payload = {"resultado": "error", "error": "Id no válido"}
+    captured = []
+    client = FabClient(
+        MemoryCredentialStore(Credentials("device", "secret")),
+        transport=lambda *_: response(payload),
+        min_interval=0,
+    )
+
+    with pytest.raises(FabMatchUnavailableError, match="no longer available") as caught:
+        client.get_match_stats("opaque-game", payload_sink=captured.append)
+
+    assert caught.value.code == "MATCH_UNAVAILABLE"
+    assert captured == [payload]
 
 
 @pytest.mark.parametrize(

@@ -225,7 +225,7 @@ model FabCompetitionCatalog {
   lastChangedAt         DateTime                      @default(now()) @map("last_changed_at") @db.Timestamptz(3)
   changes               FabCompetitionCatalogChange[]
 
-  @@index([categoryCompetitionId])
+  @@unique([categoryCompetitionId])
   @@index([monitored, lastCheckedAt])
   @@index([delegationName, competitionName])
   @@map("fab_competition_catalog")

@@ -2823,6 +2823,56 @@
       "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
       "approved_by": "peorr",
       "approved_at": "2026-09-16T16:37:22.840Z"
+    },
+    {
+      "id": "sprint-31-catalog-link-and-retired-games",
+      "name": "Sprint 31 - Catalog Link and Retired Games",
+      "title": "Recuperación de datos monitorizados y partidos retirados",
+      "status": "spec_ready",
+      "sdd": true,
+      "spec_approved": true,
+      "priority": "P0",
+      "milestone": "1.3.3",
+      "dependencies": [
+        "sprint-30-railway-immediate-startup-sync"
+      ],
+      "objective": "Mostrar los equipos ya sincronizados enlazando el catálogo por el ID estable de categoría FAB y evitar que un partido retirado con `Id no válido` bloquee el ciclo completo.",
+      "tasks": [
+        "Enlazar catálogo y CompetitionSeason mediante FAB_CATEGORY_COMPETITION, no mediante el ID opaco de búsqueda.",
+        "Deduplicar filas de catálogo con el mismo category_competition_id conservando monitorización e historial.",
+        "Clasificar de forma segura la respuesta estadística `Id no válido`.",
+        "Continuar el resto de partidos cuando uno sea rechazado y marcarlo stale tras tres rechazos persistentes.",
+        "Añadir migración, tests unitarios e integración y actualizar runbook."
+      ],
+      "acceptance": [
+        "Una fila de catálogo con category_competition_id 10468 queda enlazada a la CompetitionSeason cuyo external_id FAB_CATEGORY_COMPETITION es 10468 y el índice muestra sus equipos e inscripciones.",
+        "Existe como máximo una fila de catálogo por category_competition_id; la migración fusiona duplicados conservando monitored=true, relación de temporada y cambios auditables.",
+        "Los IDs opacos siguen almacenándose como metadato externo pero nunca se usan para enlazar catálogo con temporada.",
+        "Una respuesta de estadísticas con resultado=error y error=Id no válido se clasifica como MATCH_UNAVAILABLE sin exponer el payload.",
+        "Un partido rechazado incrementa rejected y no impide procesar otros partidos ni hace fallar la fase stats.",
+        "Tras tres respuestas MATCH_UNAVAILABLE persistidas para el mismo partido, el juego pasa a sync_status=stale y deja de ser elegible; antes del umbral permanece reintentable.",
+        "Otros FabResponseError conservan el fallo de fase actual y no se silencian.",
+        "La corrección es idempotente, preserva RAW saneado y pasa tests Python, web, Prisma y diff-scope."
+      ],
+      "scope": [
+        "services/fab_ingestor/**",
+        "apps/web/src/server/ingestion-admin.ts",
+        "apps/web/src/server/ingestion-admin.test.ts",
+        "prisma/schema.prisma",
+        "prisma/migrations/**",
+        "docs/operations/**",
+        "docs/ARCHITECTURE.md",
+        "docs/DECISIONS.md",
+        "spec/**",
+        "progress/**",
+        ".harness/**",
+        "spec.json"
+      ],
+      "manual_spec_ready": true,
+      "manual_spec_ready_reason": "Causa raíz confirmada con Railway y PostgreSQL de producción; estrategia conservadora definida.",
+      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-16T16:54:31.598Z"
     }
   ]
 }

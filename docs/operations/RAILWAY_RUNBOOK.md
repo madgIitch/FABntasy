@@ -21,6 +21,8 @@ Tras desplegar:
 - `cancelled`: Railway envió una señal de parada durante el ciclo.
 - sin fila: el proceso no llegó a enumerar esa competición; revisa arranque, configuración y acceso a PostgreSQL.
 
+Si el panel muestra `NOT_SYNCED` pero existen TeamRegistration, comprueba que `fab_competition_catalog.competition_season_id` esté enlazado por `FAB_CATEGORY_COMPETITION`. Nunca reconstruyas esa relación usando `opaque_id`. Un contador `rejected` en stats puede corresponder a un partido retirado por FAB; tres respuestas saneadas `Id no válido` lo dejan `stale` sin detener el resto de la competición.
+
 Un deploy o reinicio puede arrancar más de un proceso de forma sucesiva. Cada proceso intenta su propio ciclo inicial; los advisory locks y UPSERT idempotentes protegen los datos frente a solapamientos. No añadas un cron ni un segundo servicio scheduler.
 
 El ciclo inicial no fuerza el catálogo global. La política de frescura decide si ese barrido corresponde, mientras que las competiciones monitorizadas sí se procesan inmediatamente.

@@ -977,3 +977,23 @@ Formalizar y verificar que cada arranque del servicio productivo de Railway ejec
   - `.harness/**`
   - `spec.json`
 
+<!-- harness:sprint-31-catalog-link-and-retired-games -->
+## sprint-31-catalog-link-and-retired-games · Recuperación de datos monitorizados y partidos retirados
+
+
+
+### Scope aprobado
+
+  - `services/fab_ingestor/**`
+  - `apps/web/src/server/ingestion-admin.ts`
+  - `apps/web/src/server/ingestion-admin.test.ts`
+  - `prisma/schema.prisma`
+  - `prisma/migrations/**`
+  - `docs/operations/**`
+  - `docs/ARCHITECTURE.md`
+  - `docs/DECISIONS.md`
+  - `spec/**`
+  - `progress/**`
+  - `.harness/**`
+  - `spec.json`
+

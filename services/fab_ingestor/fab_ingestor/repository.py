@@ -264,12 +264,12 @@ class SportsRepository:
 
     def upsert_catalog_candidate(self, candidate: Any, checksum: str, metadata: dict[str, Any]) -> str:
         row = self.connection.execute(
-            "SELECT id, checksum, category_competition_id, category_name, competition_name, delegation_name FROM fab_competition_catalog WHERE opaque_id=%s FOR UPDATE",
-            (candidate.opaque_id,),
+            "SELECT id, checksum, category_competition_id, category_name, competition_name, delegation_name FROM fab_competition_catalog WHERE category_competition_id=%s FOR UPDATE",
+            (candidate.category_competition_id,),
         ).fetchone()
         linked = self.connection.execute(
-            """SELECT entity_id FROM external_ids WHERE source='FAB' AND entity_type='competition_season' AND external_id=%s""",
-            (candidate.opaque_id,),
+            """SELECT entity_id FROM external_ids WHERE source='FAB_CATEGORY_COMPETITION' AND entity_type='competition_season' AND external_id=%s""",
+            (candidate.category_competition_id,),
         ).fetchone()
         if row is None:
             catalog_id = self.connection.execute(
@@ -287,11 +287,11 @@ class SportsRepository:
         before = {"categoryCompetitionId": row[2], "categoryName": row[3], "competitionName": row[4], "delegationName": row[5]}
         changed = str(row[1]).strip() != checksum
         self.connection.execute(
-            """UPDATE fab_competition_catalog SET category_competition_id=%s, category_name=%s,
+            """UPDATE fab_competition_catalog SET opaque_id=%s, category_competition_id=%s, category_name=%s,
             competition_name=%s, delegation_name=%s, checksum=%s, status=%s, last_checked_at=CURRENT_TIMESTAMP,
             last_changed_at=CASE WHEN %s THEN CURRENT_TIMESTAMP ELSE last_changed_at END,
             competition_season_id=COALESCE(competition_season_id,%s), monitored=monitored OR %s WHERE id=%s""",
-            (candidate.category_competition_id, candidate.category_name, candidate.competition_name,
+            (candidate.opaque_id, candidate.category_competition_id, candidate.category_name, candidate.competition_name,
              candidate.delegation_name, checksum, "CHANGED" if changed else "UNCHANGED", changed,
              linked[0] if linked else None, bool(linked), row[0]),
         )
@@ -442,6 +442,32 @@ class SportsRepository:
             (competition_season_id, force),
         ).fetchall()
         return [row[0] for row in rows]
+
+    def mark_game_stale_after_unavailable(
+        self, external_game_id: str, *, threshold: int = 3
+    ) -> bool:
+        failures = self.connection.execute(
+            """
+            SELECT count(*) FROM raw_fab_payloads
+            WHERE entity_type = 'game_statistics' AND external_id = %s
+              AND lower(payload->>'resultado') = 'error'
+              AND lower(payload->>'error') IN ('id no válido', 'id no valido')
+            """,
+            (external_game_id,),
+        ).fetchone()[0]
+        if failures < threshold:
+            return False
+        updated = self.connection.execute(
+            """
+            UPDATE games SET sync_status = 'stale', updated_at = CURRENT_TIMESTAMP
+            WHERE id = (
+              SELECT entity_id FROM external_ids
+              WHERE source = 'FAB' AND entity_type = 'game' AND external_id = %s
+            ) AND sync_status <> 'stale'
+            """,
+            (external_game_id,),
+        )
+        return updated.rowcount > 0
 
     def reconcile_live_game(
         self, game_id: UUID, *, status: str, source_status: str | None,

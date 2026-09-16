@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from fab_ingestor.boxscore import BoxscoreContractError, sync_game_stats
-from fab_ingestor.client import FabResponseError
+from fab_ingestor.boxscore import BoxscoreContractError, sync_competition_stats, sync_game_stats
+from fab_ingestor.client import FabMatchUnavailableError, FabResponseError
 
 FIXTURE = json.loads(
     (Path(__file__).parent / "fixtures" / "fab_boxscore.json").read_text(encoding="utf-8")
@@ -112,6 +112,41 @@ class PreJsonInvalidResponseClient:
             }
         )
         raise FabResponseError("FAB returned invalid JSON")
+
+
+class UnavailableMatchClient:
+    def get_match_stats(self, match_id, *, payload_sink):
+        payload_sink({"resultado": "error", "error": "Id no válido"})
+        raise FabMatchUnavailableError("FAB match is no longer available")
+
+
+def test_competition_stats_rejects_removed_match_and_continues():
+    repository = Repository()
+    repository.resolve_competition_selection = lambda _: ("season", "opaque")
+    repository.list_eligible_stats_games = lambda *_args, **_kwargs: ["removed-game"]
+    stale = []
+    repository.mark_game_stale_after_unavailable = stale.append
+
+    result = sync_competition_stats(
+        UnavailableMatchClient(), repository, category_competition_id="10468"
+    )
+
+    assert result.rejected == 1
+    assert result.games == 0
+    assert stale == ["removed-game"]
+
+
+def test_competition_stats_does_not_hide_other_fab_response_errors():
+    repository = Repository()
+    repository.resolve_competition_selection = lambda _: ("season", "opaque")
+    repository.list_eligible_stats_games = lambda *_args, **_kwargs: ["broken-game"]
+
+    with pytest.raises(FabResponseError):
+        sync_competition_stats(
+            InvalidResponseClient({"resultado": "error", "error": "other"}),
+            repository,
+            category_competition_id="10468",
+        )
 
 def test_finished_schedule_wins_over_stale_live_status():
     payload = json.loads(json.dumps(FIXTURE))

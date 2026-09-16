@@ -644,3 +644,12 @@ Contexto: se aprobó el spec `sprint-30-railway-immediate-startup-sync` (Sincron
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-31-catalog-link-and-retired-games -->
+## 2026-09-16 · sprint-31-catalog-link-and-retired-games aprobado
+
+Contexto: se aprobó el spec `sprint-31-catalog-link-and-retired-games` (Recuperación de datos monitorizados y partidos retirados).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

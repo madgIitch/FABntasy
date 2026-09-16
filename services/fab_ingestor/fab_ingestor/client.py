@@ -33,6 +33,10 @@ class FabContractError(FabResponseError):
     code = "FAB_CONTRACT_ERROR"
 
 
+class FabMatchUnavailableError(FabResponseError):
+    code = "MATCH_UNAVAILABLE"
+
+
 class FabTransportError(FabError):
     pass
 
@@ -180,6 +184,12 @@ class FabClient:
         )
         if payload_sink is not None:
             payload_sink(payload)
+        error = str(payload.get("error", "")).strip().casefold()
+        if str(payload.get("resultado", "")).casefold() == "error" and error in {
+            "id no válido",
+            "id no valido",
+        }:
+            raise FabMatchUnavailableError("FAB match is no longer available")
         if (
             str(payload.get("resultado", "")).lower() != "correcto"
             or not isinstance(payload.get("estadisticas"), dict)

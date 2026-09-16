@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
-from .client import FabClient, FabResponseError
+from .client import FabClient, FabMatchUnavailableError, FabResponseError
 from .repository import SportsRepository
 
 
@@ -412,6 +412,11 @@ def sync_competition_stats(
     ):
         try:
             result = sync_game_stats(client, repository, external_game_id=external_game_id)
+        except FabMatchUnavailableError:
+            repository.mark_game_stale_after_unavailable(external_game_id)
+            total = BoxscoreSyncSummary(
+                total.games, total.players_created, total.players_updated, total.rejected + 1
+            )
         except BoxscoreContractError:
             total = BoxscoreSyncSummary(
                 total.games, total.players_created, total.players_updated, total.rejected + 1

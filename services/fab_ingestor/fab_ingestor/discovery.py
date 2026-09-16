@@ -81,6 +81,10 @@ def sync_competition_catalog(
             candidates = list(by_id.values())
         if not candidates:
             raise CompetitionDiscoveryError("FAB competition catalog was empty")
+        by_category: dict[str, CategoryCandidate] = {}
+        for candidate in sorted(candidates, key=lambda item: item.opaque_id):
+            by_category.setdefault(candidate.category_competition_id, candidate)
+        candidates = list(by_category.values())
         discovered = changed = 0
         with repository.connection.transaction():
             for candidate in candidates:

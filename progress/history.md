@@ -1,5 +1,8 @@
 # Historial de sesiones
 
+## 2026-09-16 — #sprint-31-catalog-link-and-retired-games → review_pending
+- Corregidos enlace estable de catálogo, deduplicación y partidos retirados; gates completos correctos. Pendiente de deploy y smoke productivo.
+
 ## 2026-09-16 — #sprint-30-railway-immediate-startup-sync → review_pending
 - Implementación y gates completos en el commit `c31e2c6`; pendiente de smoke test humano en Railway.
 

@@ -1,6 +1,6 @@
 # Sesión actual
 
-Feature: **sprint-30-railway-immediate-startup-sync · Sprint 30 - Railway Immediate Startup Sync** — estado: `review_pending`.
+Feature: **sprint-31-catalog-link-and-retired-games · Sprint 31 - Catalog Link and Retired Games** — estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-30-railway-immediate-startup-sync · Sprint 30 - Railway Immed
 
 ## Siguiente acción
 
-- Revisar el diff de `c31e2c6` y cerrar con `node .harness/spec.mjs done sprint-30-railway-immediate-startup-sync` tras el smoke test humano.
+- Desplegar la migración y el ingestor, comprobar que 10468 muestra 12 equipos/26 inscripciones y cerrar con `node .harness/spec.mjs done sprint-31-catalog-link-and-retired-games`.
 
 ## Último resultado
 

@@ -2828,7 +2828,7 @@
       "id": "sprint-31-catalog-link-and-retired-games",
       "name": "Sprint 31 - Catalog Link and Retired Games",
       "title": "Recuperación de datos monitorizados y partidos retirados",
-      "status": "spec_ready",
+      "status": "review_pending",
       "sdd": true,
       "spec_approved": true,
       "priority": "P0",

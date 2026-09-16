@@ -2689,7 +2689,7 @@
       "id": "sprint-29-monitored-competition-team-index",
       "name": "Sprint 29 - Monitored Competition Team Index",
       "title": "Índice de equipos y jugadores en competiciones monitorizadas",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "spec_approved": true,
       "priority": "P1",

@@ -2551,7 +2551,7 @@
       "id": "sprint-28-manager-profile-rivalries",
       "name": "Sprint 28 - Manager Profile and Rivalries",
       "title": "Perfil fantasy completo, palmarés visual y acceso a rivalidades",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "spec_approved": true,
       "priority": "P2",
@@ -2684,6 +2684,74 @@
       "answers_hash": "sha256:f89d75780ba65e63142c328672bb3bf28dd73180d19f43bc2d29f220616d0ee1",
       "approved_by": "peorr",
       "approved_at": "2026-09-15T12:44:18.348Z"
+    },
+    {
+      "id": "sprint-29-monitored-competition-team-index",
+      "name": "Sprint 29 - Monitored Competition Team Index",
+      "title": "Índice de equipos y jugadores en competiciones monitorizadas",
+      "status": "spec_ready",
+      "sdd": true,
+      "spec_approved": false,
+      "priority": "P1",
+      "milestone": "1.3.1",
+      "dependencies": [
+        "sprint-22c-fab-competition-monitoring"
+      ],
+      "description": "Extender las tarjetas de competiciones monitorizadas de Administrar ingesta con un índice consultable de sus equipos y el número de jugadores inscritos en cada uno, acompañado de totales, frescura y estados que distingan datos completos, parciales, todavía no sincronizados y fallidos.",
+      "objective": "Permitir que un operador compruebe desde la consola administrativa la cobertura real de equipos y plantillas de cada competición monitorizada sin consultar payloads RAW, ejecutar FAB desde el navegador ni interpretar como cero una ingesta incompleta.",
+      "user_stories": [
+        {
+          "id": "HU29.1",
+          "story": "Como operador de ingesta quiero desplegar una competición monitorizada y ver qué equipos contiene y cuántos jugadores tiene cada equipo."
+        },
+        {
+          "id": "HU29.2",
+          "story": "Como operador quiero conocer el total de equipos y de inscripciones de jugadores y saber cuándo se calcularon para detectar una sincronización incompleta."
+        }
+      ],
+      "tasks": [
+        "Definir un resumen server-side por competición monitorizada con totales, estado de cobertura, frescura y desglose estable por equipo.",
+        "Contar inscripciones de jugadores dentro de la temporada de competición y del equipo correspondientes, sin fusionar personas o equipos por nombre.",
+        "Exponer el índice únicamente en la API administrativa protegida y sin payloads RAW ni llamadas FAB iniciadas por la lectura.",
+        "Añadir a cada tarjeta monitorizada un control accesible para desplegar y contraer el índice de equipos.",
+        "Representar de forma diferenciada carga, vacío legítimo, no sincronizado, parcial, stale y error conservando el último snapshot válido.",
+        "Cubrir agregación, aislamiento entre competiciones, datos parciales, duplicados de nombre, autorización y renderizado responsive mediante tests."
+      ],
+      "deliverable": "Cada competición monitorizada muestra un resumen fiable de equipos y jugadores y permite consultar un índice por equipo con su recuento de inscripciones, frescura y cobertura explícitas.",
+      "acceptance": [
+        "Cada tarjeta de competición monitorizada muestra el total de equipos y el total de inscripciones de jugadores pertenecientes a su CompetitionSeason; el total de jugadores es la suma de las inscripciones incluidas en los equipos del índice y se etiqueta como inscripciones, no como personas únicas globales.",
+        "Un control de expansión con estado accesible permite abrir y cerrar el índice dentro de cada tarjeta; al abrirlo se muestran todos los equipos de esa competición en orden alfabético por nombre normalizado y, como desempate, por ID interno estable, junto con el número de inscripciones de jugadores de cada equipo.",
+        "La identidad de equipos y jugadores se resuelve por sus IDs y relaciones normalizadas; equipos con el mismo nombre permanecen en filas distintas y una misma persona inscrita en equipos o temporadas diferentes se cuenta una vez por cada PlayerRegistration incluida.",
+        "Los conteos se calculan exclusivamente desde TeamRegistration y PlayerRegistration del snapshot normalizado vigente de la CompetitionSeason monitorizada; no incluyen otras temporadas, competiciones o equipos sin inscripción en esa temporada.",
+        "La respuesta administrativa incluye por competición coverageStatus, calculatedAt, teamsLastSyncedAt y playersLastSyncedAt, además de teamCount, playerRegistrationCount y las filas teamId, teamName y playerRegistrationCount; timestamps son ISO 8601 UTC y los conteos son enteros no negativos o null cuando el dato no puede afirmarse.",
+        "coverageStatus distingue COMPLETE, PARTIAL, NOT_SYNCED, STALE y FAILED: NOT_SYNCED y FAILED no presentan null como cero; PARTIAL y STALE muestran el último snapshot válido con una advertencia visible y FAILED conserva los últimos datos válidos si existen.",
+        "Una competición sincronizada correctamente sin equipos muestra un estado vacío explícito y totales cero; este caso solo se considera vacío legítimo cuando coverageStatus es COMPLETE, nunca por una respuesta FAB parcial, fallida o todavía no sincronizada.",
+        "Consultar o expandir el índice es una operación de solo lectura sobre PostgreSQL, no solicita trabajos, no llama a FAB y no modifica el catálogo; la resincronización continúa usando la acción auditada existente del Sprint 22C.",
+        "La ruta y la API mantienen la protección INGESTION_ADMIN y el comportamiento 404 para usuarios no autorizados; la respuesta no expone credenciales, cabeceras, cookies, payloads RAW, errores internos ni datos personales de jugadores.",
+        "El índice tiene estados de carga, error y reintento accesibles, conserva el control que lo abrió, usa nombres y relaciones semánticas comprensibles para lector de pantalla y no introduce scroll horizontal involuntario a 320, 375, 768, 1024 o 1440 px.",
+        "La consulta evita N+1 y devuelve el resumen de todas las competiciones monitorizadas de la vista con agregación acotada; los tests verifican que el número de consultas no crece linealmente con el número de equipos y que una competición no recibe conteos de otra.",
+        "Los tests unitarios, de integración PostgreSQL y de interfaz cubren cero equipos completo, no sincronizado, snapshot parcial, snapshot fallido con y sin datos previos, equipos homónimos, inscripciones en varias temporadas, orden estable, autorización, expansión por teclado y responsive; typecheck, lint, test y diff-scope terminan con código cero.",
+        "El cambio de datos, si resulta necesario, es aditivo y compatible con las filas existentes; desactivar la interfaz restaura las tarjetas de Sprint 22C sin borrar equipos, inscripciones ni historial de ingesta."
+      ],
+      "scope": [
+        "apps/web/app/app/admin/ingestion/**",
+        "apps/web/app/api/admin/ingestion/**",
+        "apps/web/src/server/ingestion-admin.ts",
+        "apps/web/src/server/ingestion-admin.test.ts",
+        "apps/web/src/server/ingestion-admin-http.ts",
+        "prisma/schema.prisma",
+        "prisma/migrations/**",
+        "tests/**",
+        "docs/INGESTION_ADMIN.md",
+        "docs/operations/FAB_COMPETITION_MONITORING_SPEC.md",
+        "docs/ARCHITECTURE.md",
+        "docs/CONVENTIONS.md",
+        "docs/DECISIONS.md",
+        "spec/**",
+        "progress/**",
+        ".harness/**",
+        "spec.json"
+      ]
     }
   ]
 }

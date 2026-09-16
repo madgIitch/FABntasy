@@ -666,3 +666,12 @@ Decisiones registradas:
 - **tests:** Cobertura unitaria, PostgreSQL, HTTP y E2E de ambos estados y todos los actores.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-33-preview-league-credentials -->
+## 2026-09-16 · sprint-33-preview-league-credentials aprobado
+
+Contexto: se aprobó el spec `sprint-33-preview-league-credentials` (Compartir código y administrar contraseña desde la preview).
+
+Decisión: implementar según el spec aprobado.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

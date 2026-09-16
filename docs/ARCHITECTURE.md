@@ -1033,3 +1033,27 @@ Introducir un gate de rollout administrable que, mientras esté activo, permita 
 - **edge_cases:** Membresía sin bypass, coincidencias exactas, admin mínimo, rutas profundas, sesiones y concurrencia.
 - **ui_states:** Preview dedicada, confirmaciones y estados accesibles; OPEN conserva la experiencia actual.
 
+<!-- harness:sprint-33-preview-league-credentials -->
+## sprint-33-preview-league-credentials · Compartir código y administrar contraseña desde la preview
+
+Extender la pantalla de preview para que el propietario de una liga pueda consultar y copiar el código estable de su liga y cambiar su contraseña, sin abrir el resto del producto. La contraseña nunca se muestra ni se recupera: solo se sustituye mediante la operación server-side existente.
+
+### Scope aprobado
+
+  - `apps/web/app/app/**`
+  - `apps/web/app/api/fantasy/leagues/**`
+  - `apps/web/src/app/api/fantasy/leagues/**`
+  - `apps/web/src/components/**`
+  - `apps/web/src/server/private-leagues.ts`
+  - `apps/web/src/server/private-league-http.ts`
+  - `apps/web/src/server/rollout.ts`
+  - `tests/**`
+  - `docs/PRIVATE_LEAGUES.md`
+  - `docs/SECURITY_PRIVACY.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/DECISIONS.md`
+  - `spec/**`
+  - `progress/**`
+  - `.harness/**`
+  - `spec.json`
+

@@ -1,6 +1,6 @@
 # Sesión actual
 
-Feature: **sprint-32-controlled-rollout-preview · Sprint 32 - Controlled Rollout Preview** — estado: `review_pending`.
+Feature: **sprint-33-preview-league-credentials · Sprint 33 - Preview League Credentials** — estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-32-controlled-rollout-preview · Sprint 32 - Controlled Rollou
 
 ## Siguiente acción
 
-- Aplicar la migración `20260916183000_controlled_rollout_preview`, verificar PREVIEW/OPEN y cerrar con `node .harness/spec.mjs done sprint-32-controlled-rollout-preview` tras smoke test humano.
+- Hacer smoke test humano de código/copiar/rotación en preview y cerrar con `node .harness/spec.mjs done sprint-33-preview-league-credentials`.
 
 ## Último resultado
 

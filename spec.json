@@ -2962,6 +2962,77 @@
       "answers_hash": "sha256:f8656fb89a63451960f64bd1c4d80b6b570df5f2f385d4347a0cd1d3e1a1b71e",
       "approved_by": "peorr",
       "approved_at": "2026-09-16T17:27:14.667Z"
+    },
+    {
+      "id": "sprint-33-preview-league-credentials",
+      "name": "Sprint 33 - Preview League Credentials",
+      "title": "Compartir código y administrar contraseña desde la preview",
+      "status": "review_pending",
+      "sdd": true,
+      "spec_approved": true,
+      "priority": "P1",
+      "milestone": "1.4.1",
+      "dependencies": [
+        "sprint-32-controlled-rollout-preview"
+      ],
+      "description": "Extender la pantalla de preview para que el propietario de una liga pueda consultar y copiar el código estable de su liga y cambiar su contraseña, sin abrir el resto del producto. La contraseña nunca se muestra ni se recupera: solo se sustituye mediante la operación server-side existente.",
+      "objective": "Permitir que los administradores de una liga compartan el acceso con sus amigos y roten la contraseña durante el rollout.",
+      "user_stories": [
+        {
+          "id": "HU33.1",
+          "story": "Como propietario quiero ver y copiar el código de mi liga para enviárselo a mis amigos."
+        },
+        {
+          "id": "HU33.2",
+          "story": "Como propietario quiero cambiar la contraseña de mi liga desde la preview sin exponer la contraseña actual."
+        },
+        {
+          "id": "HU33.3",
+          "story": "Como miembro no propietario quiero ver el código para poder compartirlo, pero no cambiar las credenciales."
+        }
+      ],
+      "tasks": [
+        "Extender el estado de preview para cargar únicamente el resumen de la liga activa y sus permisos.",
+        "Reutilizar el código estable y el endpoint server-side de cambio de contraseña.",
+        "Añadir copiar código con fallback accesible.",
+        "Mostrar rotación solo al propietario con validación y feedback.",
+        "Mantener el bloqueo del resto de páginas y APIs durante PREVIEW.",
+        "Cubrir autorización, aislamiento, errores, responsive y accesibilidad."
+      ],
+      "deliverable": "La preview muestra el código de la liga con acción de copiar y permite al propietario rotar su contraseña; ningún usuario obtiene la contraseña.",
+      "acceptance": [
+        "Un miembro ACTIVE ve el nombre y código estable CNST-XXXXXX de su liga y puede copiarlo; procede del servidor.",
+        "Clipboard usa API nativa y fallback accesible ante fallo o ausencia.",
+        "Solo el propietario ve y puede usar el cambio de contraseña; el hash permanece server-side y nunca se devuelve.",
+        "Un miembro no propietario puede copiar el código pero no rotar credenciales.",
+        "Las respuestas no contienen passwordHash, contraseña, tokens, cookies ni secretos y usan private, no-store.",
+        "Varias ligas permanecen aisladas y la selección es determinista.",
+        "La función opera en PREVIEW sin desbloquear el resto del producto.",
+        "Tests unitarios, integración y E2E cubren autorización, aislamiento, Clipboard, rotación, ausencia de secretos, responsive y accesibilidad."
+      ],
+      "scope": [
+        "apps/web/app/app/**",
+        "apps/web/app/api/fantasy/leagues/**",
+        "apps/web/src/app/api/fantasy/leagues/**",
+        "apps/web/src/components/**",
+        "apps/web/src/server/private-leagues.ts",
+        "apps/web/src/server/private-league-http.ts",
+        "apps/web/src/server/rollout.ts",
+        "tests/**",
+        "docs/PRIVATE_LEAGUES.md",
+        "docs/SECURITY_PRIVACY.md",
+        "docs/ARCHITECTURE.md",
+        "docs/DECISIONS.md",
+        "spec/**",
+        "progress/**",
+        ".harness/**",
+        "spec.json"
+      ],
+      "manual_spec_ready": true,
+      "manual_spec_ready_reason": "El detalle de liga ya implementa código estable, Clipboard y rotación server-side; la ampliación se limita a exponerlo en preview.",
+      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-16T17:51:06.462Z"
     }
   ]
 }

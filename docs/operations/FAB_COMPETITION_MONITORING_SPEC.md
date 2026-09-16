@@ -63,3 +63,7 @@ Los criterios normativos son los registrados en `spec.json` bajo `sprint-22c-fab
 ## Rollback
 
 La migración será aditiva. El rollback de aplicación desactiva el barrido y oculta la nueva sección, conservando catálogo e historial. No se eliminan tablas ni se revierten datos deportivos. El scheduler anterior continúa procesando únicamente las competiciones seleccionadas.
+
+## Índice normalizado (Sprint 29)
+
+La consola agrega los equipos monitorizados por `competition_season_id`, conserva cada `team_id` como fila independiente y cuenta las `PlayerRegistration` enlazadas a esa misma temporada y registro de equipo. La operación es exclusivamente PostgreSQL y de solo lectura. La cobertura se deriva del historial de las fases `competition` y `stats`: éxito reciente implica `COMPLETE`, más de 24 horas implica `STALE`, el estado parcial del catálogo implica `PARTIAL`, un último run fallido implica `FAILED` y la ausencia de un run o snapshot implica `NOT_SYNCED`.

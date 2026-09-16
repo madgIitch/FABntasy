@@ -632,5 +632,6 @@ Decisiones registradas:
 - **auth_secrets:** La lectura exige INGESTION_ADMIN, conserva el 404 y excluye RAW, secretos, errores internos y datos personales.
 - **rollback_compat:** Cualquier cambio persistente es aditivo y la UI puede desactivarse sin borrar datos ni alterar las tarjetas previas.
 - **tests:** Se requieren pruebas unitarias, PostgreSQL, autorización, N+1, teclado, estados de cobertura y anchos de 320 a 1440 px.
+- **team_index_coverage:** El índice no persiste un agregado duplicado: lee el snapshot normalizado vigente y deriva cobertura/frescura de los runs `competition` y `stats`. Un éxito de equipos con más de 24 horas se considera `STALE`; el último fallo prevalece como `FAILED` y conserva filas previas sin convertir ausencia en cero. La agregación de todas las competiciones usa un número constante de consultas.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

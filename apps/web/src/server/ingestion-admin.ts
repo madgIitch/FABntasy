@@ -1,7 +1,23 @@
+import { Prisma } from "@prisma/client";
 import { db } from "./db";
 
 export class AdminError extends Error { constructor(public code: string, public status = 400) { super(code); } }
 export const JOB_TYPES = ["COMPETITION", "ROUND", "GAME"] as const;
+export const TEAM_INDEX_COVERAGE = ["COMPLETE", "PARTIAL", "NOT_SYNCED", "STALE", "FAILED"] as const;
+export type TeamIndexCoverageStatus = typeof TEAM_INDEX_COVERAGE[number];
+export type CompetitionTeamIndex = {
+  catalogId: string;
+  competitionSeasonId: string | null;
+  coverageStatus: TeamIndexCoverageStatus;
+  calculatedAt: string;
+  teamsLastSyncedAt: string | null;
+  playersLastSyncedAt: string | null;
+  teamCount: number | null;
+  playerRegistrationCount: number | null;
+  teams: Array<{ teamId: string; teamName: string; playerRegistrationCount: number }>;
+};
+type TeamIndexRow = { catalogId: string; competitionSeasonId: string; teamId: string | null; teamName: string | null; playerRegistrationCount: bigint | number };
+type CoverageRun = { competitionSeasonId: string | null; jobName: string; status: string; startedAt: Date; finishedAt: Date | null };
 const SECRET_KEY = /(^|_)(key|id_dispositivo|authorization|cookie|token|password|secret)($|_)/i;
 const MAX_RAW_BYTES = 256 * 1024;
 
@@ -24,6 +40,82 @@ export function classifyIngestionError(code: string | null) {
   if (/NORMAL|BOX_SCORE|INCOMPLETE|INVALID_DATA/.test(code)) return "NORMALIZATION";
   if (/DB|DATABASE|PRISMA|TRANSACTION/.test(code)) return "DATABASE";
   return "INVALID_DATA";
+}
+
+const STALE_AFTER_MS = 24 * 60 * 60_000;
+const successful = (status: string) => status.toLowerCase() === "succeeded";
+const failed = (status: string) => status.toLowerCase() === "failed";
+const iso = (value: Date | null | undefined) => value ? value.toISOString() : null;
+const normalizedTeamName = (value: string) => value.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("es");
+
+export function buildCompetitionTeamIndexes(
+  catalog: Array<{ id: string; competitionSeasonId: string | null; status: string }>,
+  rows: TeamIndexRow[],
+  runs: CoverageRun[],
+  calculatedAt = new Date(),
+): CompetitionTeamIndex[] {
+  return catalog.map(item => {
+    const seasonRows = rows.filter(row => row.catalogId === item.id && row.teamId && row.teamName).map(row => ({
+      teamId: row.teamId!, teamName: row.teamName!, playerRegistrationCount: Number(row.playerRegistrationCount),
+    })).sort((a, b) => normalizedTeamName(a.teamName).localeCompare(normalizedTeamName(b.teamName), "es") || a.teamId.localeCompare(b.teamId));
+    const seasonRuns = runs.filter(run => run.competitionSeasonId === item.competitionSeasonId);
+    const teamRuns = seasonRuns.filter(run => run.jobName === "competition");
+    const playerRuns = seasonRuns.filter(run => run.jobName === "stats");
+    const latestTeamRun = teamRuns[0];
+    const lastTeamSuccess = teamRuns.find(run => successful(run.status));
+    const lastPlayerSuccess = playerRuns.find(run => successful(run.status));
+    let coverageStatus: TeamIndexCoverageStatus;
+    if (!item.competitionSeasonId || (!latestTeamRun && seasonRows.length === 0)) coverageStatus = "NOT_SYNCED";
+    else if (latestTeamRun && failed(latestTeamRun.status)) coverageStatus = "FAILED";
+    else if (item.status === "PARTIAL") coverageStatus = "PARTIAL";
+    else if (!lastTeamSuccess) coverageStatus = "NOT_SYNCED";
+    else if (calculatedAt.getTime() - (lastTeamSuccess.finishedAt ?? lastTeamSuccess.startedAt).getTime() > STALE_AFTER_MS) coverageStatus = "STALE";
+    else coverageStatus = "COMPLETE";
+    const hasValidSnapshot = Boolean(lastTeamSuccess);
+    const canAssertCounts = coverageStatus === "COMPLETE" || coverageStatus === "PARTIAL" || coverageStatus === "STALE" || hasValidSnapshot;
+    return {
+      catalogId: item.id,
+      competitionSeasonId: item.competitionSeasonId,
+      coverageStatus,
+      calculatedAt: calculatedAt.toISOString(),
+      teamsLastSyncedAt: iso(lastTeamSuccess?.finishedAt ?? lastTeamSuccess?.startedAt),
+      playersLastSyncedAt: iso(lastPlayerSuccess?.finishedAt ?? lastPlayerSuccess?.startedAt),
+      teamCount: canAssertCounts ? seasonRows.length : null,
+      playerRegistrationCount: canAssertCounts ? seasonRows.reduce((sum, team) => sum + team.playerRegistrationCount, 0) : null,
+      teams: canAssertCounts ? seasonRows : [],
+    };
+  });
+}
+
+/** Read-only, bounded aggregation: one query for rows and one for coverage runs, never one per team. */
+export async function getMonitoredCompetitionTeamIndexes(): Promise<CompetitionTeamIndex[]> {
+  if (process.env.INGESTION_TEAM_INDEX_ENABLED === "false") return [];
+  const catalog = await db.fabCompetitionCatalog.findMany({
+    where: { monitored: true }, orderBy: { id: "asc" }, select: { id: true, competitionSeasonId: true, status: true },
+  });
+  const seasonIds = catalog.flatMap(item => item.competitionSeasonId ? [item.competitionSeasonId] : []);
+  if (!seasonIds.length) return buildCompetitionTeamIndexes(catalog, [], [], new Date());
+  const [rows, runs] = await Promise.all([
+    db.$queryRaw<TeamIndexRow[]>(Prisma.sql`
+      SELECT c.id AS "catalogId", c.competition_season_id AS "competitionSeasonId",
+             t.id AS "teamId", COALESCE(tr.display_name, t.name) AS "teamName",
+             COUNT(pr.id)::bigint AS "playerRegistrationCount"
+      FROM fab_competition_catalog c
+      LEFT JOIN team_registrations tr ON tr.competition_season_id = c.competition_season_id
+      LEFT JOIN teams t ON t.id = tr.team_id
+      LEFT JOIN player_registrations pr ON pr.team_registration_id = tr.id
+        AND pr.competition_season_id = c.competition_season_id
+      WHERE c.monitored = TRUE AND c.competition_season_id IN (${Prisma.join(seasonIds)})
+      GROUP BY c.id, c.competition_season_id, t.id, tr.display_name, t.name
+      ORDER BY lower(COALESCE(tr.display_name, t.name)) ASC NULLS LAST, t.id ASC
+    `),
+    db.ingestionRun.findMany({
+      where: { competitionSeasonId: { in: seasonIds }, jobName: { in: ["competition", "stats"] } },
+      orderBy: { startedAt: "desc" },
+      select: { competitionSeasonId: true, jobName: true, status: true, startedAt: true, finishedAt: true },
+    }),
+  ]);
+  return buildCompetitionTeamIndexes(catalog, rows, runs, new Date());
 }
 
 export async function requireIngestionAdmin(authUserId: string) {
@@ -74,21 +166,22 @@ export async function getIngestionDashboard(actorProfileId: string, filters: { s
     ...(filters.catalogStatus ? { status: filters.catalogStatus } : {}),
     ...(filters.delegation ? { delegationName: filters.delegation } : {}),
   };
-  const [jobs, runs, heartbeat, lastSuccess, catalog, catalogScan, delegations, seasons] = await Promise.all([
+  const [jobs, runs, heartbeat, lastSuccess, catalog, catalogScan, delegations, seasons, teamIndexes] = await Promise.all([
     db.ingestionJob.findMany({ where: jobWhere, orderBy: { requestedAt: "desc" }, take: 50, include: { requestedBy: { select: { username: true, displayName: true } } } }),
     db.ingestionRun.findMany({ where: competitionSeasonId ? { competitionSeasonId } : {}, orderBy: { startedAt: "desc" }, take: 50, include: { competitionSeason: { select: { id: true, name: true, competition: { select: { name: true } } } } } }),
     db.ingestionHeartbeat.findFirst({ orderBy: { seenAt: "desc" } }),
     db.ingestionRun.findFirst({ where: { status: "SUCCEEDED" }, orderBy: { finishedAt: "desc" } }),
     db.fabCompetitionCatalog.findMany({ where: catalogWhere, orderBy: [{ monitored: "desc" }, { lastChangedAt: "desc" }], take: 200,
-      include: { competitionSeason: { include: { competition: true, season: true, games: { where: { syncStatus: "active" }, select: { status: true, statsSyncStatus: true, scheduledAt: true, roundNumber: true } }, teamRegistrations: { select: { id: true } } } } } }),
+      include: { competitionSeason: { include: { competition: true, season: true, games: { where: { syncStatus: "active" }, select: { status: true, statsSyncStatus: true, scheduledAt: true, roundNumber: true } } } } } }),
     db.fabCompetitionCatalogScan.findFirst({ orderBy: { startedAt: "desc" } }),
     db.fabCompetitionCatalog.findMany({ distinct: ["delegationName"], orderBy: { delegationName: "asc" }, select: { delegationName: true } }),
     db.season.findMany({ orderBy: { name: "desc" }, select: { name: true } }),
+    getMonitoredCompetitionTeamIndexes(),
   ]);
   const now = Date.now(), age = heartbeat ? now - heartbeat.seenAt.getTime() : Infinity;
   const health = age <= 5 * 60_000 ? "HEALTHY" : age <= 20 * 60_000 ? "DEGRADED" : "STALE";
   const visibleJobs = jobs.map(job => ({ ...job, effectiveStatus: job.status === "RUNNING" && (!job.heartbeatAt || now - job.heartbeatAt.getTime() > 20 * 60_000) ? "STALE" : job.status }));
-  return { actorProfileId, health, heartbeat, lastSuccess, jobs: visibleJobs, runs: runs.map(run => ({ ...run, errorCategory: classifyIngestionError(run.errorCode) })), catalog, catalogScan, delegations: delegations.map(item => item.delegationName), seasons: seasons.map(item => item.name) };
+  return { actorProfileId, health, heartbeat, lastSuccess, jobs: visibleJobs, runs: runs.map(run => ({ ...run, errorCategory: classifyIngestionError(run.errorCode) })), catalog, teamIndexes, catalogScan, delegations: delegations.map(item => item.delegationName), seasons: seasons.map(item => item.name) };
 }
 
 export async function setCompetitionMonitoring(actorProfileId: string, catalogId: string, monitored: boolean) {

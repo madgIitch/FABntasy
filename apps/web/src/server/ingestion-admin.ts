@@ -95,6 +95,7 @@ export async function getMonitoredCompetitionTeamIndexes(): Promise<CompetitionT
   });
   const seasonIds = catalog.flatMap(item => item.competitionSeasonId ? [item.competitionSeasonId] : []);
   if (!seasonIds.length) return buildCompetitionTeamIndexes(catalog, [], [], new Date());
+  const seasonIdSql = Prisma.join(seasonIds.map(id => Prisma.sql`${id}::uuid`));
   const [rows, runs] = await Promise.all([
     db.$queryRaw<TeamIndexRow[]>(Prisma.sql`
       SELECT c.id AS "catalogId", c.competition_season_id AS "competitionSeasonId",
@@ -105,7 +106,7 @@ export async function getMonitoredCompetitionTeamIndexes(): Promise<CompetitionT
       LEFT JOIN teams t ON t.id = tr.team_id
       LEFT JOIN player_registrations pr ON pr.team_registration_id = tr.id
         AND pr.competition_season_id = c.competition_season_id
-      WHERE c.monitored = TRUE AND c.competition_season_id IN (${Prisma.join(seasonIds)})
+      WHERE c.monitored = TRUE AND c.competition_season_id IN (${seasonIdSql})
       GROUP BY c.id, c.competition_season_id, t.id, tr.display_name, t.name
       ORDER BY lower(COALESCE(tr.display_name, t.name)) ASC NULLS LAST, t.id ASC
     `),

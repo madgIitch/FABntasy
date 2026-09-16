@@ -20,3 +20,7 @@ APPROVED → `review_pending`.
 - [ ] Aplicar migración antes de promover el ingestor.
 - [ ] Confirmar una única fila de catálogo 10468 enlazada y 12 equipos/26 inscripciones visibles.
 - [ ] Confirmar que `Id no válido` incrementa rejected y el ciclo termina sin PHASE_FAILED.
+
+## Hotfix de smoke productivo
+
+La migración activó por primera vez la agregación con una CompetitionSeason enlazada. Prisma parametrizaba los UUID como texto y PostgreSQL rechazaba `uuid = text` (`P2010`, SQLSTATE `42883`). La consulta ahora aplica `::uuid` a cada parámetro. Validada directamente contra producción: 10468 devuelve `COMPLETE`, 12 equipos y 26 inscripciones.

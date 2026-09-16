@@ -39,6 +39,7 @@ describe("monitored competition team index",()=>{
   const body=source.slice(source.indexOf("export async function getMonitoredCompetitionTeamIndexes"),source.indexOf("export async function requireIngestionAdmin"));
   expect(body.match(/db\./g)).toHaveLength(3);
   expect(body).not.toMatch(/for\s*\([^)]*team/i);
+  expect(body).toContain("::uuid");
  });
  it("keeps the read API protected and the disclosure accessible",async()=>{
   const fs=await import("node:fs/promises");

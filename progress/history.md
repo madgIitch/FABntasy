@@ -60,3 +60,6 @@
 
 ## 2026-09-15T12:58:32.342Z — #sprint-28-manager-profile-rivalries Sprint 28 - Manager Profile and Rivalries → review_pending
 - 2 intento(s) · agente codex
+
+## 2026-09-16T15:58:44.577Z — #sprint-29-monitored-competition-team-index Sprint 29 - Monitored Competition Team Index → review_pending
+- 1 intento(s) · agente codex

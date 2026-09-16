@@ -11,6 +11,7 @@ export function LeagueDetailActions({ leagueId, leagueCode, isOwner, showInvitat
   const [message, setMessage] = useState("");
   const [action, setAction] = useState<ActionState>("idle");
   const [confirmLeave, setConfirmLeave] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   async function copyCode() {
     setAction("copying");
@@ -73,26 +74,19 @@ export function LeagueDetailActions({ leagueId, leagueCode, isOwner, showInvitat
         <span className={styles.fieldLabel}>Código de liga</span>
         <strong className={styles.codeValue}>{leagueCode}</strong>
       </div>
-      <button className={styles.copyButton} disabled={action !== "idle"} onClick={() => void copyCode()}>
+      <button className={styles.copyButton} aria-label="Copiar código de liga" disabled={action !== "idle"} onClick={() => void copyCode()}>
         <span className={styles.buttonLabel}>{action === "copying" ? "Copiando…" : "Copiar código"}</span>
-        <b className={styles.buttonIcon} aria-hidden="true">↗</b>
+        <b className={styles.buttonIcon} aria-hidden="true">▣</b>
       </button>
     </div>}
 
     {isOwner ? <div className={styles.security}>
       <div className={styles.securityCopy}>
         <span className={styles.eyebrow}>Seguridad</span>
-        <strong className={styles.securityTitle}>Cambiar contraseña</strong>
-        <small className={styles.securityHint}>Mínimo 6 caracteres. Los miembros actuales seguirán dentro de la liga.</small>
+        <strong className={styles.securityTitle}>Clave de acceso</strong>
+        <small className={styles.securityHint}>Los nuevos miembros necesitarán esta clave. Los miembros actuales no se verán afectados.</small>
       </div>
-      <div className={styles.passwordForm}>
-        <label className={styles.fieldLabel} htmlFor="league-password">Nueva contraseña</label>
-        <input className={styles.passwordInput} id="league-password" type="password" autoComplete="new-password" minLength={6} maxLength={72} placeholder="6 caracteres como mínimo" value={password} onChange={event => setPassword(event.target.value)} />
-        <button className={styles.saveButton} disabled={password.length < 6 || action !== "idle"} onClick={() => void updatePassword()}>
-          <span className={styles.buttonLabel}>{action === "saving" ? "Guardando…" : "Actualizar"}</span>
-          <span className={styles.buttonIcon} aria-hidden="true">→</span>
-        </button>
-      </div>
+      {showPassword ? <div className={styles.passwordForm}><label className={styles.fieldLabel} htmlFor="league-password">Nueva clave</label><input className={styles.passwordInput} id="league-password" type="password" autoComplete="new-password" minLength={6} maxLength={72} placeholder="6 caracteres como mínimo" value={password} onChange={event => setPassword(event.target.value)} /><button className={styles.saveButton} disabled={password.length < 6 || action !== "idle"} onClick={() => void updatePassword()}><span className={styles.buttonLabel}>{action === "saving" ? "Guardando…" : "Actualizar clave"}</span><span className={styles.buttonIcon} aria-hidden="true">→</span></button></div> : <button className={styles.saveButton} type="button" onClick={() => setShowPassword(true)}>Cambiar clave de acceso <span className={styles.buttonIcon} aria-hidden="true">→</span></button>}
     </div> : <button className={styles.leaveButton} disabled={action !== "idle"} onClick={() => setConfirmLeave(true)}>{action === "leaving" ? "Saliendo…" : "Abandonar liga"}</button>}
 
     <Dialog open={confirmLeave} title="¿Abandonar esta liga?" onClose={() => setConfirmLeave(false)}><p>Dejarás de participar en esta liga. La operación se comprobará antes de confirmar la salida.</p><div><button disabled={action === "leaving"} onClick={() => setConfirmLeave(false)}>Cancelar</button><button className="primary-action" disabled={action === "leaving"} onClick={() => void leave()}>{action === "leaving" ? "Saliendo…" : "Abandonar liga"}</button></div></Dialog>

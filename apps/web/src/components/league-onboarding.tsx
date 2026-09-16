@@ -10,7 +10,7 @@ import { Icon } from "./ui/icon";
 import { LeagueDetailActions } from "./league-detail";
 
 type Season = { id: string; label: string };
-type PreviewLeague = { id: string; name: string; leagueCode: string; isOwner: boolean };
+type PreviewLeague = { id: string; name: string; leagueCode: string; isOwner: boolean; memberCount: number };
 type Mode = "create" | "join";
 async function body(response: Response) { const type = response.headers.get("content-type") ?? ""; return type.includes("application/json") ? response.json() as Promise<{ error?: { code?: string } }> : null; }
 const errorMessage = (code: string | undefined, fallback: string) => code === "INVALID_INPUT" ? "No hemos podido completar tu perfil. Recarga la página e inténtalo de nuevo." : code ?? fallback;
@@ -48,8 +48,8 @@ export function LeagueOnboarding({ seasons, preview = false, hasLeague = false, 
 
   return <main className={`${styles.page} ${styles.onboarding} ${gateStyles.gated}`}>
     <div className={gateStyles.topbar}><Link className="wordmark" href="/" aria-label="Canastio, inicio">Canastio</Link><LogoutControl /></div>
-    <header className={gateStyles.intro}><div><p>{preview ? "Acceso anticipado" : "Último paso"}</p><h1>{preview ? "Tu liga empieza aquí" : "Configura tu primera liga"}</h1><span>{preview ? "Crea una liga o entra con el código de tu grupo. Te avisaremos cuando se abra la cancha completa." : "Elige cómo quieres empezar. Podrás gestionar más ligas después."}</span></div><div className={gateStyles.courtMark} aria-hidden="true"><i /></div></header>
-    {preview && hasLeague ? <><section className={`${styles.actions} ${gateStyles.singleAction}`} aria-live="polite"><div><p className={gateStyles.formLabel}>TODO LISTO</p><h2>Tu plaza está preparada</h2><p>Ya formas parte de una liga. Te avisaremos cuando abramos el resto de Canastio.</p></div></section>{previewLeague ? <LeagueDetailActions leagueId={previewLeague.id} leagueCode={previewLeague.leagueCode} isOwner={previewLeague.isOwner} /> : null}</> : <><fieldset className={gateStyles.choice}>
+    <header className={gateStyles.intro}><div><p>{preview ? "Acceso anticipado" : "Último paso"}</p><h1>{preview && hasLeague ? "Tu liga ya está preparada" : preview ? "Tu liga empieza aquí" : "Configura tu primera liga"}</h1><span>{preview && hasLeague ? "Todo está preparado. Invita a tu grupo mientras terminamos de abrir Canastio." : preview ? "Crea una liga o entra con el código de tu grupo. Te avisaremos cuando se abra la cancha completa." : "Elige cómo quieres empezar. Podrás gestionar más ligas después."}</span></div><div className={gateStyles.courtMark} aria-hidden="true"><i /></div></header>
+    {preview && hasLeague ? <>{previewLeague ? <section className={`${styles.actions} ${gateStyles.singleAction} preview-league-summary`} aria-labelledby="preview-league-title"><p className={gateStyles.formLabel}>TU LIGA</p><h2 id="preview-league-title">{previewLeague.name}</h2><p>{previewLeague.memberCount} {previewLeague.memberCount === 1 ? "manager" : "managers"}</p><strong>● Plaza confirmada</strong></section> : null}{previewLeague ? <LeagueDetailActions leagueId={previewLeague.id} leagueCode={previewLeague.leagueCode} isOwner={previewLeague.isOwner} /> : null}</> : <><fieldset className={gateStyles.choice}>
       <legend>Cómo quieres empezar</legend>
       <label onClick={() => choose("create")}><input type="radio" name="league-mode" value="create" checked={mode === "create"} onChange={() => choose("create")} /><Icon name="league" /><span><strong>Crear una liga</strong><small>Organiza una competición</small></span></label>
       <label onClick={() => choose("join")}><input type="radio" name="league-mode" value="join" checked={mode === "join"} onChange={() => choose("join")} /><Icon name="user" /><span><strong>Tengo un código</strong><small>Únete a tus amigos</small></span></label>
@@ -59,6 +59,6 @@ export function LeagueOnboarding({ seasons, preview = false, hasLeague = false, 
         : <form onSubmit={(event) => { event.preventDefault(); void join(); }}><p className={gateStyles.formLabel}>UNIRME</p><h2>Entrar en una liga</h2><Field label="Código de liga" autoCapitalize="characters" placeholder="CNST-XXXXXX" value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} /><Field label="Contraseña" type="password" autoComplete="current-password" placeholder="Contraseña de la liga" value={joinPassword} onChange={(event) => setJoinPassword(event.target.value)} /><button type="submit" disabled={pending}>{pending ? "Entrando…" : "Entrar en la liga"}<span>→</span></button></form>}
     </section></>}
     {message && <p role="alert" className={styles.message}>{message}</p>}
-    <p className={gateStyles.note}>{preview ? "Tu cuenta y tu liga quedarán preparadas. El resto de Canastio sigue en pruebas." : "Al completar este paso se activará el resto de Canastio."}</p>
+    <p className={gateStyles.note}>{preview && hasLeague ? "Todo listo. Te avisaremos cuando se abra la cancha." : preview ? "Tu cuenta y tu liga quedarán preparadas. El resto de Canastio sigue en pruebas." : "Al completar este paso se activará el resto de Canastio."}</p>
   </main>;
 }

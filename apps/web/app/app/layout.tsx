@@ -22,7 +22,16 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const user = await getServerUser();
   if (!user) redirect("/login");
   const rollout = await getRolloutAccess(user.id);
-  let profile = await db.userProfile.findUnique({ where: { authUserId: user.id }, select: { id: true, username: true, displayName: true, avatarPath: true, adminGrants: { where: { role: "INGESTION_ADMIN", revokedAt: null }, take: 1, select: { id: true } }, leagueMemberships: { where: { status: "ACTIVE", league: { status: "ACTIVE", legacyTeamId: null } }, take: 1, select: { id: true, role: true, league: { select: { id: true, name: true, leagueCode: true, ownerProfileId: true } } } } } });
+  let profile = await db.userProfile.findUnique({
+    where: { authUserId: user.id },
+    select: {
+      id: true, username: true, displayName: true, avatarPath: true,
+      adminGrants: { where: { role: "INGESTION_ADMIN", revokedAt: null }, take: 1, select: { id: true } },
+      leagueMemberships: { where: { status: "ACTIVE", league: { status: "ACTIVE", legacyTeamId: null } }, take: 1, select: {
+        id: true, role: true, league: { select: { id: true, name: true, leagueCode: true, ownerProfileId: true, _count: { select: { memberships: { where: { status: "ACTIVE" } } } } } },
+      } },
+    },
+  });
   if (profile && !profile.username) {
     const restored = await restoreUsernameFromAuthMetadata(user.id, user.user_metadata?.username);
     if (restored) profile = { ...profile, username: restored.username };
@@ -30,7 +39,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   if (rollout.state === "PREVIEW" && !rollout.isBypassed && !rollout.isAdmin) {
     const seasons = await db.competitionSeason.findMany({ where: { fantasyEnabled: true }, include: { competition: true }, orderBy: { createdAt: "desc" } });
     const membership = profile?.leagueMemberships[0];
-    const previewLeague = membership?.league ? { id: membership.league.id, name: membership.league.name, leagueCode: membership.league.leagueCode, isOwner: membership.league.ownerProfileId === profile?.id } : null;
+    const previewLeague = membership?.league ? { id: membership.league.id, name: membership.league.name, leagueCode: membership.league.leagueCode, memberCount: membership.league._count.memberships, isOwner: membership.league.ownerProfileId === profile?.id } : null;
     return <div className="league-gate rollout-preview"><LeagueOnboarding preview hasLeague={Boolean(membership)} previewLeague={previewLeague} seasons={seasons.map((season) => ({ id: season.id, label: `${season.competition.name}${season.name ? ` · ${season.name}` : ""}` }))} /></div>;
   }
   if (!profile?.leagueMemberships.length && !profile?.adminGrants.length) {

@@ -2873,6 +2873,95 @@
       "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
       "approved_by": "peorr",
       "approved_at": "2026-09-16T16:54:31.598Z"
+    },
+    {
+      "id": "sprint-32-controlled-rollout-preview",
+      "name": "Sprint 32 - Controlled Rollout Preview",
+      "title": "Preview de registro y ligas con acceso interno controlado",
+      "status": "review_pending",
+      "sdd": true,
+      "spec_approved": true,
+      "priority": "P0",
+      "milestone": "1.4.0",
+      "dependencies": [
+        "sprint-31-catalog-link-and-retired-games"
+      ],
+      "description": "Introducir un gate de rollout administrable que, mientras esté activo, permita al público registrarse, iniciar sesión y crear o unirse a una liga como preview, pero bloquee el resto del producto. Los perfiles `pvto_pepe` y `fvcking_pepe` conservan acceso integral para pruebas internas. Un administrador puede activar o desactivar el gate en tiempo de ejecución de forma segura y auditable.",
+      "objective": "Promocionar Canastio y captar registros y ligas antes de la apertura completa, manteniendo cerradas las funcionalidades todavía en prueba y sin impedir que las dos cuentas internas continúen validando el producto extremo a extremo.",
+      "user_stories": [
+        {
+          "id": "HU32.1",
+          "story": "Como visitante quiero crear una cuenta y, tras verificarla, crear una liga o unirme a una existente para reservar mi participación durante la preview."
+        },
+        {
+          "id": "HU32.2",
+          "story": "Como usuario de la preview quiero saber claramente que el resto del producto aún no está disponible, sin encontrar pantallas o acciones funcionales por navegación directa."
+        },
+        {
+          "id": "HU32.3",
+          "story": "Como probador con usuario `pvto_pepe` o `fvcking_pepe` quiero seguir accediendo a todas las páginas y APIs autenticadas mientras el gate esté activo."
+        },
+        {
+          "id": "HU32.4",
+          "story": "Como administrador con `INGESTION_ADMIN` quiero abrir o cerrar la preview sin desplegar una nueva versión y dejar constancia auditable del cambio."
+        }
+      ],
+      "tasks": [
+        "Definir una configuración persistida única para el gate de rollout, con lectura server-side, valor seguro por defecto y auditoría de cambios.",
+        "Centralizar la decisión de acceso usando el estado del gate, la sesión y el username normalizado del perfil.",
+        "Limitar rutas, layouts, Server Actions y APIs de producto cuando el gate esté activo, sin basar la protección únicamente en ocultar navegación.",
+        "Adaptar el flujo autenticado de preview para permitir exclusivamente crear o unirse a una liga y mostrar después una confirmación de espera sin habilitar el producto.",
+        "Permitir acceso integral y exacto a los perfiles `pvto_pepe` y `fvcking_pepe`, sin usar correo, display name, cookies cliente ni coincidencias parciales.",
+        "Añadir al área administrativa un control accesible para consultar, activar y desactivar el gate con confirmación, protección de origen y registro de actor y resultado.",
+        "Cubrir rutas directas, APIs, mutaciones, sesiones, cambios concurrentes del gate, allowlist, responsive, accesibilidad y rollback mediante tests."
+      ],
+      "deliverable": "Con el gate activo, el público solo puede completar autenticación y crear o unirse a una liga desde una experiencia de preview; las dos cuentas internas mantienen el producto completo y un administrador puede abrir o cerrar el acceso en tiempo de ejecución.",
+      "acceptance": [
+        "El estado de rollout tiene dos valores observables, PREVIEW y OPEN, se persiste server-side como una única configuración vigente y se evalúa en cada petición protegida; si la configuración falta o no puede leerse, producción aplica PREVIEW de forma segura y muestra un error recuperable en el control administrativo.",
+        "En PREVIEW permanecen públicas la portada, registro, confirmación y callback de correo, login, recuperación y actualización de contraseña, manifest y recursos estáticos necesarios; ninguna de estas superficies revela si un correo ajeno existe ni expone secretos o configuración interna.",
+        "Una cuenta autenticada no exceptuada puede acceder únicamente a la pantalla de preview y a las operaciones necesarias para consultar competiciones fantasy habilitadas, crear una liga o unirse a una liga; no recibe el shell, la navegación ni datos del resto del producto.",
+        "Crear o unirse a una liga durante PREVIEW conserva exactamente las validaciones, autorización, aislamiento, límites e idempotencia existentes. Al completarse, el usuario permanece en la preview y ve una confirmación de que su liga está preparada para la apertura; pertenecer ya a una liga no concede acceso adicional.",
+        "En PREVIEW, toda navegación directa de una cuenta no exceptuada a páginas privadas fuera de la preview redirige a la URL canónica de preview, sin bucles y sin conservar destinos no permitidos; las rutas administrativas no se usan como vía de acceso al producto.",
+        "En PREVIEW, toda API, Server Action o mutación de producto fuera de la allowlist de autenticación y onboarding de liga rechaza a cuentas no exceptuadas con HTTP 403 y código estable ROLLOUT_PREVIEW, sin ejecutar lógica de negocio ni filtrar datos; una sesión ausente conserva el comportamiento 401 o redirección de autenticación vigente.",
+        "Solo los perfiles cuyo username normalizado coincida exactamente con `pvto_pepe` o `fvcking_pepe` omiten el gate y conservan todas las páginas y APIs que ya les autorice su sesión; email, displayName, mayúsculas originales, parámetros, cabeceras o cookies suministradas por el cliente no pueden otorgar la excepción.",
+        "Un usuario con grant activo INGESTION_ADMIN puede consultar y cambiar PREVIEW ↔ OPEN desde el área administrativa aun cuando PREVIEW esté activo. La mutación exige sesión, grant, origen válido y confirmación explícita, y registra actor, valor anterior, valor nuevo, timestamp y resultado sin almacenar tokens, cookies ni PII innecesaria.",
+        "Un administrador no incluido en la allowlist solo obtiene durante PREVIEW el acceso mínimo a la superficie que permite consultar y cambiar el rollout y cerrar sesión; el grant administrativo por sí solo no habilita las páginas o APIs normales del producto.",
+        "Cada cambio administrativo entra en vigor para peticiones nuevas sin redeploy. Dos cambios concurrentes se serializan o usan control de versión para que no haya actualizaciones perdidas; la respuesta devuelve el estado finalmente persistido y un conflicto tiene código estable.",
+        "En OPEN, el gate deja de restringir navegación, renderizado y APIs para todas las cuentas, y los contratos de autorización, onboarding y membresía previos siguen siendo la única fuente de permisos; volver a PREVIEW no borra cuentas, ligas, membresías, equipos ni actividad ya creada.",
+        "La pantalla de preview explica el acceso anticipado, ofrece crear o unirse a una liga, representa carga, éxito, error, sesión caducada, sin competiciones disponibles y estado ya inscrito, permite cerrar sesión y funciona con teclado y lector de pantalla a 320, 375, 768, 1024 y 1440 px sin scroll horizontal involuntario.",
+        "Las respuestas privadas y la decisión de bypass usan datos server-side actuales, envían cabeceras que evitan cachear contenido entre usuarios y no incluyen la allowlist, secretos, correos, UUID internos ni la configuración administrativa completa en HTML, JavaScript cliente, logs o respuestas públicas.",
+        "Tests unitarios, integración PostgreSQL y E2E cubren PREVIEW y OPEN, configuración ausente y error de lectura, usuario anónimo, usuario normal antes y después de crear o unirse, ambos usernames exceptuados, homónimos y coincidencias parciales, admin no exceptuado, rutas profundas, APIs GET y mutaciones, cambio concurrente, sesión caducada, accesibilidad y responsive; typecheck, lint, test, Prisma validate y diff-scope terminan con código cero."
+      ],
+      "scope": [
+        "apps/web/middleware.ts",
+        "apps/web/app/globals.css",
+        "apps/web/app/auth/**",
+        "apps/web/app/app/**",
+        "apps/web/app/api/**",
+        "apps/web/src/app/api/**",
+        "apps/web/src/components/**",
+        "apps/web/src/lib/supabase/**",
+        "apps/web/src/server/**",
+        "prisma/schema.prisma",
+        "prisma/migrations/**",
+        "supabase/**",
+        "tests/**",
+        "docs/SECURITY_PRIVACY.md",
+        "docs/PRIVATE_LEAGUES.md",
+        "docs/ARCHITECTURE.md",
+        "docs/CONVENTIONS.md",
+        "docs/DECISIONS.md",
+        "spec/**",
+        "progress/**",
+        ".harness/**",
+        "spec.json"
+      ],
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-09-16T00:00:00.000Z",
+      "manual_spec_ready_reason": "El flujo existente de autenticación, onboarding de ligas y grants administrativos permite fijar un contrato conservador y verificable sin decisiones funcionales abiertas.",
+      "answers_hash": "sha256:f8656fb89a63451960f64bd1c4d80b6b570df5f2f385d4347a0cd1d3e1a1b71e",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-16T17:27:14.667Z"
     }
   ]
 }

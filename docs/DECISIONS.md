@@ -653,3 +653,16 @@ Contexto: se aprobó el spec `sprint-31-catalog-link-and-retired-games` (Recuper
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-32-controlled-rollout-preview -->
+## 2026-09-16 · sprint-32-controlled-rollout-preview aprobado
+
+Contexto: se aprobó el spec `sprint-32-controlled-rollout-preview` (Preview de registro y ligas con acceso interno controlado).
+
+Decisiones registradas:
+
+- **auth_secrets:** Decisión server-side, origen y grant para mutaciones, sin confiar en identidad aportada por cliente.
+- **rollback_compat:** Cambio aditivo y reversible sin borrar datos de usuario o fantasy.
+- **tests:** Cobertura unitaria, PostgreSQL, HTTP y E2E de ambos estados y todos los actores.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

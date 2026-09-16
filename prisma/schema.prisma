@@ -36,6 +36,7 @@ model UserProfile {
   leaguePresence          LeaguePresence[]
   followedPlayers         PlayerFollow[]
   achievementAwards       LeagueAchievementAward[]
+  rolloutChanges          RolloutSetting[]         @relation("RolloutSettingActor")
 
   @@map("user_profiles")
 }
@@ -1043,6 +1044,17 @@ model AdminAuditEvent {
   @@index([actorProfileId, createdAt])
   @@index([resourceType, resourceId, createdAt])
   @@map("admin_audit_events")
+}
+
+model RolloutSetting {
+  id                   String       @id @default("global") @db.VarChar(32)
+  state                String       @default("PREVIEW") @db.VarChar(16)
+  version              Int          @default(1)
+  updatedAt            DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedByProfileId   String?      @map("updated_by_profile_id") @db.Uuid
+  updatedBy            UserProfile? @relation("RolloutSettingActor", fields: [updatedByProfileId], references: [id], onDelete: SetNull)
+
+  @@map("rollout_settings")
 }
 
 model SportsDataRevision {

@@ -997,3 +997,39 @@ Formalizar y verificar que cada arranque del servicio productivo de Railway ejec
   - `.harness/**`
   - `spec.json`
 
+<!-- harness:sprint-32-controlled-rollout-preview -->
+## sprint-32-controlled-rollout-preview · Preview de registro y ligas con acceso interno controlado
+
+Introducir un gate de rollout administrable que, mientras esté activo, permita al público registrarse, iniciar sesión y crear o unirse a una liga como preview, pero bloquee el resto del producto. Los perfiles `pvto_pepe` y `fvcking_pepe` conservan acceso integral para pruebas internas. Un administrador puede activar o desactivar el gate en tiempo de ejecución de forma segura y auditable.
+
+### Scope aprobado
+
+  - `apps/web/middleware.ts`
+  - `apps/web/app/auth/**`
+  - `apps/web/app/app/**`
+  - `apps/web/app/api/**`
+  - `apps/web/src/app/api/**`
+  - `apps/web/src/components/**`
+  - `apps/web/src/lib/supabase/**`
+  - `apps/web/src/server/**`
+  - `prisma/schema.prisma`
+  - `prisma/migrations/**`
+  - `supabase/**`
+  - `tests/**`
+  - `docs/SECURITY_PRIVACY.md`
+  - `docs/PRIVATE_LEAGUES.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/CONVENTIONS.md`
+  - `docs/DECISIONS.md`
+  - `spec/**`
+  - `progress/**`
+  - `.harness/**`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** Configuración única PREVIEW/OPEN, versionada y auditable; bypass fijo por username canónico exacto.
+- **external_contracts:** Se preservan Auth y ligas; contrato administrativo versionado sin nueva integración externa.
+- **edge_cases:** Membresía sin bypass, coincidencias exactas, admin mínimo, rutas profundas, sesiones y concurrencia.
+- **ui_states:** Preview dedicada, confirmaciones y estados accesibles; OPEN conserva la experiencia actual.
+

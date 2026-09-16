@@ -1,6 +1,6 @@
 # Sesión actual
 
-Feature: **sprint-31-catalog-link-and-retired-games · Sprint 31 - Catalog Link and Retired Games** — estado: `review_pending`.
+Feature: **sprint-32-controlled-rollout-preview · Sprint 32 - Controlled Rollout Preview** — estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,7 +8,7 @@ Feature: **sprint-31-catalog-link-and-retired-games · Sprint 31 - Catalog Link 
 
 ## Siguiente acción
 
-- Desplegar la migración y el ingestor, comprobar que 10468 muestra 12 equipos/26 inscripciones y cerrar con `node .harness/spec.mjs done sprint-31-catalog-link-and-retired-games`.
+- Aplicar la migración `20260916183000_controlled_rollout_preview`, verificar PREVIEW/OPEN y cerrar con `node .harness/spec.mjs done sprint-32-controlled-rollout-preview` tras smoke test humano.
 
 ## Último resultado
 

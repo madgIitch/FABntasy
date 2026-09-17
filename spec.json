@@ -3118,7 +3118,7 @@
       "id": "sprint-35-recent-competition-catalog-order",
       "name": "Sprint 35 - Recent Competition Catalog Order",
       "title": "Competiciones recientes primero en el catálogo FAB",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "spec_approved": true,
       "priority": "P2",

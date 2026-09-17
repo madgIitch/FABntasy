@@ -3038,7 +3038,7 @@
       "id": "sprint-34-active-league-management-separation",
       "name": "Sprint 34 - Active League and League Management Separation",
       "title": "Separación entre liga activa y gestión de ligas",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "spec_approved": true,
       "priority": "P1",

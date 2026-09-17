@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { LeagueContext, type LeagueContextData } from "./league-context";
 import { useMemo, useState, type CSSProperties } from "react";
 import styles from "./fantasy-team-manager.module.css";
 
@@ -24,7 +25,7 @@ export function nextLineupSelection(starters: string[], selectedId: string | nul
   return { starters: starters.map((starterId) => starterId === (selectedIsStarter ? selectedId : id) ? (selectedIsStarter ? id : selectedId) : starterId), selectedId: null };
 }
 
-export function FantasyTeamManager({ competitionSeasonId, roundNumber, initialTeam, eligiblePlayers = [], playerMetrics = {}, cutoffAt = null }: { competitionSeasonId: string; roundNumber: number; initialTeam: Team | null; eligiblePlayers?: Player[]; playerMetrics?: PlayerMetrics; cutoffAt?: string | null }) {
+export function FantasyTeamManager({ leagueContext, competitionSeasonId, roundNumber, initialTeam, eligiblePlayers = [], playerMetrics = {}, cutoffAt = null }: { leagueContext?: LeagueContextData; competitionSeasonId: string; roundNumber: number; initialTeam: Team | null; eligiblePlayers?: Player[]; playerMetrics?: PlayerMetrics; cutoffAt?: string | null }) {
   const [team, setTeam] = useState(initialTeam);
   const [view, setView] = useState<View>("court");
   const [valueSort, setValueSort] = useState<ValueSort>("change");
@@ -70,14 +71,14 @@ export function FantasyTeamManager({ competitionSeasonId, roundNumber, initialTe
     } catch { setStatus("offline"); }
   }
 
-  if (!team) return <main className={`app-main ${styles.page}`}><Header roundNumber={roundNumber} locked={false} cutoffAt={cutoffAt} /><section className={styles.builder}>
+  if (!team) return <main className={`app-main ${styles.page}`}>{leagueContext?<LeagueContext {...leagueContext}/>:null}<Header roundNumber={roundNumber} locked={false} cutoffAt={cutoffAt} /><section className={styles.builder}>
     <div><p className="eyebrow">Plantilla inicial</p><h2>Elige tus siete</h2><p>Máximo dos jugadores del mismo equipo. El precio vigente se confirma al guardar.</p></div>
     <fieldset className={styles.available}><legend>{rosterDraft.length} de 7 seleccionados</legend>{eligiblePlayers.map((player) => <label key={player.playerRegistrationId}><input type="checkbox" checked={rosterDraft.includes(player.playerRegistrationId)} disabled={!rosterDraft.includes(player.playerRegistrationId) && rosterDraft.length >= 7} onChange={(event) => setRosterDraft((current) => event.target.checked ? [...current, player.playerRegistrationId] : current.filter((id) => id !== player.playerRegistrationId))} /><span><strong>{player.displayName}</strong><small>{player.realTeamName}</small></span><b>{credits.format(player.acquisitionPrice)}</b></label>)}</fieldset>
     <button className={styles.primary} disabled={rosterDraft.length !== 7 || status === "saving"} onClick={() => void createRoster()}>{status === "saving" ? "Creando…" : "Crear equipo"}</button><Feedback status={status} />
   </section></main>;
 
   const startersList = starters.map((id) => team.roster.find((player) => player.playerRegistrationId === id)).filter((player): player is Player => Boolean(player));
-  return <main className={`app-main ${styles.page}`}><Header roundNumber={roundNumber} locked={locked} cutoffAt={team.lineup?.cutoffAt ?? cutoffAt} />
+  return <main className={`app-main ${styles.page}`}>{leagueContext?<LeagueContext {...leagueContext}/>:null}<Header roundNumber={roundNumber} locked={locked} cutoffAt={team.lineup?.cutoffAt ?? cutoffAt} />
     <section className={styles.summary} aria-label="Resumen de plantilla"><span><strong>{credits.format(team.budgetUsed)}</strong><small>Coste plantilla</small></span><span><strong>{credits.format(team.budgetRemaining)}</strong><small>Disponible</small></span><span><strong>{team.roster.length}/7</strong><small>Jugadores</small></span></section>
     <nav className={styles.views} aria-label="Vista del equipo">{views.map((item) => <button key={item.id} aria-pressed={view === item.id} className={view === item.id ? styles.active : ""} onClick={() => setView(item.id)}>{item.label}</button>)}</nav>
     {locked && <p className={styles.locked}>Alineación cerrada · snapshot de la jornada {roundNumber}</p>}

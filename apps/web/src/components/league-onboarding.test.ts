@@ -14,7 +14,7 @@ describe("multiple league onboarding", () => {
     expect(onboarding).toContain("previewLeagues.map");
     expect(hub).not.toContain("Crear otra liga");
     expect(hub).not.toContain("Unirme a otra liga");
-    expect(hub).toContain("Cambiar de liga activa");
+    expect(hub).toContain("<LeagueSwitcher");
     expect(directory).toContain("Crear nueva liga");
     expect(directory).toContain("Unirme con código");
     expect(form).toContain("/api/fantasy/leagues/active");

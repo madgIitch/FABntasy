@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { LeagueContext, type LeagueContextData } from "./league-context";
 import { useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { JourneyData, JourneyPlayer } from "../server/journey";
@@ -14,14 +15,15 @@ function ScoreChart({ values }: { values: number[] }) {
 
 function EvolutionEmpty() { return <section className={styles.chartEmpty}><p>Evolución</p><strong>Cómo creció tu jornada</strong><span aria-hidden="true">○────○────○</span><small>La evolución aparecerá cuando tus jugadores empiecen a puntuar.</small></section>; }
 
-export function JourneyLive({ data }: { data: JourneyData | null }) {
+export function JourneyLive({ data, leagueContext }: { data: JourneyData | null; leagueContext?: LeagueContextData }) {
   const router = useRouter(); const refreshing = useRef(false);
   useEffect(() => { if (data?.state !== "LIVE" && data?.state !== "PROVISIONAL") return; const refresh = () => { if (document.visibilityState !== "visible" || refreshing.current) return; refreshing.current = true; router.refresh(); window.setTimeout(() => { refreshing.current = false; }, 1500); }; const timer = window.setInterval(refresh, 30000); return () => window.clearInterval(timer); }, [data?.state, router]);
-  if (!data) return <main className={styles.empty}><span aria-hidden="true">05</span><p>Jornada</p><h1>Prepara tu quinteto</h1><strong>Aún no hay un equipo activo para puntuar.</strong><Link href="/app/mi-equipo">Crear mi equipo <b>→</b></Link></main>;
+  if (!data) return <main className={styles.empty}>{leagueContext?<LeagueContext {...leagueContext}/>:null}<span aria-hidden="true">05</span><p>Jornada</p><h1>Prepara tu quinteto</h1><strong>Aún no hay un equipo activo para puntuar.</strong><Link href="/app/mi-equipo">Crear mi equipo <b>→</b></Link></main>;
   const scored = data.players.filter((player) => player.state === "FINAL" || player.state === "DNP").length;
   const hasLineup = data.players.length > 0;
   return <main className={styles.page} data-state={data.state}>
-    <header className={styles.header}><div><p>{data.league} · {data.competition}</p><h1>Jornada {String(data.roundNumber).padStart(2, "0")}</h1>{data.roundDates && <span>{data.roundDates}</span>}</div><div className={styles.status}><i/><span>{data.stateLabel}</span></div></header>
+    {leagueContext?<LeagueContext {...leagueContext}/>:null}
+    <header className={styles.header}><div>{!leagueContext?<p>{data.league} · {data.competition}</p>:null}<h1>Jornada {String(data.roundNumber).padStart(2, "0")}</h1>{data.roundDates && <span>{data.roundDates}</span>}</div><div className={styles.status}><i/><span>{data.stateLabel}</span></div></header>
     <nav className={styles.roundNav} aria-label="Cambiar jornada">{data.rounds.slice(0, 6).map((round) => <Link className={round === data.roundNumber ? styles.selected : ""} href={`/app/jornada?round=${round}`} key={round} aria-current={round === data.roundNumber ? "page" : undefined}>J{String(round).padStart(2, "0")}</Link>)}</nav>
     {data.correction && <aside className={styles.correctionNotice} role="status"><strong>Jornada recalculada</strong><span>{data.correction.reason}</span><time dateTime={data.correction.publishedAt}>{new Intl.DateTimeFormat("es-ES",{dateStyle:"medium",timeStyle:"short",timeZone:"Europe/Madrid"}).format(new Date(data.correction.publishedAt))}</time></aside>}
     <section className={styles.scoreboard} aria-labelledby="team-score"><div className={styles.scoreCopy}><p>Tu jornada</p><div><strong id="team-score">{data.totalPoints === null ? "—" : number.format(Number(data.totalPoints))}</strong><span>pts Fantasy</span></div><small>{scoreSummary(data, scored, hasLineup)}</small></div></section>

@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import type { ReactNode } from "react";
+import { LeagueSwitcher as HomeLeagueSwitcher } from "./league-switcher";
+import { LeagueContext } from "./league-context";
 import type { HomeDashboard as Dashboard, SectionState } from "../server/home-dashboard";
 import { displayPersonName, formatFreshness, heroPresentation, orderHomeSections, sportStatus } from "../server/home-presentation";
 import { DashboardRefresh } from "./home-dashboard-refresh";
@@ -16,7 +17,7 @@ const activityCopy:Record<string,string>={BUY:"fichó a",SELL:"vendió a",CLAUSE
 export function HomeDashboard({data}:{data:Dashboard}) {
   if(data.kind==="CRITICAL_ERROR")return <State title="No hemos podido cargar tu portada" body="Tus datos siguen a salvo. Inténtalo de nuevo." href="/app" action="Reintentar"/>;
   if(data.kind==="NO_PROFILE")return <State title="Completa tu perfil" body="Elige tu nombre de usuario para empezar a competir." href="/app/perfil/editar" action="Crear perfil"/>;
-  if(data.kind==="NO_TEAM")return <State title="Entra en una liga" body="Crea una liga o únete con el código de tu grupo." href="/app/ligas" action="Elegir liga"/>;
+  if(data.kind==="NO_TEAM")return data.leagueContext?<main className={styles.page}><LeagueContext {...data.leagueContext}/><h1>Prepara tu equipo</h1><p>Tu liga está lista. Crea tu plantilla para empezar.</p><Link className={styles.textAction} href="/app/mi-equipo">Crear equipo</Link></main>:<State title="Entra en una liga" body="Crea una liga o únete con el código de tu grupo." href="/app/perfil/ligas" action="Elegir liga"/>;
   const urgent=data.round.lineupState==="INCOMPLETE"||data.round.lineupState==="NOT_SAVED";
   const hero=heroPresentation({state:data.round.lineupState,mode:data.mode,roundNumber:data.round.number,hasScore:Boolean(data.performance.data)});
   const heroHref=data.round.lineupState==="NO_CALENDAR"?"/app/competicion":hero.action==="Ver jornada"?"/app/jornada":"/app/mi-equipo";
@@ -38,15 +39,3 @@ function Performance({section}:{section:Extract<Dashboard,{kind:"READY"}>["perfo
 function Section({title,kicker,href,actionLabel,state,updatedAt,children}:{title:string;kicker:string;href?:string;actionLabel?:string;state:SectionState;updatedAt:string|null;children:ReactNode}){return <section className={styles.section}><div className={styles.sectionTitle}><div><span>{kicker}</span><h2>{title}</h2></div>{href?<Link href={href}>{actionLabel??"Ver"}</Link>:null}</div>{state==="ERROR"?<Empty>No hemos podido actualizar esta sección. El resto de la portada sigue disponible.</Empty>:children}<p className={styles.freshness}>{formatFreshness(updatedAt,new Date())}</p></section>}
 function Empty({children}:{children:ReactNode}){return <p className={styles.empty}>{children}</p>}
 function State({title,body,href,action}:{title:string;body:string;href:string;action:string}){return <main className={styles.onboarding}><span>CANASTIO</span><h1>{title}</h1><p>{body}</p><Link href={href}>{action}<b>→</b></Link></main>}
-
-type LeagueOption = { id: string; name: string };
-function HomeLeagueSwitcher({ activeLeague, leagues }: { activeLeague: LeagueOption; leagues: LeagueOption[] }) {
-  const router=useRouter(),rootRef=useRef<HTMLDivElement>(null),triggerRef=useRef<HTMLButtonElement>(null),optionRefs=useRef<Array<HTMLButtonElement|null>>([]),requestId=useRef(0);
-  const [open,setOpen]=useState(false),[pending,setPending]=useState<string|null>(null),[error,setError]=useState<string|null>(null);
-  const close=(restoreFocus=true)=>{setOpen(false);if(restoreFocus)queueMicrotask(()=>triggerRef.current?.focus())};
-  useEffect(()=>{if(!open)return;queueMicrotask(()=>optionRefs.current[leagues.findIndex((league)=>league.id===activeLeague.id)]?.focus());const outside=(event:PointerEvent)=>{if(!rootRef.current?.contains(event.target as Node))close()};const keyboard=(event:KeyboardEvent)=>{if(event.key==="Escape"){event.preventDefault();close()}};document.addEventListener("pointerdown",outside);document.addEventListener("keydown",keyboard);return()=>{document.removeEventListener("pointerdown",outside);document.removeEventListener("keydown",keyboard)}},[activeLeague.id,leagues,open]);
-  useEffect(()=>{const refresh=()=>router.refresh();window.addEventListener("focus",refresh);return()=>window.removeEventListener("focus",refresh)},[router]);
-  async function selectLeague(leagueId:string){if(pending)return;if(leagueId===activeLeague.id){close();return}const current=++requestId.current;setPending(leagueId);setError(null);try{const response=await fetch("/api/fantasy/leagues/active",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({leagueId})});const result=await response.json().catch(()=>null) as {data?:{activeLeagueId?:string};error?:{code?:string}}|null;if(current!==requestId.current)return;if(!response.ok||result?.data?.activeLeagueId!==leagueId){if(response.status===401){router.refresh();return}if(response.status===404||result?.error?.code==="LEAGUE_NOT_FOUND"){setError("Esta liga ya no está disponible. Hemos actualizado tu selección.");close(false);router.refresh();return}throw new Error("ACTIVE_LEAGUE_UPDATE_FAILED")}close();router.refresh()}catch{if(current===requestId.current)setError("No se pudo cambiar de liga. Inténtalo de nuevo.")}finally{if(current===requestId.current)setPending(null)}}
-  const move=(index:number,direction:1|-1)=>optionRefs.current[(index+direction+leagues.length)%leagues.length]?.focus();
-  return <div className={styles.leagueSwitcher} ref={rootRef}><button ref={triggerRef} type="button" className={styles.leagueTrigger} aria-haspopup="menu" aria-expanded={open} onClick={()=>{setOpen(value=>!value);setError(null)}} onKeyDown={(event)=>{if(!open&&(event.key==="ArrowDown"||event.key==="ArrowUp")){event.preventDefault();setOpen(true)}}}><span>{activeLeague.name}</span><svg className={styles.chevron} viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></button>{open?<div className={styles.leagueMenu} role="menu" aria-label="Cambiar de liga"><p>Cambiar de liga</p>{leagues.map((league,index)=><button ref={(node)=>{optionRefs.current[index]=node}} key={league.id} type="button" role="menuitemradio" aria-checked={league.id===activeLeague.id} disabled={pending!==null} onClick={()=>void selectLeague(league.id)} onKeyDown={(event)=>{if(event.key==="ArrowDown"){event.preventDefault();move(index,1)}if(event.key==="ArrowUp"){event.preventDefault();move(index,-1)}}}><span>{league.name}</span><span aria-hidden="true">{pending===league.id?"…":league.id===activeLeague.id?"✓":""}</span></button>)}<Link href="/app/perfil/ligas" role="menuitem" onClick={()=>close(false)}>Gestionar mis ligas</Link></div>:null}{error?<p className={styles.leagueError} role="alert">{error}</p>:null}</div>
-}

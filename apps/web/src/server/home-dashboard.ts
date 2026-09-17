@@ -2,6 +2,7 @@ import { db } from "./db";
 import { safeError } from "./security";
 import { deriveHomeMode } from "./home-presentation";
 import { cached, cacheTags, privateCacheKey } from "./performance";
+import { listLeagues, resolveActiveLeagueId } from "./private-leagues";
 
 export type SectionState = "READY" | "EMPTY" | "ERROR";
 export type HomeDashboard = Awaited<ReturnType<typeof getHomeDashboard>>;
@@ -28,9 +29,10 @@ async function loadHomeDashboard(authUserId:string, requestedLeagueId?:string) {
   try {
     const profile = await db.userProfile.findUnique({ where:{authUserId}, include:{ fantasyTeams:{ where:{league:{status:"ACTIVE"}}, orderBy:{updatedAt:"desc"}, include:{ league:true, competitionSeason:{include:{competition:true}}, rosterSlots:{include:{playerRegistration:{include:{teamRegistration:true}}}}, lineups:{where:{supersededAt:null},orderBy:{roundNumber:"desc"},take:2,include:{slots:true}}, total:true } } } });
     if (!profile) return {kind:"NO_PROFILE" as const,updatedAt};
-    if (requestedLeagueId && !profile.fantasyTeams.some((item)=>item.leagueId===requestedLeagueId)) return {kind:"CRITICAL_ERROR" as const,code:"LEAGUE_NOT_AVAILABLE",updatedAt};
-    const team=profile.fantasyTeams.find((item)=>item.leagueId===(requestedLeagueId??profile.activeLeagueId))??profile.fantasyTeams[0];
-    if (!team) return {kind:"NO_TEAM" as const,displayName:profile.displayName,updatedAt};
+    const availableLeagues=await listLeagues({authUserId});
+    const selectedLeague=availableLeagues.find(item=>item.id===requestedLeagueId);
+    const team=profile.fantasyTeams.find((item)=>item.leagueId===requestedLeagueId);
+    if (!team) return {kind:"NO_TEAM" as const,displayName:profile.displayName,leagueContext:selectedLeague?{competition:selectedLeague.competitionSeason.competition.name,activeLeague:{id:selectedLeague.id,name:selectedLeague.name},leagues:availableLeagues.map(item=>({id:item.id,name:item.name}))}:null,updatedAt};
     const now=new Date();
     const realTeamIds=[...new Set(team.rosterSlots.map((slot)=>slot.playerRegistration.teamRegistration.teamId))];
     const gamesResult=await section(()=>db.game.findMany({where:{competitionSeasonId:team.competitionSeasonId,syncStatus:"active",AND:[{OR:[{status:{in:liveStatuses}},{scheduledAt:{gte:now}}]},...(realTeamIds.length?[{OR:[{homeTeamId:{in:realTeamIds}},{awayTeamId:{in:realTeamIds}}]}]:[])]},orderBy:[{scheduledAt:"asc"},{id:"asc"}],take:12,include:{homeTeam:true,awayTeam:true}}));
@@ -49,14 +51,16 @@ async function loadHomeDashboard(authUserId:string, requestedLeagueId?:string) {
     const stateOf=(failed:boolean,hasData:boolean):SectionState=>failed?"ERROR":hasData?"READY":"EMPTY";
     const isLive=(gamesResult.data??[]).some((game)=>liveStatuses.some((status)=>(game.status||game.sourceStatus||"").toLowerCase().includes(status)));
     const mode=deriveHomeMode({hasLive:isLive,latestFinishedAt:playedGamesResult.data?.[0]?.sourceUpdatedAt??playedGamesResult.data?.[0]?.scheduledAt??null,now});
-    return {kind:"READY" as const,schemaVersion:"canastio.home.v1",mode,displayName:profile.displayName,league:{id:team.league.id,name:team.league.name},leagues:profile.fantasyTeams.map((item)=>({id:item.league.id,name:item.league.name})),competition:team.competitionSeason.competition.name,roster:{count:team.rosterSlots.length,balanceCredits:team.balanceCredits===null?null:Number(team.balanceCredits)},round:{number:nextRound,cutoffAt:lineup?.cutoffAt?iso(lineup.cutoffAt):nextGame?.scheduledAt?iso(nextGame.scheduledAt):null,lineupState,isLive},performance:{state:stateOf(scoresResult.state==="ERROR",Boolean(latestScore)),updatedAt:latestScore?.publishedAt?iso(latestScore.publishedAt):scoresResult.updatedAt,data:latestScore?{roundNumber:latestScore.roundNumber,points:latestScore.points!.toString(),position,positionChange:position!==null&&previousPosition!==null?previousPosition-position:null}:null},market:{state:stateOf(marketResult.state==="ERROR",Boolean(marketResult.data?.length)),updatedAt:marketResult.data?.[0]?.createdAt?iso(marketResult.data[0].createdAt):marketResult.updatedAt,data:marketResult.data?buildMarketMovers(marketResult.data):null},games:{state:stateOf(gamesResult.state==="ERROR",Boolean(uniqueGames.length)),updatedAt:gamesResult.updatedAt,data:uniqueGames.map((game)=>({id:game.id,home:game.homeTeam.name,away:game.awayTeam.name,scheduledAt:game.scheduledAt?iso(game.scheduledAt):null,status:game.sourceStatus??game.status}))},playedGames:{state:stateOf(playedGamesResult.state==="ERROR",Boolean(playedGamesResult.data?.length)),updatedAt:playedGamesResult.updatedAt,data:playedGamesResult.data?.map((game)=>({id:game.id,home:game.homeTeam.name,away:game.awayTeam.name,homeScore:game.homeScore,awayScore:game.awayScore,scheduledAt:game.scheduledAt?iso(game.scheduledAt):null}))??null},activity:{state:stateOf(activityResult.state==="ERROR",Boolean(activity?.length)),updatedAt:activityResult.data?.[0]?.createdAt?iso(activityResult.data[0].createdAt):activityResult.updatedAt,data:activity},updatedAt};
+    return {kind:"READY" as const,schemaVersion:"canastio.home.v1",mode,displayName:profile.displayName,league:{id:team.league.id,name:team.league.name},leagues:availableLeagues.map((item)=>({id:item.id,name:item.name})),competition:team.competitionSeason.competition.name,roster:{count:team.rosterSlots.length,balanceCredits:team.balanceCredits===null?null:Number(team.balanceCredits)},round:{number:nextRound,cutoffAt:lineup?.cutoffAt?iso(lineup.cutoffAt):nextGame?.scheduledAt?iso(nextGame.scheduledAt):null,lineupState,isLive},performance:{state:stateOf(scoresResult.state==="ERROR",Boolean(latestScore)),updatedAt:latestScore?.publishedAt?iso(latestScore.publishedAt):scoresResult.updatedAt,data:latestScore?{roundNumber:latestScore.roundNumber,points:latestScore.points!.toString(),position,positionChange:position!==null&&previousPosition!==null?previousPosition-position:null}:null},market:{state:stateOf(marketResult.state==="ERROR",Boolean(marketResult.data?.length)),updatedAt:marketResult.data?.[0]?.createdAt?iso(marketResult.data[0].createdAt):marketResult.updatedAt,data:marketResult.data?buildMarketMovers(marketResult.data):null},games:{state:stateOf(gamesResult.state==="ERROR",Boolean(uniqueGames.length)),updatedAt:gamesResult.updatedAt,data:uniqueGames.map((game)=>({id:game.id,home:game.homeTeam.name,away:game.awayTeam.name,scheduledAt:game.scheduledAt?iso(game.scheduledAt):null,status:game.sourceStatus??game.status}))},playedGames:{state:stateOf(playedGamesResult.state==="ERROR",Boolean(playedGamesResult.data?.length)),updatedAt:playedGamesResult.updatedAt,data:playedGamesResult.data?.map((game)=>({id:game.id,home:game.homeTeam.name,away:game.awayTeam.name,homeScore:game.homeScore,awayScore:game.awayScore,scheduledAt:game.scheduledAt?iso(game.scheduledAt):null}))??null},activity:{state:stateOf(activityResult.state==="ERROR",Boolean(activity?.length)),updatedAt:activityResult.data?.[0]?.createdAt?iso(activityResult.data[0].createdAt):activityResult.updatedAt,data:activity},updatedAt};
   } catch (error) { console.error("[home-dashboard] critical_load_failed",safeError(error)); return {kind:"CRITICAL_ERROR" as const,code:"DASHBOARD_UNAVAILABLE",updatedAt}; }
 }
 
 export async function getHomeDashboard(authUserId:string, requestedLeagueId?:string) {
-  const profile=await db.userProfile.findUnique({where:{authUserId},select:{activeLeagueId:true,fantasyTeams:{where:{league:{status:"ACTIVE"}},orderBy:{updatedAt:"desc"},select:{leagueId:true}}}});
-  const preferredLeagueId=profile?.activeLeagueId??requestedLeagueId;
-  const resolvedLeagueId=profile?.fantasyTeams.find((team)=>team.leagueId===preferredLeagueId)?.leagueId??profile?.fantasyTeams[0]?.leagueId;
+  const profile=await db.userProfile.findUnique({where:{authUserId},select:{id:true}});
+  if(!profile)return {kind:"NO_PROFILE" as const,updatedAt:new Date().toISOString()};
+  // Legacy query parameters never override the persisted, authorized context.
+  void requestedLeagueId;
+  const resolvedLeagueId=await resolveActiveLeagueId({authUserId})??undefined;
   const leagueScope=resolvedLeagueId??"no-active-league";
   return cached("home",privateCacheKey("home",{actorAuthUserId:authUserId,leagueId:leagueScope}),cacheTags({leagueId:leagueScope}),()=>loadHomeDashboard(authUserId,resolvedLeagueId));
 }

@@ -3170,8 +3170,8 @@
     {
       "id": "sprint-36-home-league-switcher-and-empty-copy",
       "name": "Sprint 36 - Home League Switcher and Empty-State Copy",
-      "title": "Selector rápido de liga y estados vacíos claros en Inicio",
-      "status": "review_pending",
+      "title": "Selector compartido de liga y refinamiento visual de Inicio y Liga",
+      "status": "spec_ready",
       "sdd": true,
       "spec_approved": true,
       "priority": "P1",
@@ -3179,7 +3179,7 @@
       "dependencies": [
         "sprint-35-recent-competition-catalog-order"
       ],
-      "description": "Convertir el nombre de la liga en Inicio en un selector rápido inequívoco, conectado con la liga activa persistida, y sustituir el estado vacío de jornada por copy breve orientado al usuario.",
+      "description": "Unificar el selector rápido de liga activa en las cinco superficies de juego y refinar visualmente Inicio y Liga sin cambiar contratos, permisos ni reglas de negocio. La ampliación conserva la implementación previa y requiere nueva aprobación.",
       "objective": "Permitir cambiar el contexto global de juego desde Inicio sin confundir selección rápida con gestión de ligas, y explicar la ausencia de calendario sin lenguaje técnico redundante.",
       "user_stories": [
         {
@@ -3212,12 +3212,26 @@
         "Con NO_CALENDAR, Inicio muestra una sola vez Calendario pendiente, una única explicación orientada al usuario y un CTA cuyo texto describe su destino; no renderiza Sin fecha disponible ni Puntuación y clasificación pendientes.",
         "Inicio no incorpora creación, unión, abandono ni edición de ligas; esas acciones permanecen en Perfil > Mis ligas y solo se enlazan desde Gestionar mis ligas.",
         "Tests unitarios cubren presentación de NO_CALENDAR y resolución de liga activa; tests de integración cubren éxito, rechazo, persistencia, fallback y doble envío; E2E cubre teclado, foco, lector de pantalla, navegación a gestión y coherencia entre superficies.",
-        "corepack pnpm typecheck, corepack pnpm lint, corepack pnpm test y diff-scope finalizan con código cero."
+        "corepack pnpm typecheck, corepack pnpm lint, corepack pnpm test y diff-scope finalizan con código cero.",
+        "Inicio, Mercado, Mi equipo, Jornada y Liga reutilizan un único componente de selector rápido: nombre de liga de 18–20 px semibold, sin caja de formulario, chevron SVG de 12–14 px alineado ópticamente y área pulsable mínima de 44 px.",
+        "El menú compartido muestra Cambiar de liga, check visual de la activa, otras membresías disponibles y Gestionar mis ligas; no usa un select nativo ni botones Activar. Conserva semántica accesible sin indicadores de radio visibles.",
+        "Tras confirmar el cambio y representar el contexto canónico, anuncia Ahora estás en {nombre} mediante role=status; errores, doble envío, fallback y reconciliación conservan el contrato existente.",
+        "Liga elimina Ver miembros por duplicar el tab Miembros; mantiene el recuento y ofrece Invitar únicamente al actor autorizado, reutilizando el flujo existente sin rotar ni generar credenciales automáticamente.",
+        "Clasificación, Actividad y Miembros caben sin scrollbar decorativa en 393 px; en 320 px conservan legibilidad, foco y objetivos táctiles sin ocultar opciones.",
+        "La clasificación vacía muestra Aún no hay clasificación y La clasificación aparecerá cuando se publiquen los primeros resultados, con altura natural sin min-height de una tabla futura.",
+        "Las acciones textuales de contexto no incorporan flechas ornamentales; se conservan los iconos funcionales de navegación y el avatar actual.",
+        "La ampliación no modifica esquema, APIs, reglas de puntuación, permisos, avatar ni formato de clasificación con datos. Perfil mantiene la gestión completa.",
+        "Pruebas de componente e integración verifican el selector compartido, anuncio de éxito y permisos de invitación; E2E autenticado y revisión visual cubren cinco superficies, cero/una/varias ligas, teclado y anchos 320/375/393/768/1024/1440. Los escenarios omitidos se documentan y no cuentan como verificados."
       ],
       "scope": [
+        "apps/web/src/components/**",
+        "apps/web/app/app/**",
+        "apps/web/e2e/**",
         "apps/web/src/components/home-dashboard.tsx",
         "apps/web/src/components/home-dashboard.module.css",
         "apps/web/src/server/home-dashboard.ts",
+        "apps/web/src/server/journey.ts",
+        "apps/web/src/server/fantasy-team.ts",
         "apps/web/src/server/home-presentation.ts",
         "apps/web/src/server/home-dashboard.test.ts",
         "apps/web/src/server/home-presentation.test.ts",
@@ -3237,7 +3251,7 @@
       ],
       "answers_hash": "sha256:13f45af4b16f61f03322377f29450f6ca309eebcf42f2a83fe3ed42d78b4a324",
       "approved_by": "peorr",
-      "approved_at": "2026-09-17T21:55:15.559Z"
+      "approved_at": "2026-09-17T23:27:09.780Z"
     }
   ]
 }

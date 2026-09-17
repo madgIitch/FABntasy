@@ -25,7 +25,7 @@ describe("home dashboard contract",()=>{
     expect(page).toContain("getServerUser()");
     expect(readFileSync(new URL("../lib/supabase/server.ts",import.meta.url),"utf8")).toContain("auth.getUser()");
     expect(page).toContain("getHomeDashboard(user.id, league)");
-    expect(service).toContain("LEAGUE_NOT_AVAILABLE");
+    expect(service).toContain("resolveActiveLeagueId({authUserId})");
     expect(service).toContain("[home-dashboard] section_failed");
     expect(service).toContain("schemaVersion:\"canastio.home.v1\"");
   });
@@ -45,7 +45,7 @@ describe("home dashboard contract",()=>{
   });
 
   it("uses a persistent accessible league switcher instead of query-string navigation",()=>{
-    const component=readFileSync(resolve(process.cwd(),"src/components/home-dashboard.tsx"),"utf8");
+    const component=readFileSync(resolve(process.cwd(),"src/components/league-switcher.tsx"),"utf8");
     const route=readFileSync(resolve(process.cwd(),"src/app/api/fantasy/leagues/active/route.ts"),"utf8");
     expect(component).toContain('fetch("/api/fantasy/leagues/active"');
     expect(component).toContain('role="menuitemradio"');

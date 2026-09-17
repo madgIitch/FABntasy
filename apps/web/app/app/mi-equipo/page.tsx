@@ -3,21 +3,16 @@ import { FantasyTeamManager } from "../../../src/components/fantasy-team-manager
 import { getServerUser } from "../../../src/lib/supabase/server";
 import { db } from "../../../src/server/db";
 import { FantasyTeamServiceError, getFantasyTeam } from "../../../src/server/fantasy-team";
+import { listLeagues, resolveActiveLeagueId } from "../../../src/server/private-leagues";
 
 export default async function MyTeamPage() {
   const user = await getServerUser();
   if (!user) redirect("/login");
 
-  const profile = await db.userProfile.findUnique({ where: { authUserId: user.id }, select: { id: true } });
-  const existing = profile ? await db.fantasyTeam.findFirst({
-    where: { userProfileId: profile.id },
-    orderBy: { updatedAt: "desc" },
-    select: { competitionSeasonId: true },
-  }) : null;
-  const fallbackSeason = existing ? null : await db.competitionSeason.findFirst({
-    where: { fantasyEnabled: true }, orderBy: { updatedAt: "desc" }, select: { id: true },
-  });
-  const seasonId = existing?.competitionSeasonId ?? fallbackSeason?.id;
+  const activeLeagueId = await resolveActiveLeagueId({ authUserId: user.id });
+  const leagues = await listLeagues({ authUserId: user.id });
+  const league = leagues.find(item => item.id === activeLeagueId);
+  const seasonId = league?.competitionSeasonId;
 
   if (!seasonId) return <main className="app-main"><section className="empty-state"><span aria-hidden="true">◎</span><h1>Mi equipo</h1><p>No hay una competición fantasy activa.</p></section></main>;
 
@@ -28,7 +23,7 @@ export default async function MyTeamPage() {
   const roundNumber = nextGame?.roundNumber ?? 1;
   let initialTeam = null;
   try {
-    initialTeam = await getFantasyTeam({ authUserId: user.id }, seasonId, roundNumber);
+    initialTeam = await getFantasyTeam({ authUserId: user.id }, seasonId, roundNumber, league!.id);
   } catch (error) {
     if (!(error instanceof FantasyTeamServiceError) || error.code !== "TEAM_NOT_FOUND") throw error;
   }
@@ -61,6 +56,8 @@ export default async function MyTeamPage() {
   });
 
   return <FantasyTeamManager
+    key={league!.id}
+    leagueContext={{competition:league!.competitionSeason.competition.name,activeLeague:{id:league!.id,name:league!.name},leagues:leagues.map(item=>({id:item.id,name:item.name}))}}
     competitionSeasonId={seasonId}
     roundNumber={roundNumber}
     cutoffAt={nextGame?.scheduledAt?.toISOString() ?? null}

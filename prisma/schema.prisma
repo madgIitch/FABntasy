@@ -14,6 +14,7 @@ model UserProfile {
   username                String?                  @unique @db.VarChar(24)
   displayName             String?                  @map("display_name")
   avatarPath              String?                  @map("avatar_path")
+  activeLeagueId          String?                  @map("active_league_id") @db.Uuid
   discoverableByUsername  Boolean                  @default(true) @map("discoverable_by_username")
   deletedAt               DateTime?                @map("deleted_at") @db.Timestamptz(3)
   createdAt               DateTime                 @default(now()) @map("created_at")
@@ -38,6 +39,7 @@ model UserProfile {
   achievementAwards       LeagueAchievementAward[]
   rolloutChanges          RolloutSetting[]         @relation("RolloutSettingActor")
 
+  @@index([activeLeagueId])
   @@map("user_profiles")
 }
 

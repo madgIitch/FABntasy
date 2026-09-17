@@ -59,13 +59,15 @@ export async function getUserProfileOverview(authUserId: string) {
     createdAt: profile.createdAt,
     leagueCount: profile.leagueMemberships.length,
     totalPoints: publishedTotals.length ? publishedTotals.reduce((sum, total) => sum + Number(total.totalPoints), 0) : null,
-    leagues: profile.leagueMemberships.map(({ league }) => ({
+    leagues: profile.leagueMemberships.map(({ league, role }) => ({
       id: league.id,
       name: league.name,
       competitionName: league.competitionSeason.competition.name,
       memberCount: league.memberships.length,
       hasTeam: teamsByLeague.has(league.id),
       teamName: teamsByLeague.get(league.id)?.name ?? null,
+      isActive: league.id === profile.activeLeagueId,
+      role,
     })),
   };
 }

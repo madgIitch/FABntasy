@@ -675,3 +675,16 @@ Contexto: se aprobó el spec `sprint-33-preview-league-credentials` (Compartir c
 Decisión: implementar según el spec aprobado.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-34-active-league-management-separation -->
+## 2026-09-17 · sprint-34-active-league-management-separation aprobado
+
+Contexto: se aprobó el spec `sprint-34-active-league-management-separation` (Separación entre liga activa y gestión de ligas).
+
+Decisiones registradas:
+
+- **auth_secrets:** La identidad debe resolverse desde Supabase Auth en servidor; se conservan autorización, aislamiento, hash scrypt de contraseñas y ausencia de secretos o identidad confiada al cliente.
+- **rollback_compat:** Se exige conservar contratos existentes, pero no se especifica una migración aditiva ni el comportamiento de clientes o datos anteriores durante despliegue y rollback.
+- **tests:** La aceptación exige explícitamente cobertura unitaria, integración y E2E para una y varias ligas, selección, mutaciones, permisos, vacíos, teclado, lector de pantalla y anchos de 320 a 1440 px.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

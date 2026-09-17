@@ -1,5 +1,11 @@
 # Ligas privadas
 
+## Liga activa y gestión de membresías
+
+En `OPEN`, la pestaña inferior **Liga** representa exclusivamente la liga activa: clasificación, actividad, miembros, invitación y acciones contextuales autorizadas. Crear, unirse, seleccionar o abandonar una liga vive en **Perfil → Mis ligas**, con rutas dedicadas para creación y unión.
+
+`user_profiles.active_league_id` es una preferencia nullable y aditiva. El servidor nunca la acepta como prueba de acceso: cada lectura o cambio exige una membresía `ACTIVE` en una liga `ACTIVE`. Si la preferencia falta o queda obsoleta, se elige de forma determinista la membresía más reciente (`joined_at DESC`, `id ASC`) y se repara la preferencia. Un propietario no puede abandonar su liga mediante el flujo de membresía vigente.
+
 Un usuario puede pertenecer a varias ligas activas a la vez. Tanto durante el rollout PREVIEW como con el producto OPEN, la interfaz mantiene disponibles las acciones para crear una liga adicional o unirse a otra mediante código y contraseña. Cada membresía, plantilla, mercado y clasificación continúa aislada por `leagueId`.
 
 Una liga pertenece a una competición-temporada y admite hasta 20 miembros activos. El owner cuenta en ese límite, administra invitaciones y no puede abandonar la liga. Las plantillas pasan a estar vinculadas a la liga; el precio de mercado de cada jugador sigue siendo global.

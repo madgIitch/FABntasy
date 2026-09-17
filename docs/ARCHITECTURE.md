@@ -1057,3 +1057,36 @@ Extender la pantalla de preview para que el propietario de una liga pueda consul
   - `.harness/**`
   - `spec.json`
 
+<!-- harness:sprint-34-active-league-management-separation -->
+## sprint-34-active-league-management-separation · Separación entre liga activa y gestión de ligas
+
+Separar la experiencia competitiva de la liga activa de la gestión de membresías: la pestaña Liga conserva clasificación, actividad, miembros e invitación, mientras Perfil > Mis ligas concentra selección, creación, unión y abandono.
+
+### Scope aprobado
+
+  - `apps/web/app/app/**`
+  - `apps/web/app/api/fantasy/leagues/**`
+  - `apps/web/src/app/api/fantasy/leagues/**`
+  - `apps/web/src/components/**`
+  - `apps/web/src/server/private-leagues.ts`
+  - `apps/web/src/server/private-league-http.ts`
+  - `apps/web/src/server/rollout.ts`
+  - `prisma/schema.prisma`
+  - `prisma/migrations/**`
+  - `tests/**`
+  - `docs/PRIVATE_LEAGUES.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/CONVENTIONS.md`
+  - `docs/DECISIONS.md`
+  - `spec/**`
+  - `progress/**`
+  - `.harness/**`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** No define dónde se persiste la liga activa, su cardinalidad por usuario ni qué ocurre al abandonar la liga seleccionada.
+- **external_contracts:** Se preservan los contratos PREVIEW/OPEN y las operaciones existentes, pero no se define el contrato versionado para listar membresías ni seleccionar la liga activa.
+- **edge_cases:** Menciona una o varias ligas y estados vacíos, pero no resuelve owner, abandono de la activa, membresías de distintas competiciones ni concurrencia entre pestañas.
+- **ui_states:** La separación de destinos está clara, pero faltan estados concretos de carga, vacío, error, guardado, éxito, offline, conflicto y foco posterior a cada mutación.
+

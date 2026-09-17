@@ -2878,7 +2878,7 @@
       "id": "sprint-32-controlled-rollout-preview",
       "name": "Sprint 32 - Controlled Rollout Preview",
       "title": "Preview de registro y ligas con acceso interno controlado",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "spec_approved": true,
       "priority": "P0",
@@ -3033,6 +3033,82 @@
       "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
       "approved_by": "peorr",
       "approved_at": "2026-09-16T17:51:06.462Z"
+    },
+    {
+      "id": "sprint-34-active-league-management-separation",
+      "name": "Sprint 34 - Active League and League Management Separation",
+      "title": "Separación entre liga activa y gestión de ligas",
+      "status": "spec_ready",
+      "sdd": true,
+      "spec_approved": true,
+      "priority": "P1",
+      "milestone": "1.4.2",
+      "dependencies": [
+        "sprint-33-preview-league-credentials"
+      ],
+      "description": "Separar la experiencia competitiva de la liga activa de la gestión de membresías: la pestaña Liga conserva clasificación, actividad, miembros e invitación, mientras Perfil > Mis ligas concentra selección, creación, unión y abandono.",
+      "objective": "Dar a cada superficie una intención inequívoca y evitar que los formularios de crear o unirse interrumpan la consulta cotidiana de la liga activa.",
+      "user_stories": [
+        {
+          "id": "HU34.1",
+          "story": "Como manager quiero que la pestaña Liga muestre solamente la competición activa para consultar clasificación, actividad y miembros sin formularios ajenos a esa tarea."
+        },
+        {
+          "id": "HU34.2",
+          "story": "Como manager con varias ligas quiero verlas y cambiar la liga activa desde Mis ligas."
+        },
+        {
+          "id": "HU34.3",
+          "story": "Como manager quiero crear una liga o unirme mediante código desde un flujo de gestión claro y dedicado."
+        }
+      ],
+      "tasks": [
+        "Retirar los formularios de creación y unión de la superficie competitiva de Liga.",
+        "Convertir Perfil > Mis ligas en el directorio de membresías y punto de entrada de gestión.",
+        "Añadir un selector accesible de liga activa y conservar la selección server-side de forma segura.",
+        "Crear flujos dedicados y accesibles para crear una liga y unirse mediante código y contraseña.",
+        "Mantener invitación y administración contextual en la liga activa según permisos.",
+        "Cubrir navegación, autorización, estados vacíos, múltiples ligas, responsive y accesibilidad."
+      ],
+      "deliverable": "Liga queda dedicada a la competición activa y Perfil > Mis ligas permite seleccionar, crear, unirse y gestionar membresías mediante flujos separados.",
+      "acceptance": [
+        "La pestaña Liga no contiene formularios para crear otra liga ni unirse a otra; muestra únicamente la liga activa, sus tabs y acciones contextuales autorizadas.",
+        "Perfil > Mis ligas lista todas las membresías ACTIVE con nombre, competición, equipo, número de managers y navegación inequívoca.",
+        "El usuario puede elegir la liga activa; el servidor verifica la membresía, persiste una selección válida y aplica un fallback determinista si esa membresía deja de estar ACTIVE.",
+        "La acción Añadir ofrece opciones separadas para Crear liga y Unirme con código; cada opción abre un formulario dedicado con validación, carga, éxito, error y restauración de foco.",
+        "Crear, unirse o abandonar conserva autorización, aislamiento, límites, idempotencia y reglas vigentes de propietario; ninguna selección cliente concede acceso.",
+        "Liga mantiene clasificación, actividad, miembros e invitación de la liga activa; la administración contextual solo aparece para actores autorizados.",
+        "El perfil representa la ausencia de puntuación como `Sin puntos todavía` o elimina la métrica, sin mostrar un guion ambiguo.",
+        "PREVIEW conserva su experiencia limitada para preparar ligas y OPEN utiliza la nueva separación; ninguna ruta o API bloqueada queda accesible por el rediseño.",
+        "El rollback de aplicación no elimina ligas, membresías, equipos, credenciales, actividad ni la capacidad de acceder con versiones anteriores.",
+        "Tests unitarios, integración y E2E cubren cero, una y varias ligas, selección y fallback, creación, unión, abandono, permisos, errores, PREVIEW/OPEN, teclado, lector de pantalla y 320, 375, 768, 1024 y 1440 px."
+      ],
+      "scope": [
+        "apps/web/app/app/**",
+        "apps/web/app/api/fantasy/leagues/**",
+        "apps/web/src/app/api/fantasy/leagues/**",
+        "apps/web/src/components/**",
+        "apps/web/src/server/private-leagues.ts",
+        "apps/web/src/server/private-league-http.ts",
+        "apps/web/src/server/rollout.ts",
+        "prisma/schema.prisma",
+        "prisma/migrations/**",
+        "tests/**",
+        "docs/PRIVATE_LEAGUES.md",
+        "docs/ARCHITECTURE.md",
+        "docs/CONVENTIONS.md",
+        "docs/DECISIONS.md",
+        "spec/**",
+        "progress/**",
+        ".harness/**",
+        "spec.json"
+      ],
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-09-17T15:54:40.303Z",
+      "manual_spec_ready_reason": "Dev override: Fase 0 marcada como suficientemente especificada pese a suposiciones pendientes.",
+      "answers_hash": "sha256:072039328a8db4f490fcda3be3a07eb5b893bd5883795cfd6a84d2de87a5736e",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-17T15:56:53.368Z"
     }
   ]
 }

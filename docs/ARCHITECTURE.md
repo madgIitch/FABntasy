@@ -1090,3 +1090,25 @@ Separar la experiencia competitiva de la liga activa de la gestión de membresí
 - **edge_cases:** Menciona una o varias ligas y estados vacíos, pero no resuelve owner, abandono de la activa, membresías de distintas competiciones ni concurrencia entre pestañas.
 - **ui_states:** La separación de destinos está clara, pero faltan estados concretos de carga, vacío, error, guardado, éxito, offline, conflicto y foco posterior a cada mutación.
 
+<!-- harness:sprint-35-recent-competition-catalog-order -->
+## sprint-35-recent-competition-catalog-order · Competiciones recientes primero en el catálogo FAB
+
+Ordenar el catálogo administrativo FAB por la actividad real más reciente, de modo que una competición recién descubierta o cuyo contenido acaba de cambiar aparezca al principio.
+
+### Scope aprobado
+
+  - `apps/web/src/server/ingestion-admin.ts`
+  - `apps/web/src/server/ingestion-admin.test.ts`
+  - `tests/**`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+  - `.harness/**`
+
+### Contexto técnico
+
+- **data_model:** El modelo existente ya contiene lastChangedAt, que se inicializa al descubrir y solo cambia cuando cambia el checksum; lastCheckedAt se actualiza también en comprobaciones sin cambios y no debe usarse para ordenar.
+- **external_contracts:** No cambia FAB ni el esquema de la API administrativa; únicamente cambia el orden de los elementos devueltos por la consulta existente.
+- **edge_cases:** Los empates de lastChangedAt se resuelven por categoryCompetitionId ascendente, identidad FAB estable del catálogo. El nombre, el estado y monitored no participan en el desempate.
+- **ui_states:** El catálogo general debe usar exclusivamente la actividad reciente; la sección separada de competiciones monitorizadas puede seguir filtrando el mismo resultado sin que monitored influya en la prioridad cronológica.
+

@@ -688,3 +688,16 @@ Decisiones registradas:
 - **tests:** La aceptación exige explícitamente cobertura unitaria, integración y E2E para una y varias ligas, selección, mutaciones, permisos, vacíos, teclado, lector de pantalla y anchos de 320 a 1440 px.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-35-recent-competition-catalog-order -->
+## 2026-09-17 · sprint-35-recent-competition-catalog-order aprobado
+
+Contexto: se aprobó el spec `sprint-35-recent-competition-catalog-order` (Competiciones recientes primero en el catálogo FAB).
+
+Decisiones registradas:
+
+- **auth_secrets:** No cambia la autorización INGESTION_ADMIN, las mutaciones, los secretos ni la exposición de datos sensibles.
+- **rollback_compat:** El cambio puede revertirse restaurando el orderBy anterior; no requiere migración ni modifica datos persistidos.
+- **tests:** Una prueba unitaria debe verificar el argumento orderBy enviado a Prisma dentro de getIngestionDashboard. Esa prueba, junto con las pruebas existentes del dashboard y los gates completos, es cobertura suficiente; no se requiere integración con PostgreSQL porque no hay SQL manual, migraciones ni semántica ajena a la ordenación nativa de Prisma.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

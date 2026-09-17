@@ -1,6 +1,6 @@
 # Sesión actual
 
-Feature: **sprint-34-active-league-management-separation · Sprint 34 - Active League and League Management Separation** — estado: `review_pending`.
+Feature: **sprint-35-recent-competition-catalog-order · Sprint 35 - Recent Competition Catalog Order** — estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -8,12 +8,12 @@ Feature: **sprint-34-active-league-management-separation · Sprint 34 - Active L
 
 ## Siguiente acción
 
-- Aplicar la migración aditiva `20260917180000_active_league_selection`.
-- Hacer smoke autenticado de Perfil → Mis ligas y Liga a 393×852.
-- Tras validación humana, cerrar con `node .harness/spec.mjs done sprint-34-active-league-management-separation`.
+- Hacer smoke de `/app/admin/ingestion` tras un cambio o alta real del catálogo.
+- Confirmar que la competición más reciente aparece al principio del catálogo general.
+- Tras validación humana, cerrar con `node .harness/spec.mjs done sprint-35-recent-competition-catalog-order`.
 
 ## Último resultado
 
 | intento | resultado | gate fallido |
 |--:|--|--|
-| 1 | OK con limitación visual heredada | — |
+| 1 | OK | — |

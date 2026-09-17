@@ -3,6 +3,10 @@ import { db } from "./db";
 
 export class AdminError extends Error { constructor(public code: string, public status = 400) { super(code); } }
 export const JOB_TYPES = ["COMPETITION", "ROUND", "GAME"] as const;
+export const RECENT_CATALOG_ORDER: Prisma.FabCompetitionCatalogOrderByWithRelationInput[] = [
+  { lastChangedAt: "desc" },
+  { categoryCompetitionId: "asc" },
+];
 export const TEAM_INDEX_COVERAGE = ["COMPLETE", "PARTIAL", "NOT_SYNCED", "STALE", "FAILED"] as const;
 export type TeamIndexCoverageStatus = typeof TEAM_INDEX_COVERAGE[number];
 export type CompetitionTeamIndex = {
@@ -172,7 +176,7 @@ export async function getIngestionDashboard(actorProfileId: string, filters: { s
     db.ingestionRun.findMany({ where: competitionSeasonId ? { competitionSeasonId } : {}, orderBy: { startedAt: "desc" }, take: 50, include: { competitionSeason: { select: { id: true, name: true, competition: { select: { name: true } } } } } }),
     db.ingestionHeartbeat.findFirst({ orderBy: { seenAt: "desc" } }),
     db.ingestionRun.findFirst({ where: { status: "SUCCEEDED" }, orderBy: { finishedAt: "desc" } }),
-    db.fabCompetitionCatalog.findMany({ where: catalogWhere, orderBy: [{ monitored: "desc" }, { lastChangedAt: "desc" }], take: 200,
+    db.fabCompetitionCatalog.findMany({ where: catalogWhere, orderBy: RECENT_CATALOG_ORDER, take: 200,
       include: { competitionSeason: { include: { competition: true, season: true, games: { where: { syncStatus: "active" }, select: { status: true, statsSyncStatus: true, scheduledAt: true, roundNumber: true } } } } } }),
     db.fabCompetitionCatalogScan.findFirst({ orderBy: { startedAt: "desc" } }),
     db.fabCompetitionCatalog.findMany({ distinct: ["delegationName"], orderBy: { delegationName: "asc" }, select: { delegationName: true } }),

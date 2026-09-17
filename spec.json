@@ -3113,6 +3113,59 @@
       "answers_hash": "sha256:072039328a8db4f490fcda3be3a07eb5b893bd5883795cfd6a84d2de87a5736e",
       "approved_by": "peorr",
       "approved_at": "2026-09-17T15:56:53.368Z"
+    },
+    {
+      "id": "sprint-35-recent-competition-catalog-order",
+      "name": "Sprint 35 - Recent Competition Catalog Order",
+      "title": "Competiciones recientes primero en el catálogo FAB",
+      "status": "review_pending",
+      "sdd": true,
+      "spec_approved": true,
+      "priority": "P2",
+      "milestone": "1.4.3",
+      "dependencies": [
+        "sprint-34-active-league-management-separation"
+      ],
+      "description": "Ordenar el catálogo administrativo FAB por la actividad real más reciente, de modo que una competición recién descubierta o cuyo contenido acaba de cambiar aparezca al principio.",
+      "objective": "Facilitar la revisión operativa de novedades del catálogo sin que el estado de monitorización o una comprobación sin cambios oculte las competiciones relevantes.",
+      "user_stories": [
+        {
+          "id": "HU35.1",
+          "story": "Como administrador quiero ver primero las competiciones recién descubiertas o modificadas para detectar y revisar novedades rápidamente."
+        }
+      ],
+      "tasks": [
+        "Sustituir la prioridad de monitorización por un orden descendente de última aparición o cambio.",
+        "Definir desempates deterministas para que el listado no salte entre recargas.",
+        "Mantener intactos los filtros y la sección específica de competiciones monitorizadas.",
+        "Añadir pruebas unitarias del orden del catálogo."
+      ],
+      "deliverable": "El catálogo FAB muestra primero las competiciones con aparición o cambio más reciente, independientemente de si están monitorizadas.",
+      "acceptance": [
+        "La consulta del catálogo general ordena primero por lastChangedAt descendente y no usa lastCheckedAt ni monitored como claves de prioridad.",
+        "Una fila recién insertada, cuyo lastChangedAt se inicializa en el momento del descubrimiento, aparece antes que cualquier fila con lastChangedAt anterior.",
+        "Cuando cambia el checksum de una competición, la actualización de lastChangedAt hace que aparezca antes que filas con actividad anterior.",
+        "Una observación con checksum idéntico actualiza lastCheckedAt pero conserva lastChangedAt y, por tanto, no cambia la prioridad cronológica.",
+        "Cambiar monitored entre true y false no modifica la posición relativa de dos filas con distintos valores de lastChangedAt.",
+        "Los empates de lastChangedAt se resuelven por categoryCompetitionId ascendente.",
+        "Los filtros catalogQuery, catalogStatus, delegation y season conservan sus predicados actuales y el orden reciente se aplica sobre el conjunto filtrado.",
+        "El límite existente de 200 resultados se aplica después de la ordenación, devolviendo las 200 competiciones con actividad más reciente que satisfagan los filtros.",
+        "Las pruebas cubren descubrimiento, cambio, comprobación sin cambios, independencia de monitored, empate determinista y combinación con filtros.",
+        "corepack pnpm typecheck, corepack pnpm lint, corepack pnpm test y diff-scope finalizan con código cero."
+      ],
+      "scope": [
+        "apps/web/src/server/ingestion-admin.ts",
+        "apps/web/src/server/ingestion-admin.test.ts",
+        "tests/**",
+        "docs/**",
+        "spec/**",
+        "progress/**",
+        ".harness/**",
+        "spec.json"
+      ],
+      "answers_hash": "sha256:dcf79939cbddb47205f62e60e247f424ed52cef281718c4b07af2e970b40a85e",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-17T18:03:09.804Z"
     }
   ]
 }

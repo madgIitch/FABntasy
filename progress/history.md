@@ -69,3 +69,6 @@
 
 ## 2026-09-16T15:58:44.577Z — #sprint-29-monitored-competition-team-index Sprint 29 - Monitored Competition Team Index → review_pending
 - 1 intento(s) · agente codex
+
+## 2026-09-17T18:06:00.000Z — #sprint-35-recent-competition-catalog-order Sprint 35 - Recent Competition Catalog Order → review_pending
+- 1 intento · catálogo ordenado por último cambio o descubrimiento; gates aprobados.

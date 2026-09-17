@@ -1,10 +1,15 @@
-# sprint-36-home-league-switcher-and-empty-copy · Selector rápido de liga y estados vacíos claros en Inicio — Diseño
+# sprint-36-home-league-switcher-and-empty-copy · Selector compartido de liga y refinamiento visual de Inicio y Liga — Diseño
 
 ## Scope (archivos que puede tocar)
 
+- `apps/web/src/components/**`
+- `apps/web/app/app/**`
+- `apps/web/e2e/**`
 - `apps/web/src/components/home-dashboard.tsx`
 - `apps/web/src/components/home-dashboard.module.css`
 - `apps/web/src/server/home-dashboard.ts`
+- `apps/web/src/server/journey.ts`
+- `apps/web/src/server/fantasy-team.ts`
 - `apps/web/src/server/home-presentation.ts`
 - `apps/web/src/server/home-dashboard.test.ts`
 - `apps/web/src/server/home-presentation.test.ts`

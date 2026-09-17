@@ -1,11 +1,11 @@
-# sprint-36-home-league-switcher-and-empty-copy · Selector rápido de liga y estados vacíos claros en Inicio — Requisitos
+# sprint-36-home-league-switcher-and-empty-copy · Selector compartido de liga y refinamiento visual de Inicio y Liga — Requisitos
 
 - name: `Sprint 36 - Home League Switcher and Empty-State Copy` · priority: P1 · sdd: true
-- aprobado por: peorr · 2026-09-17T21:55:15.559Z
+- aprobado por: peorr · 2026-09-17T23:27:09.780Z
 
 ## Contexto
 
-Convertir el nombre de la liga en Inicio en un selector rápido inequívoco, conectado con la liga activa persistida, y sustituir el estado vacío de jornada por copy breve orientado al usuario.
+Unificar el selector rápido de liga activa en las cinco superficies de juego y refinar visualmente Inicio y Liga sin cambiar contratos, permisos ni reglas de negocio. La ampliación conserva la implementación previa y requiere nueva aprobación.
 
 ## Requisitos funcionales
 
@@ -22,6 +22,15 @@ R10. Con NO_CALENDAR, Inicio muestra una sola vez Calendario pendiente, una úni
 R11. Inicio no incorpora creación, unión, abandono ni edición de ligas; esas acciones permanecen en Perfil > Mis ligas y solo se enlazan desde Gestionar mis ligas.
 R12. Tests unitarios cubren presentación de NO_CALENDAR y resolución de liga activa; tests de integración cubren éxito, rechazo, persistencia, fallback y doble envío; E2E cubre teclado, foco, lector de pantalla, navegación a gestión y coherencia entre superficies.
 R13. corepack pnpm typecheck, corepack pnpm lint, corepack pnpm test y diff-scope finalizan con código cero.
+R14. Inicio, Mercado, Mi equipo, Jornada y Liga reutilizan un único componente de selector rápido: nombre de liga de 18–20 px semibold, sin caja de formulario, chevron SVG de 12–14 px alineado ópticamente y área pulsable mínima de 44 px.
+R15. El menú compartido muestra Cambiar de liga, check visual de la activa, otras membresías disponibles y Gestionar mis ligas; no usa un select nativo ni botones Activar. Conserva semántica accesible sin indicadores de radio visibles.
+R16. Tras confirmar el cambio y representar el contexto canónico, anuncia Ahora estás en {nombre} mediante role=status; errores, doble envío, fallback y reconciliación conservan el contrato existente.
+R17. Liga elimina Ver miembros por duplicar el tab Miembros; mantiene el recuento y ofrece Invitar únicamente al actor autorizado, reutilizando el flujo existente sin rotar ni generar credenciales automáticamente.
+R18. Clasificación, Actividad y Miembros caben sin scrollbar decorativa en 393 px; en 320 px conservan legibilidad, foco y objetivos táctiles sin ocultar opciones.
+R19. La clasificación vacía muestra Aún no hay clasificación y La clasificación aparecerá cuando se publiquen los primeros resultados, con altura natural sin min-height de una tabla futura.
+R20. Las acciones textuales de contexto no incorporan flechas ornamentales; se conservan los iconos funcionales de navegación y el avatar actual.
+R21. La ampliación no modifica esquema, APIs, reglas de puntuación, permisos, avatar ni formato de clasificación con datos. Perfil mantiene la gestión completa.
+R22. Pruebas de componente e integración verifican el selector compartido, anuncio de éxito y permisos de invitación; E2E autenticado y revisión visual cubren cinco superficies, cero/una/varias ligas, teclado y anchos 320/375/393/768/1024/1440. Los escenarios omitidos se documentan y no cuentan como verificados.
 
 ## Restricciones
 

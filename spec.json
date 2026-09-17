@@ -2967,7 +2967,7 @@
       "id": "sprint-33-preview-league-credentials",
       "name": "Sprint 33 - Preview League Credentials",
       "title": "Compartir código y administrar contraseña desde la preview",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "spec_approved": true,
       "priority": "P1",

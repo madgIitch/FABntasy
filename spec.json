@@ -3166,6 +3166,78 @@
       "answers_hash": "sha256:dcf79939cbddb47205f62e60e247f424ed52cef281718c4b07af2e970b40a85e",
       "approved_by": "peorr",
       "approved_at": "2026-09-17T18:03:09.804Z"
+    },
+    {
+      "id": "sprint-36-home-league-switcher-and-empty-copy",
+      "name": "Sprint 36 - Home League Switcher and Empty-State Copy",
+      "title": "Selector rápido de liga y estados vacíos claros en Inicio",
+      "status": "review_pending",
+      "sdd": true,
+      "spec_approved": true,
+      "priority": "P1",
+      "milestone": "1.4.4",
+      "dependencies": [
+        "sprint-35-recent-competition-catalog-order"
+      ],
+      "description": "Convertir el nombre de la liga en Inicio en un selector rápido inequívoco, conectado con la liga activa persistida, y sustituir el estado vacío de jornada por copy breve orientado al usuario.",
+      "objective": "Permitir cambiar el contexto global de juego desde Inicio sin confundir selección rápida con gestión de ligas, y explicar la ausencia de calendario sin lenguaje técnico redundante.",
+      "user_stories": [
+        {
+          "id": "HU36.1",
+          "story": "Como manager con varias ligas quiero cambiar rápidamente la liga activa desde Inicio y reconocer sin dudas cuál está seleccionada."
+        },
+        {
+          "id": "HU36.2",
+          "story": "Como manager quiero entender qué ocurrirá cuando todavía no exista una próxima jornada sin leer estados técnicos repetidos."
+        }
+      ],
+      "tasks": [
+        "Hacer que el nombre de liga cerrado muestre affordance de selector con chevron.",
+        "Añadir encabezado, indicador de selección y acceso a Gestionar mis ligas en el desplegable.",
+        "Persistir el cambio mediante el contrato server-side de liga activa y refrescar Inicio sin navegación a otra pantalla.",
+        "Simplificar el copy del estado NO_CALENDAR y ocultar métricas pendientes redundantes.",
+        "Cubrir teclado, foco, estados de envío/error y responsive."
+      ],
+      "deliverable": "Inicio expone un selector rápido y accesible de liga activa y un estado vacío de jornada claro, mientras Perfil > Mis ligas conserva la gestión completa.",
+      "acceptance": [
+        "Inicio conserva el orden competición FAB → liga privada; el nombre de la liga activa es un control con chevron visible, nombre accesible y estado expandido anunciado.",
+        "Al abrirse, el selector muestra Cambiar de liga, marca exactamente una liga activa, lista las demás membresías ACTIVE disponibles y ofrece Gestionar mis ligas con destino a /app/perfil/ligas.",
+        "La selección reutiliza la mutación server-side de liga activa; una respuesta satisfactoria persiste active_league_id, cierra el selector, restaura el foco y refresca Inicio sin navegación a otra pantalla.",
+        "Durante una selección pendiente, todas las opciones de cambio quedan deshabilitadas y una segunda activación no genera otra mutación.",
+        "Ante cualquier fallo, la interfaz conserva la liga anterior y sus datos, anuncia un mensaje mediante role=\"alert\" y permite reintentar sin recargar la página.",
+        "Tras completar el cambio, nuevas resoluciones server-side de Inicio, Mercado, Mi equipo, Jornada y Liga obtienen el mismo leagueId activo y no mezclan datos de la liga anterior.",
+        "Si la membresía elegida deja de ser ACTIVE antes de confirmarse, el servidor rechaza la selección y resuelve la liga válida mediante la regla de fallback existente; el cliente representa ese resultado sin asumir autorización local.",
+        "El selector admite Enter y Espacio para abrir, flechas para recorrer opciones, Enter para seleccionar, Escape para cerrar, clic exterior para cerrar y devolución del foco al disparador.",
+        "El selector permanece visible, sin recorte ni desbordamiento horizontal, en 320, 375, 768, 1024 y 1440 CSS px; los controles interactivos mantienen un área mínima de 44 × 44 px y foco perceptible.",
+        "Con NO_CALENDAR, Inicio muestra una sola vez Calendario pendiente, una única explicación orientada al usuario y un CTA cuyo texto describe su destino; no renderiza Sin fecha disponible ni Puntuación y clasificación pendientes.",
+        "Inicio no incorpora creación, unión, abandono ni edición de ligas; esas acciones permanecen en Perfil > Mis ligas y solo se enlazan desde Gestionar mis ligas.",
+        "Tests unitarios cubren presentación de NO_CALENDAR y resolución de liga activa; tests de integración cubren éxito, rechazo, persistencia, fallback y doble envío; E2E cubre teclado, foco, lector de pantalla, navegación a gestión y coherencia entre superficies.",
+        "corepack pnpm typecheck, corepack pnpm lint, corepack pnpm test y diff-scope finalizan con código cero."
+      ],
+      "scope": [
+        "apps/web/src/components/home-dashboard.tsx",
+        "apps/web/src/components/home-dashboard.module.css",
+        "apps/web/src/server/home-dashboard.ts",
+        "apps/web/src/server/home-presentation.ts",
+        "apps/web/src/server/home-dashboard.test.ts",
+        "apps/web/src/server/home-presentation.test.ts",
+        "apps/web/src/server/active-league-selection.test.ts",
+        "apps/web/src/app/api/fantasy/leagues/active/route.ts",
+        "apps/web/e2e/home-dashboard.spec.ts",
+        "apps/web/e2e/visual-fixtures.tsx",
+        "tests/**",
+        "docs/PRIVATE_LEAGUES.md",
+        "docs/ARCHITECTURE.md",
+        "docs/ACCESSIBILITY_AND_LOCALE.md",
+        "docs/DECISIONS.md",
+        "spec/**",
+        "progress/**",
+        ".harness/**",
+        "spec.json"
+      ],
+      "answers_hash": "sha256:13f45af4b16f61f03322377f29450f6ca309eebcf42f2a83fe3ed42d78b4a324",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-17T21:55:15.559Z"
     }
   ]
 }

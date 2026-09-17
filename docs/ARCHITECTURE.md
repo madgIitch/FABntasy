@@ -1112,3 +1112,37 @@ Ordenar el catálogo administrativo FAB por la actividad real más reciente, de 
 - **edge_cases:** Los empates de lastChangedAt se resuelven por categoryCompetitionId ascendente, identidad FAB estable del catálogo. El nombre, el estado y monitored no participan en el desempate.
 - **ui_states:** El catálogo general debe usar exclusivamente la actividad reciente; la sección separada de competiciones monitorizadas puede seguir filtrando el mismo resultado sin que monitored influya en la prioridad cronológica.
 
+<!-- harness:sprint-36-home-league-switcher-and-empty-copy -->
+## sprint-36-home-league-switcher-and-empty-copy · Selector rápido de liga y estados vacíos claros en Inicio
+
+Convertir el nombre de la liga en Inicio en un selector rápido inequívoco, conectado con la liga activa persistida, y sustituir el estado vacío de jornada por copy breve orientado al usuario.
+
+### Scope aprobado
+
+  - `apps/web/src/components/home-dashboard.tsx`
+  - `apps/web/src/components/home-dashboard.module.css`
+  - `apps/web/src/server/home-dashboard.ts`
+  - `apps/web/src/server/home-presentation.ts`
+  - `apps/web/src/server/home-dashboard.test.ts`
+  - `apps/web/src/server/home-presentation.test.ts`
+  - `apps/web/src/server/active-league-selection.test.ts`
+  - `apps/web/src/app/api/fantasy/leagues/active/route.ts`
+  - `apps/web/e2e/home-dashboard.spec.ts`
+  - `apps/web/e2e/visual-fixtures.tsx`
+  - `tests/**`
+  - `docs/PRIVATE_LEAGUES.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/ACCESSIBILITY_AND_LOCALE.md`
+  - `docs/DECISIONS.md`
+  - `spec/**`
+  - `progress/**`
+  - `.harness/**`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** Reutiliza user_profiles.active_league_id, nullable y aditivo, con validación server-side de membresía ACTIVE, persistencia y fallback determinista definidos en Sprint 34. El cambio entre ligas de distintas competiciones actualiza conjuntamente la competición y la liga activas.
+- **external_contracts:** Reutiliza POST /api/fantasy/leagues/active con JSON {"leagueId": string} y los envelopes existentes leagueOk/leagueError. En éxito ejecuta router.refresh() e invalida o revalida las rutas y tags dependientes del perfil y de la liga activa para que Inicio, Mercado, Mi equipo, Jornada y Liga converjan en el resultado canónico del servidor.
+- **edge_cases:** Define cero, una y varias ligas; selección de la liga ya activa sin mutación; preferencia o membresía obsoleta; cambios concurrentes y reconciliación entre pestañas; y ligas pertenecientes a competiciones distintas. Con cero ligas se conserva el onboarding actual y con una liga se mantiene el selector informativo y el acceso a gestión.
+- **ui_states:** Quedan definidos contenido, pendiente, error, teclado, foco y reglas de cierre: Escape, clic exterior, selección confirmada y navegación a gestión. Con una sola liga se muestran encabezado, marca de liga actual y enlace de gestión. El estado NO_CALENDAR usa el CTA Ver competición con destino /app/competicion.
+

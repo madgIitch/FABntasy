@@ -8,6 +8,8 @@ En `OPEN`, la pestaña inferior **Liga** representa exclusivamente la liga activ
 
 Un usuario puede pertenecer a varias ligas activas a la vez. Tanto durante el rollout PREVIEW como con el producto OPEN, la interfaz mantiene disponibles las acciones para crear una liga adicional o unirse a otra mediante código y contraseña. Cada membresía, plantilla, mercado y clasificación continúa aislada por `leagueId`.
 
+Inicio muestra la liga activa como selector rápido, pero mantiene la creación, unión, abandono y administración en Perfil → Mis ligas. El cambio reutiliza `POST /api/fantasy/leagues/active`, persiste la preferencia y refresca el contexto server-side; Inicio, Mercado, Mi equipo, Jornada y Liga resuelven después la misma selección. Con una sola liga el selector sigue ofreciendo acceso a la gestión, y con cero ligas permanece el onboarding.
+
 Una liga pertenece a una competición-temporada y admite hasta 20 miembros activos. El owner cuenta en ese límite, administra invitaciones y no puede abandonar la liga. Las plantillas pasan a estar vinculadas a la liga; el precio de mercado de cada jugador sigue siendo global.
 
 Cada liga tiene un código estable `CNST-XXXXXX` y una contraseña definida por su administrador. La base conserva exclusivamente un hash `scrypt` con salt aleatorio; nunca devuelve ni registra la contraseña. El administrador puede rotarla y el código permanece estable. Las ligas migradas conservan el acceso cerrado hasta que su administrador establezca una contraseña.

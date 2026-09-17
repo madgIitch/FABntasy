@@ -701,3 +701,16 @@ Decisiones registradas:
 - **tests:** Una prueba unitaria debe verificar el argumento orderBy enviado a Prisma dentro de getIngestionDashboard. Esa prueba, junto con las pruebas existentes del dashboard y los gates completos, es cobertura suficiente; no se requiere integración con PostgreSQL porque no hay SQL manual, migraciones ni semántica ajena a la ordenación nativa de Prisma.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-36-home-league-switcher-and-empty-copy -->
+## 2026-09-17 · sprint-36-home-league-switcher-and-empty-copy aprobado
+
+Contexto: se aprobó el spec `sprint-36-home-league-switcher-and-empty-copy` (Selector rápido de liga y estados vacíos claros en Inicio).
+
+Decisiones registradas:
+
+- **auth_secrets:** La identidad procede exclusivamente de la sesión de Supabase Auth y el servidor valida una membresía ACTIVE en una liga ACTIVE. El cliente no aporta identidad confiable ni se introducen secretos nuevos.
+- **rollback_compat:** No requiere migración ni modifica de forma incompatible la API. Reutiliza active_league_id y la mutación existente; un rollback del frontend conserva los datos persistidos y cualquier selección válida.
+- **tests:** La matriz bloqueante cubre cero, una y varias ligas; idempotencia; éxito, doble envío y respuestas fuera de orden; errores transitorios; membresía obsoleta y fallback; competiciones distintas; accesibilidad y foco; NO_CALENDAR; coherencia entre cinco superficies; todos los breakpoints exigidos; y los gates generales.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

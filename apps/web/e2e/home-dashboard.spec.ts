@@ -20,4 +20,17 @@ test.describe("home dashboard",()=>{
     await action.click();
     await expect(page).toHaveURL(/\/app\/mi-equipo/);
   });
+
+  test("opens the league switcher with keyboard and restores focus",async({page})=>{
+    await page.goto("/app");
+    const trigger=page.locator('button[aria-haspopup="menu"]');
+    await expect(trigger).toBeVisible();
+    await trigger.focus();
+    await trigger.press("Enter");
+    await expect(page.getByRole("menu",{name:"Cambiar de liga"})).toBeVisible();
+    await expect(page.getByRole("menuitemradio",{checked:true})).toHaveCount(1);
+    await expect(page.getByRole("menuitem",{name:/Gestionar mis ligas/})).toHaveAttribute("href","/app/perfil/ligas");
+    await page.keyboard.press("Escape");
+    await expect(trigger).toBeFocused();
+  });
 });

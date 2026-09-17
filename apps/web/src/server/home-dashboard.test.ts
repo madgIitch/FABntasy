@@ -35,12 +35,24 @@ describe("home dashboard contract",()=>{
     const refresh=readFileSync(new URL("../components/home-dashboard-refresh.tsx",import.meta.url),"utf8");
     expect(component).toContain("Completa tu perfil");
     expect(component).toContain("Entra en una liga");
-    expect(component).toContain("Puntuación y clasificación pendientes");
+    expect(component).not.toContain('"Sin fecha disponible"');
+    expect(component).toContain('data.round.lineupState!=="NO_CALENDAR"');
     expect(component).toContain("/app/mi-equipo");
     expect(component).toContain("/app/partidos/");
     expect(refresh).toContain("document.visibilityState");
     expect(refresh).toContain("45000");
     expect(refresh).toContain("refreshing.current");
+  });
+
+  it("uses a persistent accessible league switcher instead of query-string navigation",()=>{
+    const component=readFileSync(resolve(process.cwd(),"src/components/home-dashboard.tsx"),"utf8");
+    const route=readFileSync(resolve(process.cwd(),"src/app/api/fantasy/leagues/active/route.ts"),"utf8");
+    expect(component).toContain('fetch("/api/fantasy/leagues/active"');
+    expect(component).toContain('role="menuitemradio"');
+    expect(component).toContain("Gestionar mis ligas");
+    expect(component).toContain('event.key==="Escape"');
+    expect(component).toContain('event.key==="ArrowDown"');
+    expect(route).toContain("invalidateCache(cacheTags({ leagueId: result.activeLeagueId }))");
   });
 
   it("keeps the mobile navigation fixed and visible through 720px",()=>{

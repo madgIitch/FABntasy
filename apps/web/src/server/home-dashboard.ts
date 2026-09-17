@@ -29,7 +29,7 @@ async function loadHomeDashboard(authUserId:string, requestedLeagueId?:string) {
     const profile = await db.userProfile.findUnique({ where:{authUserId}, include:{ fantasyTeams:{ where:{league:{status:"ACTIVE"}}, orderBy:{updatedAt:"desc"}, include:{ league:true, competitionSeason:{include:{competition:true}}, rosterSlots:{include:{playerRegistration:{include:{teamRegistration:true}}}}, lineups:{where:{supersededAt:null},orderBy:{roundNumber:"desc"},take:2,include:{slots:true}}, total:true } } } });
     if (!profile) return {kind:"NO_PROFILE" as const,updatedAt};
     if (requestedLeagueId && !profile.fantasyTeams.some((item)=>item.leagueId===requestedLeagueId)) return {kind:"CRITICAL_ERROR" as const,code:"LEAGUE_NOT_AVAILABLE",updatedAt};
-    const team=profile.fantasyTeams.find((item)=>item.leagueId===requestedLeagueId)??profile.fantasyTeams[0];
+    const team=profile.fantasyTeams.find((item)=>item.leagueId===(requestedLeagueId??profile.activeLeagueId))??profile.fantasyTeams[0];
     if (!team) return {kind:"NO_TEAM" as const,displayName:profile.displayName,updatedAt};
     const now=new Date();
     const realTeamIds=[...new Set(team.rosterSlots.map((slot)=>slot.playerRegistration.teamRegistration.teamId))];
@@ -54,8 +54,9 @@ async function loadHomeDashboard(authUserId:string, requestedLeagueId?:string) {
 }
 
 export async function getHomeDashboard(authUserId:string, requestedLeagueId?:string) {
-  const profile=await db.userProfile.findUnique({where:{authUserId},select:{fantasyTeams:{where:{league:{status:"ACTIVE"}},orderBy:{updatedAt:"desc"},select:{leagueId:true}}}});
-  const resolvedLeagueId=profile?.fantasyTeams.find((team)=>team.leagueId===requestedLeagueId)?.leagueId??profile?.fantasyTeams[0]?.leagueId;
+  const profile=await db.userProfile.findUnique({where:{authUserId},select:{activeLeagueId:true,fantasyTeams:{where:{league:{status:"ACTIVE"}},orderBy:{updatedAt:"desc"},select:{leagueId:true}}}});
+  const preferredLeagueId=profile?.activeLeagueId??requestedLeagueId;
+  const resolvedLeagueId=profile?.fantasyTeams.find((team)=>team.leagueId===preferredLeagueId)?.leagueId??profile?.fantasyTeams[0]?.leagueId;
   const leagueScope=resolvedLeagueId??"no-active-league";
   return cached("home",privateCacheKey("home",{actorAuthUserId:authUserId,leagueId:leagueScope}),cacheTags({leagueId:leagueScope}),()=>loadHomeDashboard(authUserId,resolvedLeagueId));
 }

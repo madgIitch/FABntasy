@@ -62,7 +62,8 @@ export function buildCompetitionTeamIndexes(
     const seasonRows = rows.filter(row => row.catalogId === item.id && row.teamId && row.teamName).map(row => ({
       teamId: row.teamId!, teamName: row.teamName!, playerRegistrationCount: Number(row.playerRegistrationCount),
     })).sort((a, b) => normalizedTeamName(a.teamName).localeCompare(normalizedTeamName(b.teamName), "es") || a.teamId.localeCompare(b.teamId));
-    const seasonRuns = runs.filter(run => run.competitionSeasonId === item.competitionSeasonId);
+    const seasonRuns = runs.filter(run => run.competitionSeasonId === item.competitionSeasonId)
+      .sort((a, b) => (b.finishedAt ?? b.startedAt).getTime() - (a.finishedAt ?? a.startedAt).getTime());
     const teamRuns = seasonRuns.filter(run => run.jobName === "competition");
     const playerRuns = seasonRuns.filter(run => run.jobName === "stats");
     const latestTeamRun = teamRuns[0];
@@ -95,12 +96,12 @@ export function buildCompetitionTeamIndexes(
 export async function getMonitoredCompetitionTeamIndexes(): Promise<CompetitionTeamIndex[]> {
   if (process.env.INGESTION_TEAM_INDEX_ENABLED === "false") return [];
   const catalog = await db.fabCompetitionCatalog.findMany({
-    where: { monitored: true }, orderBy: { id: "asc" }, select: { id: true, competitionSeasonId: true, status: true },
+    where: { monitored: true }, orderBy: { id: "asc" }, select: { id: true, categoryCompetitionId: true, competitionSeasonId: true, status: true },
   });
   const seasonIds = catalog.flatMap(item => item.competitionSeasonId ? [item.competitionSeasonId] : []);
   if (!seasonIds.length) return buildCompetitionTeamIndexes(catalog, [], [], new Date());
   const seasonIdSql = Prisma.join(seasonIds.map(id => Prisma.sql`${id}::uuid`));
-  const [rows, runs] = await Promise.all([
+  const [rows, runs, jobs] = await Promise.all([
     db.$queryRaw<TeamIndexRow[]>(Prisma.sql`
       SELECT c.id AS "catalogId", c.competition_season_id AS "competitionSeasonId",
              t.id AS "teamId", COALESCE(tr.display_name, t.name) AS "teamName",
@@ -119,8 +120,23 @@ export async function getMonitoredCompetitionTeamIndexes(): Promise<CompetitionT
       orderBy: { startedAt: "desc" },
       select: { competitionSeasonId: true, jobName: true, status: true, startedAt: true, finishedAt: true },
     }),
+    db.ingestionJob.findMany({
+      where: { type: "COMPETITION", targetKey: { in: catalog.map(item => `categoryId:${item.categoryCompetitionId}`) }, status: { in: ["SUCCEEDED", "FAILED"] } },
+      orderBy: { requestedAt: "desc" },
+      select: { targetKey: true, status: true, requestedAt: true, startedAt: true, finishedAt: true },
+    }),
   ]);
-  return buildCompetitionTeamIndexes(catalog, rows, runs, new Date());
+  const seasonByTarget = new Map(catalog.map(item => [`categoryId:${item.categoryCompetitionId}`, item.competitionSeasonId]));
+  const manualRuns: CoverageRun[] = jobs.flatMap(job => {
+    const competitionSeasonId = seasonByTarget.get(job.targetKey);
+    if (!competitionSeasonId) return [];
+    const startedAt = job.startedAt ?? job.requestedAt;
+    return ["competition", "stats"].map(jobName => ({
+      competitionSeasonId, jobName, status: job.status,
+      startedAt, finishedAt: job.finishedAt,
+    }));
+  });
+  return buildCompetitionTeamIndexes(catalog, rows, [...runs, ...manualRuns], new Date());
 }
 
 export async function requireIngestionAdmin(authUserId: string) {

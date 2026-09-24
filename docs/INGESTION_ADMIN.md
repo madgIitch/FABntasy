@@ -39,6 +39,8 @@ El worker actualiza `ingestion_heartbeats`, reclama con `FOR UPDATE SKIP LOCKED`
 
 Las tarjetas monitorizadas muestran un resumen y un índice desplegable calculado exclusivamente desde las relaciones normalizadas `TeamRegistration` y `PlayerRegistration` de su `CompetitionSeason`. “Inscripciones” significa filas de `PlayerRegistration`, no personas únicas entre equipos o temporadas. La lectura usa una agregación acotada para todas las competiciones, no llama a FAB, no crea jobs y no modifica el catálogo.
 
+El estado de cobertura considera tanto las fases programadas de `ingestion_runs` como los jobs manuales `COMPETITION` de `ingestion_jobs`, ordenados por su finalización. Un éxito manual posterior a un fallo programado habilita el snapshot normalizado; un fallo posterior conserva el último snapshot válido y muestra `FAILED`. Los equipos pueden estar sincronizados aunque todavía haya cero inscripciones de jugadores.
+
 El contrato `ingestion-admin.v1` expone `coverageStatus`, `calculatedAt`, `teamsLastSyncedAt`, `playersLastSyncedAt`, `teamCount`, `playerRegistrationCount` y filas con `teamId`, `teamName` y `playerRegistrationCount`. `NOT_SYNCED` y `FAILED` sin snapshot válido usan conteos `null`; un éxito confirmado sin equipos usa ceros. `PARTIAL`, `STALE` y un `FAILED` con datos anteriores conservan el último snapshot normalizado con advertencia. La frescura pasa a `STALE` 24 horas después del último run `competition` correcto.
 
 `GET /api/admin/ingestion/team-index` exige `INGESTION_ADMIN` y mantiene el 404 opaco para actores no autorizados. No devuelve jugadores, PII, RAW, credenciales ni errores internos.

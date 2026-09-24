@@ -27,6 +27,12 @@ describe("monitored competition team index",()=>{
   expect(buildCompetitionTeamIndexes([catalog()],rows,[run("succeeded",25)],now)[0].coverageStatus).toBe("STALE");
   expect(buildCompetitionTeamIndexes([catalog()],rows,[run("failed"),run("succeeded",2)],now)[0]).toMatchObject({coverageStatus:"FAILED",teamCount:1,playerRegistrationCount:2});
  });
+ it("uses a later successful manual sync after an earlier scheduled failure",()=>{
+  const rows=[{catalogId:"catalog-a",competitionSeasonId:season,teamId:"team-a",teamName:"Águilas",playerRegistrationCount:0n}];
+  const result=buildCompetitionTeamIndexes([catalog()],rows,[run("failed",2),run("SUCCEEDED",1)],now)[0];
+  expect(result).toMatchObject({coverageStatus:"COMPLETE",teamCount:1,playerRegistrationCount:0});
+  expect(result.teamsLastSyncedAt).toBe(run("SUCCEEDED",1).finishedAt.toISOString());
+ });
  it("isolates competitions, keeps homonyms by ID, counts registrations, and sorts stably",()=>{
   const otherSeason="22222222-2222-4222-8222-222222222222";
   const rows=[
@@ -38,10 +44,10 @@ describe("monitored competition team index",()=>{
   expect(result[0]).toMatchObject({teamCount:2,playerRegistrationCount:5,teams:[{teamId:"team-a"},{teamId:"team-z"}]});
   expect(result[1]).toMatchObject({teamCount:1,playerRegistrationCount:7,teams:[{teamId:"team-b"}]});
  });
- it("uses a bounded three-query read rather than querying per team",async()=>{
+ it("uses a bounded four-query read rather than querying per team",async()=>{
   const source=await import("node:fs/promises").then(fs=>fs.readFile(new URL("./ingestion-admin.ts",import.meta.url),"utf8"));
   const body=source.slice(source.indexOf("export async function getMonitoredCompetitionTeamIndexes"),source.indexOf("export async function requireIngestionAdmin"));
-  expect(body.match(/db\./g)).toHaveLength(3);
+  expect(body.match(/db\./g)).toHaveLength(4);
   expect(body).not.toMatch(/for\s*\([^)]*team/i);
   expect(body).toContain("::uuid");
  });

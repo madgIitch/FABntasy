@@ -129,12 +129,20 @@ def sync_competition_games(
 
         for external_game_id, (group_id, external_group_id, match) in collected.items():
             number = _required_int(match, "NumeroJornada", "match")
-            round_id = repository.upsert_from_external(
-                source="FAB",
-                entity_type="round",
-                external_id=f"{external_group_id}:{number}",
-                values={"group_id": group_id, "number": number, "name": f"Jornada {number}"},
-            )
+            if hasattr(repository, "upsert_fab_round"):
+                round_id = repository.upsert_fab_round(
+                    group_id=group_id,
+                    external_id=f"{external_group_id}:{number}",
+                    number=number,
+                    name=f"Jornada {number}",
+                )
+            else:
+                round_id = repository.upsert_from_external(
+                    source="FAB",
+                    entity_type="round",
+                    external_id=f"{external_group_id}:{number}",
+                    values={"group_id": group_id, "number": number, "name": f"Jornada {number}"},
+                )
             home_name = _required_text(match, "NombreEquipoLocal", "match")
             away_name = _required_text(match, "NombreEquipoVisitante", "match")
             home_team_id = repository.resolve_registered_team(competition_season_id, home_name)

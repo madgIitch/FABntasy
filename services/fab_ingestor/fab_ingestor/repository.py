@@ -776,6 +776,29 @@ class SportsRepository:
             values={"competition_season_id": competition_season_id, "name": name},
         )
 
+    def upsert_fab_round(
+        self, *, group_id: UUID, external_id: str, number: int, name: str,
+    ) -> UUID:
+        """Reuse a round when FAB rotates the group handle on another device."""
+        existing = self.resolve_external_id(
+            source="FAB", entity_type="round", external_id=external_id,
+        )
+        if existing is not None:
+            return existing
+        row = self.connection.execute(
+            "SELECT id FROM rounds WHERE group_id=%s AND number=%s", (group_id, number),
+        ).fetchone()
+        if row is not None:
+            self.upsert_external_id(
+                source="FAB", entity_type="round", external_id=external_id,
+                entity_id=row[0],
+            )
+            return row[0]
+        return self.upsert_from_external(
+            source="FAB", entity_type="round", external_id=external_id,
+            values={"group_id": group_id, "number": number, "name": name},
+        )
+
     def upsert_fab_team_registration(
         self, *, competition_season_id: UUID, category_competition_id: str,
         stable_team_id: str, device_team_id: str, display_name: str,

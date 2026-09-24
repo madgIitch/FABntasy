@@ -3330,7 +3330,7 @@
       "id": "sprint-38-disable-fantasy-competition",
       "name": "Sprint 38 - Disable Fantasy Competition",
       "title": "Deshabilitar una competición para Fantasy",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "spec_approved": true,
       "priority": "P0",

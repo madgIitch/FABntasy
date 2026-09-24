@@ -177,7 +177,9 @@ class IngestionOrchestrator:
                         ),
                     ),
                 ])
-                if self.fantasy_lifecycle and getattr(self.repository, "is_fantasy_selected", lambda _: True)(competition_season_id):
+                if (self.fantasy_lifecycle
+                        and getattr(self.repository, "is_fantasy_selected", lambda _: True)(competition_season_id)
+                        and getattr(self.repository, "is_fantasy_lifecycle_due", lambda _: True)(competition_season_id)):
                     phases.append((
                         "fantasy_lifecycle",
                         lambda competition_season_id=competition_season_id: self.fantasy_lifecycle(competition_season_id),

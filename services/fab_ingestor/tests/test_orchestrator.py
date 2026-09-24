@@ -39,6 +39,9 @@ class Repository:
     def is_roster_enabled(self, competition_season_id):
         return True
 
+    def is_fantasy_lifecycle_due(self, competition_season_id):
+        return True
+
     def start_ingestion_run(self, job, competition):
         run_id = f"run-{len(self.runs)}"
         self.runs.append((run_id, job, competition))
@@ -128,6 +131,22 @@ def test_monitored_competition_sync_does_not_advance_fantasy(monkeypatch):
     ).sync_all()
 
     assert summary.phases_succeeded == 3
+
+
+def test_preseason_sync_skips_fantasy_lifecycle(monkeypatch):
+    repository = Repository()
+    repository.is_fantasy_lifecycle_due = lambda _: False
+    monkeypatch.setattr("fab_ingestor.orchestrator.sync_competition_teams", lambda *_, **__: {})
+    monkeypatch.setattr("fab_ingestor.orchestrator.sync_competition_games", lambda *_, **__: {})
+    monkeypatch.setattr("fab_ingestor.orchestrator.sync_competition_stats", lambda *_, **__: {})
+    monkeypatch.setattr("fab_ingestor.orchestrator.sync_competition_rosters", lambda *_, **__: {})
+
+    summary = IngestionOrchestrator(
+        object(), repository, fantasy_lifecycle=lambda _: pytest.fail("preseason has no scoring")
+    ).sync_all()
+
+    assert summary.phases_succeeded == 4
+    assert summary.phases_failed == 0
 
 
 def test_sync_all_does_not_advance_fantasy_when_stats_fails(monkeypatch):

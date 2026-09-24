@@ -71,7 +71,8 @@ def execute_job(
         counters = {"games": summary.games, "rejected": summary.rejected}
         return _advance_fantasy(
             counters, competition_season_id,
-            fantasy_lifecycle if repository.is_fantasy_selected(competition_season_id) else None,
+            fantasy_lifecycle if repository.is_fantasy_selected(competition_season_id)
+            and repository.is_fantasy_lifecycle_due(competition_season_id) else None,
         )
     category_id = str(target["categoryId"])
     try:
@@ -90,7 +91,8 @@ def execute_job(
         return _advance_fantasy(
             {"games": schedule.games, "rejected": rejected},
             competition_season_id,
-            fantasy_lifecycle if repository.is_fantasy_selected(competition_season_id) else None,
+            fantasy_lifecycle if repository.is_fantasy_selected(competition_season_id)
+            and repository.is_fantasy_lifecycle_due(competition_season_id) else None,
         )
     failure: Exception | None = None
     counters: dict[str, int] = {}
@@ -119,7 +121,8 @@ def execute_job(
             counters = _advance_fantasy(
                 {**counters, "teams": teams.teams, "games": games.games, "rejected": stats.rejected},
                 competition_season_id,
-                fantasy_lifecycle if repository.is_fantasy_selected(competition_season_id) else None,
+                fantasy_lifecycle if repository.is_fantasy_selected(competition_season_id)
+                and repository.is_fantasy_lifecycle_due(competition_season_id) else None,
             )
         except Exception as error:  # noqa: BLE001 - commit successful earlier phases before reporting failure
             failure = error

@@ -160,6 +160,29 @@ def test_fantasy_competition_job_runs_roster_phase_and_reports_coverage(monkeypa
     roster.assert_called_once()
 
 
+def test_preseason_competition_job_does_not_require_lifecycle(monkeypatch):
+    repository = Mock()
+    repository.resolve_competition_selection.return_value = ("season-1", "opaque")
+    repository.is_roster_enabled.return_value = False
+    repository.is_fantasy_selected.return_value = True
+    repository.is_fantasy_lifecycle_due.return_value = False
+    lock = MagicMock()
+    lock.__enter__.return_value = True
+    repository.advisory_lock.return_value = lock
+    monkeypatch.setattr("fab_ingestor.admin_jobs.sync_competition_teams", Mock(return_value=Mock(teams=19)))
+    monkeypatch.setattr("fab_ingestor.admin_jobs.sync_competition_games", Mock(return_value=Mock(games=162)))
+    monkeypatch.setattr("fab_ingestor.admin_jobs.sync_competition_stats", Mock(return_value=Mock(rejected=0)))
+    lifecycle = Mock(side_effect=RuntimeError("lifecycle unavailable"))
+
+    counters = execute_job(
+        {"type": "COMPETITION", "target": {"categoryId": "10215"}},
+        Mock(), repository, lifecycle,
+    )
+
+    assert counters == {"teams": 19, "games": 162, "rejected": 0}
+    lifecycle.assert_not_called()
+
+
 def test_schedule_failure_commits_completed_team_phase_before_failing_job(monkeypatch):
     repository = Mock()
     repository.resolve_competition_selection.return_value = ("season-1", "opaque-1")

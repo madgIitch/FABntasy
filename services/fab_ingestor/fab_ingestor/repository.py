@@ -331,6 +331,21 @@ class SportsRepository:
         ).fetchone()
         return bool(row and row[0])
 
+    def is_fantasy_lifecycle_due(self, competition_season_id: UUID) -> bool:
+        """Scoring has work only after live or final statistics arrive."""
+        row = self.connection.execute(
+            """SELECT EXISTS (
+                SELECT 1 FROM games
+                WHERE competition_season_id=%s AND sync_status='active'
+                  AND round_number IS NOT NULL
+                  AND ((status='live' AND stats_sync_status='partial')
+                    OR (status='finished' AND has_statistics=TRUE
+                        AND stats_sync_status='stats_final'))
+            )""",
+            (competition_season_id,),
+        ).fetchone()
+        return bool(row and row[0])
+
     def catalog_scan_due(self, interval_hours: int = 6) -> bool:
         row = self.connection.execute(
             """SELECT id, status, started_at, finished_at FROM fab_competition_catalog_scans

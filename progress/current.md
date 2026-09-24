@@ -1,6 +1,6 @@
 # Sesión actual
 
-Feature: **sprint-38-disable-fantasy-competition · Sprint 38 - Disable Fantasy Competition** — estado: `review_pending`.
+Feature: **sprint-38-disable-fantasy-competition · Sprint 38 - Disable Fantasy Competition** — estado: `done`.
 
 - agente: codex
 - rama: `main`
@@ -9,9 +9,7 @@ Feature: **sprint-38-disable-fantasy-competition · Sprint 38 - Disable Fantasy 
 
 ## Siguiente acción
 
-- Revisar el diff y hacer smoke humano del panel de ingesta, deshabilitación, URL suspendida y reactivación.
-- Ejecutar una competición de prueba y confirmar que la monitorización deportiva continúa mientras se omiten las fases Fantasy.
-- Cerrar con `node .harness/spec.mjs done sprint-38-disable-fantasy-competition` tras la revisión humana.
+- Spec cerrada por solicitud explícita del usuario. El smoke en producción y la prueba de una competición real no constan como ejecutados; quedan como seguimiento operativo.
 
 ## Evidencia
 

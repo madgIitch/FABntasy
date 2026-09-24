@@ -9,6 +9,10 @@
 - Lecturas y mutaciones Fantasy, puntuación, precios, rankings, follows y ciclo de ingesta respetan `fantasy_enabled`; la monitorización deportiva permanece activa.
 - Gates: typecheck, lint, 192 tests web, 126 tests Python, Prisma validate y diff-check correctos. Pendiente smoke humano para cerrar.
 
+## 2026-09-24 — #sprint-38-disable-fantasy-competition → done
+- Cierre solicitado explícitamente por el usuario y registrado con `spec.mjs done`.
+- No consta smoke en producción de deshabilitación y reactivación; se conserva como seguimiento operativo, sin declararlo verificado.
+
 ## 2026-09-16 — #sprint-31-catalog-link-and-retired-games → review_pending
 - Corregidos enlace estable de catálogo, deduplicación y partidos retirados; gates completos correctos. Pendiente de deploy y smoke productivo.
 

@@ -95,6 +95,10 @@ Decisiones registradas:
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
 
+## 2026-09-24 · Enlace de competiciones monitorizadas al ingestor
+
+Una competición fijada en el catálogo puede no estar seleccionada para fantasy. La ingesta profunda crea de forma idempotente su `CompetitionSeason` con rol `disabled`, enlazada por `IdCompeticionCategoria`; cuando FAB no informa temporada se usa una etiqueta técnica por ID. Los jobs manuales y el scheduler comparten el advisory lock `sync_all` por competición. El ciclo fantasy solo se invoca para roles `validation` o `primary`.
+
 ## 2026-09-15 · Web Push usa invalidación VAPID explícita y claims con lease
 
 Se adopta una única versión VAPID activa. Cambiar `VAPID_KEY_VERSION` deja las suscripciones anteriores fuera del dispatcher y exige resincronización iniciada por el usuario desde Perfil; no existe ventana dual ni se persisten claves privadas históricas. Las entregas se deduplican por suscripción, intención y evento, se reclaman durante 5 minutos y se revalidan antes de enviar.

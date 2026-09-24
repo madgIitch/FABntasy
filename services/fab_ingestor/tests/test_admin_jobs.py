@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from unittest.mock import Mock
+from unittest.mock import MagicMock, Mock
 
 from fab_ingestor.admin_jobs import claim_job, execute_job, run_one_job
 from fab_ingestor.boxscore import BoxscoreSyncSummary
@@ -90,3 +90,27 @@ def test_game_job_does_not_advance_fantasy_when_ingestion_fails(monkeypatch):
         raise AssertionError("failed ingestion was accepted")
 
     lifecycle.assert_not_called()
+
+
+def test_monitored_competition_job_links_without_fantasy_and_reuses_sync_lock(monkeypatch):
+    repository = Mock()
+    repository.resolve_competition_selection.side_effect = [
+        ValueError("not linked"), ("season-1", "opaque-1")
+    ]
+    repository.advisory_lock.return_value = MagicMock()
+    repository.advisory_lock.return_value.__enter__.return_value = True
+    repository.is_fantasy_selected.return_value = False
+    monkeypatch.setattr("fab_ingestor.admin_jobs.sync_competition_teams", Mock(return_value=Mock(teams=4)))
+    monkeypatch.setattr("fab_ingestor.admin_jobs.sync_competition_games", Mock(return_value=Mock(games=3)))
+    monkeypatch.setattr("fab_ingestor.admin_jobs.sync_competition_stats", Mock(return_value=Mock(rejected=0)))
+    lifecycle = Mock()
+
+    counters = execute_job(
+        {"type": "COMPETITION", "target": {"categoryId": "9955"}},
+        Mock(), repository, lifecycle,
+    )
+
+    repository.ensure_monitored_competition.assert_called_once_with("9955")
+    repository.advisory_lock.assert_called_once_with("sync_all", "season-1")
+    lifecycle.assert_not_called()
+    assert counters == {"teams": 4, "games": 3, "rejected": 0}

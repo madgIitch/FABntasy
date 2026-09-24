@@ -33,6 +33,9 @@ class Repository:
     def list_selected_competitions(self):
         return [("season", "category")]
 
+    def is_fantasy_selected(self, competition_season_id):
+        return True
+
     def start_ingestion_run(self, job, competition):
         run_id = f"run-{len(self.runs)}"
         self.runs.append((run_id, job, competition))
@@ -100,6 +103,20 @@ def test_sync_all_advances_fantasy_only_after_successful_stats(monkeypatch):
 
     assert calls == ["stats", ("fantasy", "season")]
     assert summary.phases_succeeded == 4
+
+
+def test_monitored_competition_sync_does_not_advance_fantasy(monkeypatch):
+    repository = Repository()
+    repository.is_fantasy_selected = lambda _: False
+    monkeypatch.setattr("fab_ingestor.orchestrator.sync_competition_teams", lambda *_, **__: {})
+    monkeypatch.setattr("fab_ingestor.orchestrator.sync_competition_games", lambda *_, **__: {})
+    monkeypatch.setattr("fab_ingestor.orchestrator.sync_competition_stats", lambda *_, **__: {})
+
+    summary = IngestionOrchestrator(
+        object(), repository, fantasy_lifecycle=lambda _: pytest.fail("must not run")
+    ).sync_all()
+
+    assert summary.phases_succeeded == 3
 
 
 def test_sync_all_does_not_advance_fantasy_when_stats_fails(monkeypatch):

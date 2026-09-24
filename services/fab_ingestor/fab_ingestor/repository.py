@@ -193,26 +193,88 @@ class SportsRepository:
     def resolve_competition_selection(self, category_competition_id: str) -> tuple[UUID, str]:
         row = self.connection.execute(
             """
-            SELECT cs.id, opaque.external_id
+            SELECT cs.id, COALESCE(c.opaque_id, opaque.external_id)
             FROM competition_seasons cs
             JOIN external_ids category
               ON category.entity_id = cs.id
              AND category.source = 'FAB_CATEGORY_COMPETITION'
              AND category.entity_type = 'competition_season'
-            JOIN external_ids opaque
+            LEFT JOIN external_ids opaque
               ON opaque.entity_id = cs.id
              AND opaque.source = 'FAB'
              AND opaque.entity_type = 'competition_season'
+            LEFT JOIN fab_competition_catalog c
+              ON c.category_competition_id = category.external_id
+             AND c.monitored = TRUE
             WHERE category.external_id = %s
-              AND cs.fantasy_role IN ('validation', 'primary')
+              AND (cs.fantasy_role IN ('validation', 'primary') OR c.id IS NOT NULL)
+            ORDER BY opaque.id
+            LIMIT 1
             """,
             (category_competition_id,),
         ).fetchone()
         if row is None:
-            raise ValueError("category is not a selected FAB competition")
+            raise ValueError("category is not a selected or monitored FAB competition")
         return row[0], row[1]
 
+    def ensure_monitored_competition(self, category_competition_id: str) -> UUID:
+        """Link a monitored catalog item without enabling fantasy for it."""
+        with self.connection.transaction():
+            row = self.connection.execute(
+                """SELECT opaque_id, category_name, competition_name, delegation_name,
+                          season_name, competition_season_id
+                   FROM fab_competition_catalog
+                   WHERE category_competition_id=%s AND monitored=TRUE FOR UPDATE""",
+                (category_competition_id,),
+            ).fetchone()
+            if row is None:
+                raise ValueError("category is not monitored")
+            if row[5] is not None:
+                self.upsert_external_id(
+                    source="FAB", entity_type="competition_season",
+                    external_id=row[0], entity_id=row[5],
+                )
+                return row[5]
+            existing = self.resolve_external_id(
+                source="FAB_CATEGORY_COMPETITION",
+                entity_type="competition_season",
+                external_id=category_competition_id,
+            )
+            if existing is None:
+                federation_id = self.upsert_federation(name="Federación Andaluza de Baloncesto")
+                competition_id = self.upsert_from_external(
+                    source="FAB", entity_type="competition",
+                    external_id=category_competition_id,
+                    values={"federation_id": federation_id, "name": row[2]},
+                )
+                season_name = row[4] or f"FAB catalog {category_competition_id}"
+                season_id = self.upsert_from_external(
+                    source="FAB_CATALOG", entity_type="season",
+                    external_id=category_competition_id, values={"name": season_name},
+                )
+                existing = self.upsert_from_external(
+                    source="FAB_CATEGORY_COMPETITION", entity_type="competition_season",
+                    external_id=category_competition_id,
+                    values={"competition_id": competition_id, "season_id": season_id,
+                            "name": row[2], "category_name": row[1],
+                            "delegation_name": row[3]},
+                )
+            self.upsert_external_id(
+                source="FAB", entity_type="competition_season",
+                external_id=row[0], entity_id=existing,
+            )
+            self.connection.execute(
+                "UPDATE fab_competition_catalog SET competition_season_id=%s WHERE category_competition_id=%s",
+                (existing, category_competition_id),
+            )
+            return existing
+
     def list_selected_competitions(self) -> list[tuple[UUID, str]]:
+        monitored = self.connection.execute(
+            "SELECT category_competition_id FROM fab_competition_catalog WHERE monitored=TRUE"
+        ).fetchall()
+        for (category_id,) in monitored:
+            self.ensure_monitored_competition(category_id)
         rows = self.connection.execute(
             """
             SELECT cs.id, category.external_id
@@ -222,10 +284,19 @@ class SportsRepository:
              AND category.source = 'FAB_CATEGORY_COMPETITION'
              AND category.entity_type = 'competition_season'
             WHERE cs.fantasy_role IN ('validation', 'primary')
+               OR EXISTS (SELECT 1 FROM fab_competition_catalog c
+                          WHERE c.competition_season_id=cs.id AND c.monitored=TRUE)
             ORDER BY CASE cs.fantasy_role WHEN 'primary' THEN 0 ELSE 1 END, cs.id
             """
         ).fetchall()
         return [(row[0], row[1]) for row in rows]
+
+    def is_fantasy_selected(self, competition_season_id: UUID) -> bool:
+        row = self.connection.execute(
+            "SELECT fantasy_role FROM competition_seasons WHERE id=%s",
+            (competition_season_id,),
+        ).fetchone()
+        return bool(row and row[0] in {"validation", "primary"})
 
     def catalog_scan_due(self, interval_hours: int = 6) -> bool:
         row = self.connection.execute(

@@ -68,9 +68,18 @@ def execute_job(
         ]
         summary = sync_game_stats(client, repository, external_game_id=game_id)
         counters = {"games": summary.games, "rejected": summary.rejected}
-        return _advance_fantasy(counters, competition_season_id, fantasy_lifecycle)
+        return _advance_fantasy(
+            counters, competition_season_id,
+            fantasy_lifecycle if repository.is_fantasy_selected(competition_season_id) else None,
+        )
     category_id = str(target["categoryId"])
-    competition_season_id, _ = repository.resolve_competition_selection(category_id)
+    try:
+        competition_season_id, _ = repository.resolve_competition_selection(category_id)
+    except ValueError:
+        if job["type"] != "COMPETITION":
+            raise
+        repository.ensure_monitored_competition(category_id)
+        competition_season_id, _ = repository.resolve_competition_selection(category_id)
     if job["type"] == "ROUND":
         round_number = int(target["roundNumber"])
         schedule = sync_competition_games(client, repository, category_competition_id=category_id, round_number=round_number)
@@ -80,16 +89,23 @@ def execute_job(
         return _advance_fantasy(
             {"games": schedule.games, "rejected": rejected},
             competition_season_id,
-            fantasy_lifecycle,
+            fantasy_lifecycle if repository.is_fantasy_selected(competition_season_id) else None,
         )
-    teams = sync_competition_teams(client, repository, category_competition_id=category_id)
-    games = sync_competition_games(client, repository, category_competition_id=category_id)
-    stats = sync_competition_stats(client, repository, category_competition_id=category_id)
-    return _advance_fantasy(
-        {"teams": teams.teams, "games": games.games, "rejected": stats.rejected},
-        competition_season_id,
-        fantasy_lifecycle,
-    )
+    with repository.advisory_lock("sync_all", competition_season_id) as acquired:
+        if not acquired:
+            raise IngestionLockedError("competition ingestion is already running")
+        teams = sync_competition_teams(client, repository, category_competition_id=category_id)
+        games = sync_competition_games(client, repository, category_competition_id=category_id)
+        stats = sync_competition_stats(client, repository, category_competition_id=category_id)
+        return _advance_fantasy(
+            {"teams": teams.teams, "games": games.games, "rejected": stats.rejected},
+            competition_season_id,
+            fantasy_lifecycle if repository.is_fantasy_selected(competition_season_id) else None,
+        )
+
+
+class IngestionLockedError(RuntimeError):
+    pass
 
 
 def _advance_fantasy(
@@ -165,6 +181,9 @@ def run_one_job(
 
         elif isinstance(error, FantasyLifecycleTransportError):
             code = "FANTASY_LIFECYCLE_TRANSPORT"
+
+        elif isinstance(error, IngestionLockedError):
+            code = "INGESTION_LOCKED"
 
         elif isinstance(error, FabResponseError):
             code = getattr(

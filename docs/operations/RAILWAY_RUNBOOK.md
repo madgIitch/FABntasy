@@ -6,6 +6,8 @@ Railway arranca `python -m fab_ingestor run-production`. El supervisor crea exac
 
 La primera ejecución de cada proceso scheduler se registra en `ingestion_runs` como `sync_all_startup`. Las siguientes se registran como `sync_all_scheduled`; una ejecución directa de CLI usa `sync_all_manual`. Esta distinción no contiene ningún identificador ni secreto de Railway.
 
+«Sincronizar ahora» en la consola administrativa encola un job `COMPETITION` para una categoría FAB monitorizada. El worker crea el vínculo con una `CompetitionSeason` si falta y comparte con el scheduler el bloqueo `sync_all` por competición. La cadencia programada continúa. Las competiciones solo monitorizadas mantienen `fantasy_role=disabled` y no ejecutan el ciclo fantasy; cuando FAB no informa temporada, se usa una etiqueta técnica basada en el ID FAB.
+
 Tras desplegar:
 
 1. Comprueba que los logs contienen `FAB ingestion scheduler started` una sola vez por proceso.

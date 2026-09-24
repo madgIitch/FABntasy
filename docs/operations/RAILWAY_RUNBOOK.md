@@ -23,6 +23,10 @@ Tras desplegar:
 - `cancelled`: Railway envió una señal de parada durante el ciclo.
 - sin fila: el proceso no llegó a enumerar esa competición; revisa arranque, configuración y acceso a PostgreSQL.
 
+Una categoría monitorizada sin grupos publicados aún devuelve un resumen vacío y conserva los partidos existentes; no es un error de contrato. Si el calendario falla por otro motivo, los jobs manuales registran un código `SCHEDULE_*` específico y seguro (por ejemplo, `SCHEDULE_UNKNOWN_MATCHDAY`) para identificar el campo o la inconsistencia antes de ajustar el parser. El código anterior `SCHEDULECONTRACTERROR` no contiene ese detalle.
+
+El worker deja confirmar una fase de equipos correcta aunque falle una fase posterior del mismo job. Por ello, tras un fallo de calendario, los grupos y el RAW de equipos quedan disponibles para diagnóstico; el job conserva el estado `FAILED` y no se presenta como sincronización completa.
+
 Si el panel muestra `NOT_SYNCED` pero existen TeamRegistration, comprueba que `fab_competition_catalog.competition_season_id` esté enlazado por `FAB_CATEGORY_COMPETITION`. Nunca reconstruyas esa relación usando `opaque_id`. Un contador `rejected` en stats puede corresponder a un partido retirado por FAB; tres respuestas saneadas `Id no válido` lo dejan `stale` sin detener el resto de la competición.
 
 Un deploy o reinicio puede arrancar más de un proceso de forma sucesiva. Cada proceso intenta su propio ciclo inicial; los advisory locks y UPSERT idempotentes protegen los datos frente a solapamientos. No añadas un cron ni un segundo servicio scheduler.

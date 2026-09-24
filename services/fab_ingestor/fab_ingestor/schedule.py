@@ -13,7 +13,9 @@ from .repository import SportsRepository
 
 
 class ScheduleContractError(RuntimeError):
-    pass
+    def __init__(self, message: str, code: str = "SCHEDULE_CONTRACT") -> None:
+        super().__init__(message)
+        self.code = code
 
 
 @dataclass(frozen=True)
@@ -39,7 +41,9 @@ def sync_competition_games(
     )
     groups = repository.list_competition_groups(competition_season_id)
     if not groups:
-        raise ScheduleContractError("selected FAB competition has no synchronized groups")
+        # FAB may publish a category before publishing its phases and groups.
+        # No schedule can be authoritative until a group exists.
+        return ScheduleSyncSummary(0, 0, 0, 0, 0, 0, 0)
 
     raw_payloads: list[tuple[str, str, dict[str, Any]]] = []
     collected: dict[str, tuple[Any, str, dict[str, Any]]] = {}
@@ -84,12 +88,16 @@ def sync_competition_games(
             if round_number is not None and number != round_number:
                 continue
             if (external_group_id, number) not in matchdays_seen:
-                raise ScheduleContractError("FAB match references an unknown matchday")
+                raise ScheduleContractError(
+                    "FAB match references an unknown matchday", "SCHEDULE_UNKNOWN_MATCHDAY"
+                )
             external_game_id = _required_text(match, "IdPartido", "match")
             candidate = (internal_group_id, external_group_id, match)
             previous = collected.get(external_game_id)
             if previous is not None and previous != candidate:
-                raise ScheduleContractError("FAB returned a contradictory duplicate match")
+                raise ScheduleContractError(
+                    "FAB returned a contradictory duplicate match", "SCHEDULE_DUPLICATE_MATCH"
+                )
             collected[external_game_id] = candidate
 
     created = 0
@@ -181,7 +189,9 @@ def _parse_fab_datetime(value: Any) -> datetime | None:
         return None
     match = re.fullmatch(r"/Date\((-?\d+)(?:[+-]\d{4})?\)/", str(value).strip())
     if match is None:
-        raise ScheduleContractError("FAB match datetime has an unknown format")
+        raise ScheduleContractError(
+            "FAB match datetime has an unknown format", "SCHEDULE_DATETIME_FORMAT"
+        )
     milliseconds = int(match.group(1))
     if milliseconds <= 0:
         return None
@@ -192,10 +202,10 @@ def _parse_results(value: Any) -> tuple[int | None, int | None, list | None]:
     if value is None:
         return None, None, None
     if not isinstance(value, dict):
-        raise ScheduleContractError("FAB match results are invalid")
+        raise ScheduleContractError("FAB match results are invalid", "SCHEDULE_RESULTS_SHAPE")
     periods = value.get("ResultadosPeriodo")
     if periods is not None and not isinstance(periods, list):
-        raise ScheduleContractError("FAB period results are invalid")
+        raise ScheduleContractError("FAB period results are invalid", "SCHEDULE_PERIODS_SHAPE")
     return _optional_score(value.get("ResultadoLocal")), _optional_score(
         value.get("ResultadoVisitante")
     ), periods
@@ -207,7 +217,7 @@ def _optional_score(value: Any) -> int | None:
     try:
         return int(value)
     except (TypeError, ValueError) as error:
-        raise ScheduleContractError("FAB score is not an integer") from error
+        raise ScheduleContractError("FAB score is not an integer", "SCHEDULE_SCORE_FORMAT") from error
 
 
 def _normalize_status(value: str) -> str:
@@ -238,7 +248,9 @@ def _fold(value: str) -> str:
 def _required_text(payload: dict[str, Any], key: str, entity: str) -> str:
     value = _optional_text(payload.get(key))
     if value is None:
-        raise ScheduleContractError(f"FAB {entity} is missing {key}")
+        raise ScheduleContractError(
+            f"FAB {entity} is missing {key}", f"SCHEDULE_{entity.upper()}_{key.upper()}_MISSING"
+        )
     return value
 
 
@@ -252,7 +264,9 @@ def _required_int(payload: dict[str, Any], key: str, entity: str) -> int:
     try:
         return int(payload[key])
     except (KeyError, TypeError, ValueError) as error:
-        raise ScheduleContractError(f"FAB {entity} has invalid {key}") from error
+        raise ScheduleContractError(
+            f"FAB {entity} has invalid {key}", f"SCHEDULE_{entity.upper()}_{key.upper()}_INVALID"
+        ) from error
 
 
 def _action_for(entity_type: str) -> str:

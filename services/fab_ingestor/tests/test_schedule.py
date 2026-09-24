@@ -160,3 +160,30 @@ def test_empty_non_authoritative_schedule_preserves_known_games():
     assert summary.games == 0
     assert summary.stale == 0
     assert repository.stale_seen is None
+
+
+def test_category_without_published_groups_is_pending_not_a_contract_error():
+    repository = FakeRepository(existing_game=True)
+    repository.list_competition_groups = lambda _: []
+
+    summary = sync_competition_games(
+        FakeClient(), repository, category_competition_id="9955"
+    )
+
+    assert summary.groups == 0
+    assert summary.games == 0
+    assert repository.stale_seen is None
+
+
+def test_unknown_matchday_has_safe_specific_error_code():
+    class UnknownMatchdayClient(FakeClient):
+        def get_category_matchdays(self, category, phase, *, group_id, payload_sink):
+            payload = {"resultado": "correcto", "ListaJornadas": []}
+            payload_sink(payload)
+            return []
+
+    with pytest.raises(ScheduleContractError) as failure:
+        sync_competition_games(
+            UnknownMatchdayClient(), FakeRepository(), category_competition_id="9955"
+        )
+    assert failure.value.code == "SCHEDULE_UNKNOWN_MATCHDAY"

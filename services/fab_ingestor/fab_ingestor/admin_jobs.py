@@ -11,7 +11,7 @@ from .client import FabCancelledError, FabClient, FabResponseError
 from .discovery import sync_competition_teams
 from .fantasy_lifecycle import FantasyLifecycleSummary, FantasyLifecycleTransportError
 from .repository import SportsRepository
-from .schedule import sync_competition_games
+from .schedule import ScheduleContractError, sync_competition_games
 
 
 def worker_identity() -> str:
@@ -91,17 +91,25 @@ def execute_job(
             competition_season_id,
             fantasy_lifecycle if repository.is_fantasy_selected(competition_season_id) else None,
         )
+    failure: Exception | None = None
+    counters: dict[str, int] = {}
     with repository.advisory_lock("sync_all", competition_season_id) as acquired:
         if not acquired:
             raise IngestionLockedError("competition ingestion is already running")
-        teams = sync_competition_teams(client, repository, category_competition_id=category_id)
-        games = sync_competition_games(client, repository, category_competition_id=category_id)
-        stats = sync_competition_stats(client, repository, category_competition_id=category_id)
-        return _advance_fantasy(
-            {"teams": teams.teams, "games": games.games, "rejected": stats.rejected},
-            competition_season_id,
-            fantasy_lifecycle if repository.is_fantasy_selected(competition_season_id) else None,
-        )
+        try:
+            teams = sync_competition_teams(client, repository, category_competition_id=category_id)
+            games = sync_competition_games(client, repository, category_competition_id=category_id)
+            stats = sync_competition_stats(client, repository, category_competition_id=category_id)
+            counters = _advance_fantasy(
+                {"teams": teams.teams, "games": games.games, "rejected": stats.rejected},
+                competition_season_id,
+                fantasy_lifecycle if repository.is_fantasy_selected(competition_season_id) else None,
+            )
+        except Exception as error:  # noqa: BLE001 - commit successful earlier phases before reporting failure
+            failure = error
+    if failure is not None:
+        raise failure
+    return counters
 
 
 class IngestionLockedError(RuntimeError):
@@ -184,6 +192,9 @@ def run_one_job(
 
         elif isinstance(error, IngestionLockedError):
             code = "INGESTION_LOCKED"
+
+        elif isinstance(error, ScheduleContractError):
+            code = error.code[:64]
 
         elif isinstance(error, FabResponseError):
             code = getattr(

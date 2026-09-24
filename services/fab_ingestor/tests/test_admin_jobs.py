@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, Mock
 from fab_ingestor.admin_jobs import claim_job, execute_job, run_one_job
 from fab_ingestor.boxscore import BoxscoreSyncSummary
 from fab_ingestor.fantasy_lifecycle import FantasyLifecycleSummary
+from fab_ingestor.schedule import ScheduleContractError
 
 
 def test_claim_uses_skip_locked_and_marks_running():
@@ -37,6 +38,23 @@ def test_job_failure_records_only_stable_error_code(monkeypatch):
     assert "status='FAILED'" in query
     assert params == ("RUNTIMEERROR", "job-1")
     assert "secret body" not in str(params)
+
+
+def test_schedule_job_failure_records_specific_safe_code(monkeypatch):
+    repository = Mock()
+    monkeypatch.setattr("fab_ingestor.admin_jobs.heartbeat", Mock())
+    monkeypatch.setattr("fab_ingestor.admin_jobs.claim_job", Mock(return_value={
+        "id": "job-1", "type": "COMPETITION", "target": {"categoryId": "9955"},
+        "requested_by_id": "admin-1",
+    }))
+    monkeypatch.setattr("fab_ingestor.admin_jobs.execute_job", Mock(side_effect=
+        ScheduleContractError("untrusted FAB body", "SCHEDULE_UNKNOWN_MATCHDAY")))
+
+    assert run_one_job(Mock(), repository, "worker-1") is True
+    query, params = repository.connection.execute.call_args_list[0].args
+    assert "status='FAILED'" in query
+    assert params == ("SCHEDULE_UNKNOWN_MATCHDAY", "job-1")
+    assert "untrusted FAB body" not in str(params)
 
 
 def test_game_job_advances_fantasy_after_ingestion(monkeypatch):
@@ -114,3 +132,30 @@ def test_monitored_competition_job_links_without_fantasy_and_reuses_sync_lock(mo
     repository.advisory_lock.assert_called_once_with("sync_all", "season-1")
     lifecycle.assert_not_called()
     assert counters == {"teams": 4, "games": 3, "rejected": 0}
+
+
+def test_schedule_failure_commits_completed_team_phase_before_failing_job(monkeypatch):
+    repository = Mock()
+    repository.resolve_competition_selection.return_value = ("season-1", "opaque-1")
+    lock = MagicMock()
+    lock.__enter__.return_value = True
+    repository.advisory_lock.return_value = lock
+    teams = Mock(return_value=Mock(teams=4))
+    monkeypatch.setattr("fab_ingestor.admin_jobs.sync_competition_teams", teams)
+    monkeypatch.setattr(
+        "fab_ingestor.admin_jobs.sync_competition_games",
+        Mock(side_effect=ScheduleContractError("bad schedule", "SCHEDULE_UNKNOWN_MATCHDAY")),
+    )
+
+    try:
+        execute_job(
+            {"type": "COMPETITION", "target": {"categoryId": "9955"}},
+            Mock(), repository,
+        )
+    except ScheduleContractError:
+        pass
+    else:
+        raise AssertionError("invalid schedule was accepted")
+
+    teams.assert_called_once()
+    lock.__exit__.assert_called_once_with(None, None, None)

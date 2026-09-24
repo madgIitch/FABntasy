@@ -2,6 +2,8 @@
 
 Estado: **aprobada el 24/09/2026** (`spec_approved: true`). La validación de la fuente FAB de plantillas sigue siendo condición de entrada para implementarla.
 
+Validación de entrada del 24/09/2026: **bloqueada**. [La investigación de la fuente FAB](FAB_PRESEASON_ROSTER_SOURCE_VALIDATION.md) encontró plantillas previas en 10027, pero ningún jugador publicado en 9955 y ningún identificador de jugador estable entre dispositivos que pueda conciliarse con boxscores. No se inicia la ingesta de jugadores hasta resolver esa identidad.
+
 ## Problema y objetivo
 
 Hoy una competición monitorizada puede tener equipos y calendario completos, pero cero `PlayerRegistration` hasta que haya una boxscore elegible. Eso impide crear plantillas fantasy antes del primer partido. La nueva capacidad debe obtener de FAB las inscripciones publicadas para cada competición habilitada para fantasy, mantenerlas actualizadas por el scheduler y mediante una solicitud manual, y hacer que las boxscores usen esas mismas identidades. Una persona observada primero en una boxscore debe entrar también en el índice de inscripciones de su competición.

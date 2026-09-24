@@ -7,6 +7,7 @@ from typing import Any
 
 from .client import FabClient
 from .repository import SportsRepository
+from .selection import resolve_current_category_id
 
 CATALOG_DISCOVERY_SEEDS = tuple("abcdefghijklmnñopqrstuvwxyz0123456789")
 
@@ -171,9 +172,10 @@ def sync_competition_teams(
     *,
     category_competition_id: str,
 ) -> CompetitionSyncSummary:
-    competition_season_id, opaque_category_id = repository.resolve_competition_selection(
+    competition_season_id, _ = repository.resolve_competition_selection(
         category_competition_id
     )
+    opaque_category_id = resolve_current_category_id(client, repository, category_competition_id)
     raw_phases: list[dict] = []
     phases_payload = client.get_category_phases(
         opaque_category_id,

@@ -48,7 +48,11 @@ def test_incomplete_candidate_is_rejected():
 
 
 class SyncClient:
+    def search_category(self, query):
+        return [{**VALID, "Id": "current-device-category"}]
+
     def get_category_phases(self, category_id, *, payload_sink=None):
+        assert category_id == "current-device-category"
         payload = {
             "resultado": "correcto",
             "listaFasesGrupo": [
@@ -90,6 +94,9 @@ class SyncRepository:
     def resolve_competition_selection(self, category_id):
         assert category_id == "10468"
         return uuid4(), "opaque-category"
+
+    def competition_search_terms(self, category_id):
+        return ["LIGA NACIONAL N1 MAS"]
 
     def save_raw_payload(self, **values):
         self.raw.append(values)

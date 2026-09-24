@@ -718,3 +718,6 @@ Decisiones registradas:
 - **tests:** La matriz bloqueante cubre cero, una y varias ligas; idempotencia; éxito, doble envío y respuestas fuera de orden; errores transitorios; membresía obsoleta y fallback; competiciones distintas; accesibilidad y foco; NO_CALENDAR; coherencia entre cinco superficies; todos los breakpoints exigidos; y los gates generales.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+## 2026-09-24 · Identificador opaco de FAB por dispositivo
+
+La API de FAB devuelve IDs opacos distintos para un mismo `IdCompeticionCategoria` según el dispositivo registrado. Reutilizar el ID opaco del catálogo en otro worker puede producir `fasesGrupos` correcto pero vacío. Las ingestas profundas resuelven el ID opaco con el dispositivo activo y comprueban la identidad estable antes de leer datos. Una búsqueda sin coincidencia inequívoca falla; nunca confirma un snapshot vacío por esta causa.

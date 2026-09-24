@@ -11,7 +11,16 @@ from fab_ingestor.schedule import (
 
 
 class FakeClient:
+    def search_category(self, query):
+        return [{"IdCompeticionCategoria": "10468", "Id": "current-device-category"},
+                {"IdCompeticionCategoria": "9955", "Id": "current-device-category"}]
+
+    def get_category_phases(self, category):
+        assert category == "current-device-category"
+        return {"listaFasesGrupo": [{"IdFase": "phase-a", "Grupos": [{"IdGrupo": "group-a"}]}]}
+
     def get_category_matchdays(self, category, phase, *, group_id, payload_sink):
+        assert category == "current-device-category"
         payload = {
             "resultado": "correcto",
             "ListaJornadas": [
@@ -22,6 +31,7 @@ class FakeClient:
         return payload["ListaJornadas"]
 
     def get_category_matches(self, category, phase, *, group_id, payload_sink):
+        assert category == "current-device-category"
         payload = {
             "resultado": "correcto",
             "partidos": [
@@ -85,6 +95,9 @@ class FakeRepository:
 
     def resolve_competition_selection(self, category_id):
         return uuid4(), "opaque-category"
+
+    def competition_search_terms(self, category_id):
+        return ["LIGA NACIONAL N1 MAS"]
 
     def list_competition_groups(self, competition_id):
         return [(uuid4(), "group-a", "phase-a")]
@@ -173,6 +186,19 @@ def test_category_without_published_groups_is_pending_not_a_contract_error():
     assert summary.groups == 0
     assert summary.games == 0
     assert repository.stale_seen is None
+
+
+def test_schedule_ignores_group_handles_from_a_previous_device():
+    repository = FakeRepository()
+    repository.list_competition_groups = lambda _: [
+        (uuid4(), "old-group", "old-phase"),
+        (uuid4(), "group-a", "phase-a"),
+    ]
+    summary = sync_competition_games(
+        FakeClient(), repository, category_competition_id="10468"
+    )
+    assert summary.groups == 1
+    assert summary.games == 1
 
 
 def test_unknown_matchday_has_safe_specific_error_code():

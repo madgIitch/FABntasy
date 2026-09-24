@@ -10,6 +10,7 @@ from psycopg.types.json import Jsonb
 
 from .client import FabClient
 from .repository import SportsRepository
+from .selection import resolve_current_category_id
 
 
 class ScheduleContractError(RuntimeError):
@@ -36,7 +37,7 @@ def sync_competition_games(
     category_competition_id: str,
     round_number: int | None = None,
 ) -> ScheduleSyncSummary:
-    competition_season_id, opaque_category_id = repository.resolve_competition_selection(
+    competition_season_id, _ = repository.resolve_competition_selection(
         category_competition_id
     )
     groups = repository.list_competition_groups(competition_season_id)
@@ -44,6 +45,19 @@ def sync_competition_games(
         # FAB may publish a category before publishing its phases and groups.
         # No schedule can be authoritative until a group exists.
         return ScheduleSyncSummary(0, 0, 0, 0, 0, 0, 0)
+
+    opaque_category_id = resolve_current_category_id(client, repository, category_competition_id)
+    current_phases = client.get_category_phases(opaque_category_id)["listaFasesGrupo"]
+    current_groups = {
+        (str(group["IdGrupo"]), str(phase["IdFase"]))
+        for phase in current_phases
+        for group in phase.get("Grupos", [])
+    }
+    groups = [row for row in groups if (row[1], row[2]) in current_groups]
+    if not groups and current_groups:
+        raise ScheduleContractError(
+            "FAB group identifiers are not current for this device", "SCHEDULE_STALE_GROUP_IDS"
+        )
 
     raw_payloads: list[tuple[str, str, dict[str, Any]]] = []
     collected: dict[str, tuple[Any, str, dict[str, Any]]] = {}

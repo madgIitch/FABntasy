@@ -217,6 +217,22 @@ class SportsRepository:
             raise ValueError("category is not a selected or monitored FAB competition")
         return row[0], row[1]
 
+    def competition_search_terms(self, category_competition_id: str) -> list[str]:
+        row = self.connection.execute(
+            """SELECT c.category_name, cs.category_name, c.competition_name, cs.name
+               FROM competition_seasons cs
+               JOIN external_ids category ON category.entity_id = cs.id
+                AND category.source = 'FAB_CATEGORY_COMPETITION'
+                AND category.entity_type = 'competition_season'
+               LEFT JOIN fab_competition_catalog c
+                ON c.category_competition_id = category.external_id
+               WHERE category.external_id = %s LIMIT 1""",
+            (category_competition_id,),
+        ).fetchone()
+        if row is None:
+            raise ValueError("category is not a selected FAB competition")
+        return list(dict.fromkeys(str(term).strip() for term in row if term and str(term).strip()))
+
     def ensure_monitored_competition(self, category_competition_id: str) -> UUID:
         """Link a monitored catalog item without enabling fantasy for it."""
         with self.connection.transaction():

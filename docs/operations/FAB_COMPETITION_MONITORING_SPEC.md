@@ -70,4 +70,8 @@ La consola agrega los equipos monitorizados por `competition_season_id`, conserv
 
 El enlace entre catálogo y temporada usa exclusivamente `IdCompeticionCategoria` mediante `FAB_CATEGORY_COMPETITION`; el ID opaco de cada resultado de búsqueda puede variar y no define identidad. Solo puede existir una fila de catálogo por `category_competition_id`.
 
+## Resolución del identificador en la ingesta
+
+El ID opaco de `buscarCategoria` depende del dispositivo FAB. Antes de consultar fases, equipos o calendario, el ingestor busca la competición con las credenciales del dispositivo que ejecuta el job y valida `IdCompeticionCategoria` contra el ID estable seleccionado. Los nombres del catálogo son solo pistas de búsqueda; si no encuentran la categoría, se recorre la búsqueda global. Un resultado ausente o ambiguo falla con `FAB_CATEGORY_ID_UNRESOLVED` y conserva los datos existentes. El ID opaco persistido no se reutiliza para llamadas de ingesta de otro dispositivo. La consulta de calendario solo procesa los grupos cuyo ID y fase coinciden con la respuesta actual del mismo dispositivo.
+
 Si estadísticas devuelve exactamente `Id no válido`, el ingestor conserva el RAW saneado, incrementa `rejected` y continúa con los demás partidos. Tras tres rechazos persistidos para el mismo partido, lo marca `sync_status=stale` para que deje de bloquear ciclos posteriores. Ningún otro `FabResponseError` se silencia con esta regla.

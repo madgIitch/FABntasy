@@ -9,6 +9,7 @@ export const RECENT_CATALOG_ORDER: Prisma.FabCompetitionCatalogOrderByWithRelati
 ];
 export const TEAM_INDEX_COVERAGE = ["COMPLETE", "PARTIAL", "NOT_SYNCED", "STALE", "FAILED"] as const;
 export type TeamIndexCoverageStatus = typeof TEAM_INDEX_COVERAGE[number];
+export type RosterCoverageStatus = TeamIndexCoverageStatus | "PLANTILLA_NO_DISPONIBLE";
 export type CompetitionTeamIndex = {
   catalogId: string;
   competitionSeasonId: string | null;
@@ -16,12 +17,17 @@ export type CompetitionTeamIndex = {
   calculatedAt: string;
   teamsLastSyncedAt: string | null;
   playersLastSyncedAt: string | null;
+  rosterCoverageStatus: RosterCoverageStatus;
+  rosterLastSyncedAt: string | null;
+  rosterRegistrationCount: number | null;
+  tentativeRegistrationCount: number | null;
+  ambiguousCount: number;
   teamCount: number | null;
   playerRegistrationCount: number | null;
   teams: Array<{ teamId: string; teamName: string; playerRegistrationCount: number }>;
 };
-type TeamIndexRow = { catalogId: string; competitionSeasonId: string; teamId: string | null; teamName: string | null; playerRegistrationCount: bigint | number };
-type CoverageRun = { competitionSeasonId: string | null; jobName: string; status: string; startedAt: Date; finishedAt: Date | null };
+type TeamIndexRow = { catalogId: string; competitionSeasonId: string; teamId: string | null; teamName: string | null; playerRegistrationCount: bigint | number; rosterRegistrationCount?: bigint | number; tentativeRegistrationCount?: bigint | number };
+type CoverageRun = { competitionSeasonId: string | null; jobName: string; status: string; startedAt: Date; finishedAt: Date | null; counters?: unknown };
 const SECRET_KEY = /(^|_)(key|id_dispositivo|authorization|cookie|token|password|secret)($|_)/i;
 const MAX_RAW_BYTES = 256 * 1024;
 
@@ -66,9 +72,25 @@ export function buildCompetitionTeamIndexes(
       .sort((a, b) => (b.finishedAt ?? b.startedAt).getTime() - (a.finishedAt ?? a.startedAt).getTime());
     const teamRuns = seasonRuns.filter(run => run.jobName === "competition");
     const playerRuns = seasonRuns.filter(run => run.jobName === "stats");
+    const rosterRuns = seasonRuns.filter(run => run.jobName === "roster");
     const latestTeamRun = teamRuns[0];
     const lastTeamSuccess = teamRuns.find(run => successful(run.status));
     const lastPlayerSuccess = playerRuns.find(run => successful(run.status));
+    const latestRosterRun = rosterRuns[0];
+    const lastRosterSuccess = rosterRuns.find(run => successful(run.status));
+    const rosterCounters = (lastRosterSuccess?.counters ?? {}) as Record<string, unknown>;
+    const unavailable = Number(rosterCounters.unavailable ?? rosterCounters.rosterUnavailable ?? 0);
+    const ambiguous = Number(rosterCounters.ambiguous ?? rosterCounters.rosterAmbiguous ?? 0);
+    const rosterObserved = Number(rosterCounters.observed ?? rosterCounters.rosterObserved ?? 0);
+    let rosterCoverageStatus: RosterCoverageStatus = "NOT_SYNCED";
+    if (latestRosterRun && failed(latestRosterRun.status)) rosterCoverageStatus = "FAILED";
+    else if (lastRosterSuccess) {
+      const rosterAge = calculatedAt.getTime() - (lastRosterSuccess.finishedAt ?? lastRosterSuccess.startedAt).getTime();
+      if (rosterAge > 6 * 60 * 60_000) rosterCoverageStatus = "STALE";
+      else if (unavailable > 0 && rosterObserved === 0) rosterCoverageStatus = "PLANTILLA_NO_DISPONIBLE";
+      else if (unavailable > 0 || ambiguous > 0) rosterCoverageStatus = "PARTIAL";
+      else rosterCoverageStatus = "COMPLETE";
+    }
     let coverageStatus: TeamIndexCoverageStatus;
     if (!item.competitionSeasonId || (!latestTeamRun && seasonRows.length === 0)) coverageStatus = "NOT_SYNCED";
     else if (latestTeamRun && failed(latestTeamRun.status)) coverageStatus = "FAILED";
@@ -85,6 +107,11 @@ export function buildCompetitionTeamIndexes(
       calculatedAt: calculatedAt.toISOString(),
       teamsLastSyncedAt: iso(lastTeamSuccess?.finishedAt ?? lastTeamSuccess?.startedAt),
       playersLastSyncedAt: iso(lastPlayerSuccess?.finishedAt ?? lastPlayerSuccess?.startedAt),
+      rosterCoverageStatus,
+      rosterLastSyncedAt: iso(lastRosterSuccess?.finishedAt ?? lastRosterSuccess?.startedAt),
+      rosterRegistrationCount: lastRosterSuccess ? seasonRows.reduce((sum, team) => sum + Number(rows.find(row => row.catalogId === item.id && row.teamId === team.teamId)?.rosterRegistrationCount ?? 0), 0) : null,
+      tentativeRegistrationCount: lastRosterSuccess ? seasonRows.reduce((sum, team) => sum + Number(rows.find(row => row.catalogId === item.id && row.teamId === team.teamId)?.tentativeRegistrationCount ?? 0), 0) : null,
+      ambiguousCount: ambiguous,
       teamCount: canAssertCounts ? seasonRows.length : null,
       playerRegistrationCount: canAssertCounts ? seasonRows.reduce((sum, team) => sum + team.playerRegistrationCount, 0) : null,
       teams: canAssertCounts ? seasonRows : [],
@@ -96,7 +123,7 @@ export function buildCompetitionTeamIndexes(
 export async function getMonitoredCompetitionTeamIndexes(): Promise<CompetitionTeamIndex[]> {
   if (process.env.INGESTION_TEAM_INDEX_ENABLED === "false") return [];
   const catalog = await db.fabCompetitionCatalog.findMany({
-    where: { monitored: true }, orderBy: { id: "asc" }, select: { id: true, categoryCompetitionId: true, competitionSeasonId: true, status: true },
+    where: { monitored: true }, orderBy: { id: "asc" }, select: { id: true, categoryCompetitionId: true, competitionSeasonId: true, status: true, competitionSeason: { select: { fantasyEnabled: true } } },
   });
   const seasonIds = catalog.flatMap(item => item.competitionSeasonId ? [item.competitionSeasonId] : []);
   if (!seasonIds.length) return buildCompetitionTeamIndexes(catalog, [], [], new Date());
@@ -105,7 +132,9 @@ export async function getMonitoredCompetitionTeamIndexes(): Promise<CompetitionT
     db.$queryRaw<TeamIndexRow[]>(Prisma.sql`
       SELECT c.id AS "catalogId", c.competition_season_id AS "competitionSeasonId",
              t.id AS "teamId", COALESCE(tr.display_name, t.name) AS "teamName",
-             COUNT(pr.id)::bigint AS "playerRegistrationCount"
+             COUNT(pr.id)::bigint AS "playerRegistrationCount",
+             COUNT(pr.id) FILTER (WHERE pr.roster_seen_at IS NOT NULL)::bigint AS "rosterRegistrationCount",
+             COUNT(pr.id) FILTER (WHERE pr.identity_status = 'TENTATIVE')::bigint AS "tentativeRegistrationCount"
       FROM fab_competition_catalog c
       LEFT JOIN team_registrations tr ON tr.competition_season_id = c.competition_season_id
       LEFT JOIN teams t ON t.id = tr.team_id
@@ -116,24 +145,27 @@ export async function getMonitoredCompetitionTeamIndexes(): Promise<CompetitionT
       ORDER BY lower(COALESCE(tr.display_name, t.name)) ASC NULLS LAST, t.id ASC
     `),
     db.ingestionRun.findMany({
-      where: { competitionSeasonId: { in: seasonIds }, jobName: { in: ["competition", "stats"] } },
+      where: { competitionSeasonId: { in: seasonIds }, jobName: { in: ["competition", "roster", "stats"] } },
       orderBy: { startedAt: "desc" },
-      select: { competitionSeasonId: true, jobName: true, status: true, startedAt: true, finishedAt: true },
+      select: { competitionSeasonId: true, jobName: true, status: true, startedAt: true, finishedAt: true, counters: true },
     }),
     db.ingestionJob.findMany({
       where: { type: "COMPETITION", targetKey: { in: catalog.map(item => `categoryId:${item.categoryCompetitionId}`) }, status: { in: ["SUCCEEDED", "FAILED"] } },
       orderBy: { requestedAt: "desc" },
-      select: { targetKey: true, status: true, requestedAt: true, startedAt: true, finishedAt: true },
+      select: { targetKey: true, status: true, requestedAt: true, startedAt: true, finishedAt: true, counters: true },
     }),
   ]);
-  const seasonByTarget = new Map(catalog.map(item => [`categoryId:${item.categoryCompetitionId}`, item.competitionSeasonId]));
+  const seasonByTarget = new Map(catalog.map(item => [`categoryId:${item.categoryCompetitionId}`, { id: item.competitionSeasonId, rosterEnabled: Boolean(item.competitionSeason?.fantasyEnabled) }]));
   const manualRuns: CoverageRun[] = jobs.flatMap(job => {
-    const competitionSeasonId = seasonByTarget.get(job.targetKey);
+    const selected = seasonByTarget.get(job.targetKey);
+    const competitionSeasonId = selected?.id;
     if (!competitionSeasonId) return [];
     const startedAt = job.startedAt ?? job.requestedAt;
-    return ["competition", "stats"].map(jobName => ({
+    const rosterReported = job.counters && typeof job.counters === "object" && "rosterTeams" in job.counters;
+    const rosterFailed = job.status === "FAILED" && selected?.rosterEnabled;
+    return ["competition", "stats", ...(rosterReported || rosterFailed ? ["roster"] : [])].map(jobName => ({
       competitionSeasonId, jobName, status: job.status,
-      startedAt, finishedAt: job.finishedAt,
+      startedAt, finishedAt: job.finishedAt, counters: job.counters,
     }));
   });
   return buildCompetitionTeamIndexes(catalog, rows, [...runs, ...manualRuns], new Date());
@@ -214,6 +246,40 @@ export async function setCompetitionMonitoring(actorProfileId: string, catalogId
     await tx.adminAuditEvent.create({ data: { actorProfileId, action: parsed.monitored ? "COMPETITION_MONITOR_ENABLE" : "COMPETITION_MONITOR_DISABLE", resourceType: "FAB_COMPETITION", resourceId: catalogId, result: "SUCCESS" } });
     return updated;
   });
+}
+
+export async function enableCompetitionFantasy(actorProfileId: string, catalogId: string) {
+  if (!/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(catalogId)) throw new AdminError("INVALID_TARGET");
+  const entry = await db.fabCompetitionCatalog.findUnique({
+    where: { id: catalogId },
+    select: { id: true, categoryCompetitionId: true, competitionSeasonId: true, monitored: true },
+  });
+  if (!entry?.monitored) throw new AdminError("MONITORED_COMPETITION_REQUIRED", 404);
+  if (!entry.competitionSeasonId) throw new AdminError("SYNC_COMPETITION_FIRST", 409);
+  const result = await db.$transaction(async tx => {
+    const current = await tx.competitionSeason.findUniqueOrThrow({
+      where: { id: entry.competitionSeasonId! }, select: { fantasyEnabled: true, fantasyRole: true },
+    });
+    if (!current.fantasyEnabled) {
+      const primary = await tx.competitionSeason.findFirst({
+        where: { fantasyRole: "primary" }, select: { id: true },
+      });
+      await tx.competitionSeason.update({
+        where: { id: entry.competitionSeasonId! },
+        data: { fantasyEnabled: true, fantasyRole: primary ? "validation" : "primary" },
+      });
+    }
+    await tx.adminAuditEvent.create({
+      data: { actorProfileId, action: "COMPETITION_FANTASY_ENABLE", resourceType: "FAB_COMPETITION",
+        resourceId: catalogId, result: current.fantasyEnabled ? "DUPLICATE" : "SUCCESS" },
+    });
+    return { alreadyEnabled: current.fantasyEnabled };
+  });
+  const queued = await enqueueIngestionJob(actorProfileId, {
+    type: "COMPETITION", target: { categoryId: entry.categoryCompetitionId },
+    reason: "Preparar plantillas fantasy",
+  });
+  return { ...result, jobId: queued.job.id, duplicateJob: queued.duplicate };
 }
 
 export function parseMonitoringUpdate(catalogId: string, monitored: unknown) {

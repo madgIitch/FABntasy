@@ -102,13 +102,11 @@ export async function putRoster(actor: TeamActor, competitionSeasonId: string, i
     const result = await db.$transaction(async (tx) => {
       const owner = await profileId(tx, actor, true);
       const rules = await activeRules(tx, competitionSeasonId);
-      const registrations = await tx.playerRegistration.findMany({ where: { id: { in: [...input.playerRegistrationIds] }, competitionSeasonId }, include: {
+      const registrations = await tx.playerRegistration.findMany({ where: { id: { in: [...input.playerRegistrationIds] }, competitionSeasonId, identityStatus: { not: "CONFLICT" } }, include: {
         teamRegistration: { select: { teamId: true } }, prices: { orderBy: { updatedAt: "desc" }, take: 1, select: { currentPrice: true } },
       } });
       if (registrations.length !== new Set(input.playerRegistrationIds).size) fail("ROSTER_INVALID");
-      const dynamicPricingActive = await tx.playerPrice.count({ where: { competitionSeasonId } }) > 0;
       const acquisitionPrices = new Map(registrations.map((registration) => {
-        if (dynamicPricingActive && !registration.prices[0]) fail("PRICE_UNAVAILABLE");
         return [registration.id, registration.prices[0]?.currentPrice ?? rules.coldStartPriceCredits] as const;
       }));
       validateRoster(input.playerRegistrationIds.map((id) => { const registration = registrations.find((x) => x.id === id)!; return { playerRegistrationId: id, realTeamId: registration.teamRegistration.teamId, priceCredits: asNumber(acquisitionPrices.get(id)!) }; }), {

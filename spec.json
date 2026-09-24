@@ -3257,7 +3257,7 @@
       "id": "sprint-37-fantasy-preseason-registrations",
       "name": "Sprint 37 - Fantasy Preseason Registrations",
       "title": "Inscripciones de pretemporada y conciliación con boxscores",
-      "status": "spec_ready",
+      "status": "review_pending",
       "sdd": true,
       "spec_approved": true,
       "priority": "P0",
@@ -3282,7 +3282,7 @@
         }
       ],
       "tasks": [
-        "Validar y documentar una fuente FAB de plantillas previas y sus IDs estables entre dispositivos y boxscores, con fixtures saneados.",
+        "Documentar la fuente FAB de plantillas previas, sus handles por dispositivo y una conciliación por ID verificado o fallback único y tentativo por nombre, equipo, competición y temporada.",
         "Añadir selección administrativa auditada y sincronización inicial, periódica y manual de inscripciones para competiciones fantasy.",
         "Persistir jugadores e inscripciones con identidad canónica, snapshot parcial seguro y conciliación idempotente de boxscores.",
         "Mostrar cobertura independiente de equipos, inscripciones y estadísticas, con progreso y errores seguros.",
@@ -3290,12 +3290,12 @@
       ],
       "deliverable": "Jugadores disponibles para plantillas fantasy antes del inicio y una sola inscripción por identidad verificada al procesar boxscores.",
       "acceptance": [
-        "La fuente FAB de plantilla previa está validada con fixtures saneados e IDs contrastados entre dos dispositivos y boxscores; si no existe, no se inventan jugadores y se muestra PLANTILLA_NO_DISPONIBLE.",
+        "La fuente FAB de plantilla previa está documentada con fixtures saneados; un equipo sin fichas publicadas muestra PLANTILLA_NO_DISPONIBLE sin inventar jugadores.",
         "Una competición monitorizada se habilita para fantasy por ID FAB estable mediante acción INGESTION_ADMIN auditada; inicia una sincronización sin activar otras competiciones.",
         "Las inscripciones de una competición fantasy se actualizan al menos cada seis horas en pretemporada y con Sincronizar ahora usando el mismo pipeline, lock e idempotencia.",
         "Los jugadores publicados antes del primer partido son seleccionables con su equipo y precio inicial sin depender de PlayerGameStat.",
-        "Plantilla y boxscore con identidad FAB verificada conservan el mismo Player, PlayerRegistration y referencias fantasy; nombre y dorsal no son claves.",
-        "Un jugador visto primero en una boxscore aparece como inscripción provisional y se concilia después sin duplicarse ni borrar referencias; una identidad ambigua queda pendiente de revisión.",
+        "Plantilla y boxscore conservan el mismo Player, PlayerRegistration y referencias fantasy con ID común verificado o fallback único y tentativo por nombre y apellidos normalizados, equipo, competición y temporada; los conflictos se alertan sin fusionar.",
+        "Un jugador visto primero en una boxscore aparece como inscripción provisional y se concilia después por ID verificado o fallback único tentativo sin duplicarse ni borrar referencias; una identidad ambigua queda pendiente de revisión.",
         "Fallos, respuestas parciales o vacíos no autoritativos conservan el último snapshot válido y no convierten ausencia de datos en cero legítimo.",
         "La consola distingue cobertura de equipos, inscripciones y estadísticas, muestra progreso y errores seguros, y no expone secretos ni RAW.",
         "Tests sin red e integración cubren dos dispositivos, ambos órdenes de llegada, homónimos, cambios de equipo, idempotencia, locks y rollback; pasan los gates del repositorio."
@@ -3303,6 +3303,7 @@
       "scope": [
         "services/fab_ingestor/**",
         "apps/web/src/server/**",
+        "apps/web/src/components/canastio-market.tsx",
         "apps/web/app/app/admin/ingestion/**",
         "apps/web/app/api/admin/ingestion/**",
         "apps/web/app/app/mercado/**",
@@ -3323,7 +3324,7 @@
       "spec_reference": "docs/operations/FANTASY_PRESEASON_REGISTRATIONS_SPEC.md",
       "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
       "approved_by": "peorr",
-      "approved_at": "2026-09-24T11:40:38.532Z"
+      "approved_at": "2026-09-24T12:38:31.807Z"
     }
   ]
 }

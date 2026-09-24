@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import hashlib
 import json
+import re
+import unicodedata
 from collections.abc import Mapping
 from contextlib import contextmanager
 from typing import Any, ClassVar
@@ -15,6 +18,13 @@ from .raw_payload import canonical_payload
 
 class ExternalIdentityConflict(RuntimeError):
     pass
+
+
+def normalized_player_name(value: str) -> str:
+    """A candidate key only; never evidence of a verified sporting identity."""
+    folded = unicodedata.normalize("NFKD", value.casefold())
+    plain = "".join(character for character in folded if not unicodedata.combining(character))
+    return " ".join(re.findall(r"[a-z0-9]+", plain))
 
 
 class SportsRepository:
@@ -313,6 +323,13 @@ class SportsRepository:
             (competition_season_id,),
         ).fetchone()
         return bool(row and row[0] in {"validation", "primary"})
+
+    def is_roster_enabled(self, competition_season_id: UUID) -> bool:
+        row = self.connection.execute(
+            "SELECT fantasy_enabled FROM competition_seasons WHERE id=%s",
+            (competition_season_id,),
+        ).fetchone()
+        return bool(row and row[0])
 
     def catalog_scan_due(self, interval_hours: int = 6) -> bool:
         row = self.connection.execute(
@@ -614,10 +631,40 @@ class SportsRepository:
         team_registration_id: UUID,
         competition_season_id: UUID,
         shirt_number: str | None,
+        allow_roster_match: bool = True,
     ) -> tuple[UUID, bool]:
         existed = self.resolve_external_id(
             source="FAB", entity_type="player", external_id=player_external_id
         )
+        if existed is None and allow_roster_match:
+            candidates = self._name_candidates(team_registration_id, display_name)
+            roster_candidates = [
+                candidate for candidate in candidates if candidate[2] in {"ROSTER_ONLY", "TENTATIVE"}
+            ]
+            if len(roster_candidates) == 1 and len(candidates) == 1:
+                registration_id, player_id, _ = roster_candidates[0]
+                with self.connection.transaction():
+                    self.upsert_external_id(
+                        source="FAB", entity_type="player", external_id=player_external_id,
+                        entity_id=player_id,
+                    )
+                    self.upsert_external_id(
+                        source="FAB", entity_type="player_registration",
+                        external_id=f"{player_external_id}:{team_registration_id}",
+                        entity_id=registration_id,
+                    )
+                    self.connection.execute(
+                        """UPDATE players SET display_name=%s, provisional=%s,
+                           updated_at=CURRENT_TIMESTAMP WHERE id=%s""",
+                        (display_name, provisional, player_id),
+                    )
+                    self.connection.execute(
+                        """UPDATE player_registrations SET identity_status='TENTATIVE',
+                           shirt_number=COALESCE(%s, shirt_number), updated_at=CURRENT_TIMESTAMP
+                           WHERE id=%s""",
+                        (shirt_number, registration_id),
+                    )
+                return registration_id, False
         player_id = self.upsert_from_external(
             source="FAB",
             entity_type="player",
@@ -635,7 +682,204 @@ class SportsRepository:
                 "shirt_number": shirt_number,
             },
         )
+        self.connection.execute(
+            """UPDATE player_registrations SET identity_status=CASE
+               WHEN identity_status IN ('ROSTER_ONLY', 'TENTATIVE') THEN 'TENTATIVE'
+               ELSE identity_status END WHERE id=%s""",
+            (registration_id,),
+        )
         return registration_id, existed is None
+
+    def _name_candidates(
+        self, team_registration_id: UUID, display_name: str
+    ) -> list[tuple[UUID, UUID, str]]:
+        normalized = normalized_player_name(display_name)
+        if not normalized:
+            return []
+        rows = self.connection.execute(
+            """SELECT pr.id, pr.player_id, pr.identity_status, p.display_name
+               FROM player_registrations pr JOIN players p ON p.id=pr.player_id
+               WHERE pr.team_registration_id=%s FOR UPDATE OF pr""",
+            (team_registration_id,),
+        ).fetchall()
+        return [(row[0], row[1], row[2]) for row in rows
+                if normalized_player_name(row[3]) == normalized]
+
+    def mark_roster_name_conflict(self, team_registration_id: UUID, display_name: str) -> int:
+        """Quarantine previously published candidates when a new homonym appears."""
+        with self.connection.transaction():
+            candidates = self._name_candidates(team_registration_id, display_name)
+            for registration_id, _, status in candidates:
+                if status in {"ROSTER_ONLY", "TENTATIVE"}:
+                    self.connection.execute(
+                        """UPDATE player_registrations SET identity_status='CONFLICT',
+                           updated_at=CURRENT_TIMESTAMP WHERE id=%s""",
+                        (registration_id,),
+                    )
+            return len(candidates)
+
+    def resolve_roster_team_registration(
+        self, competition_season_id: UUID, team_name: str, stable_team_id: str
+    ) -> UUID:
+        """Find one existing team registration; never merge ambiguous team names."""
+        external = self.resolve_external_id(
+            source="FAB_TEAM_NOTIFICATION", entity_type="team_registration",
+            external_id=f"{competition_season_id}:{stable_team_id}",
+        )
+        if external is not None:
+            return external
+        rows = self.connection.execute(
+            """SELECT tr.id, COALESCE(tr.display_name,t.name) FROM team_registrations tr
+               JOIN teams t ON t.id=tr.team_id WHERE tr.competition_season_id=%s""",
+            (competition_season_id,),
+        ).fetchall()
+        candidates = [row[0] for row in rows
+                      if normalized_player_name(row[1]) == normalized_player_name(team_name)]
+        if len(candidates) != 1:
+            raise ExternalIdentityConflict("FAB roster team is missing or ambiguous")
+        self.upsert_external_id(
+            source="FAB_TEAM_NOTIFICATION", entity_type="team_registration",
+            external_id=f"{competition_season_id}:{stable_team_id}", entity_id=candidates[0],
+        )
+        return candidates[0]
+
+    def upsert_fab_team_registration(
+        self, *, competition_season_id: UUID, category_competition_id: str,
+        stable_team_id: str, device_team_id: str, display_name: str,
+        group_id: UUID | None,
+    ) -> tuple[UUID, UUID]:
+        """Keep one team UUID across FAB devices when the stable notification ID exists."""
+        stable_key = f"{competition_season_id}:{stable_team_id}"
+        registration_id = self.resolve_external_id(
+            source="FAB_TEAM_NOTIFICATION", entity_type="team_registration",
+            external_id=stable_key,
+        )
+        if registration_id is None:
+            old_key = f"{category_competition_id}:{device_team_id}"
+            registration_id = self.resolve_external_id(
+                source="FAB", entity_type="team_registration", external_id=old_key,
+            )
+        if registration_id is None:
+            rows = self.connection.execute(
+                """SELECT tr.id, COALESCE(tr.display_name,t.name) FROM team_registrations tr
+                   JOIN teams t ON t.id=tr.team_id WHERE tr.competition_season_id=%s""",
+                (competition_season_id,),
+            ).fetchall()
+            matches = [row[0] for row in rows
+                       if normalized_player_name(row[1]) == normalized_player_name(display_name)]
+            if len(matches) > 1:
+                raise ExternalIdentityConflict("FAB team name is ambiguous within competition")
+            registration_id = matches[0] if matches else None
+        if registration_id is not None:
+            row = self.connection.execute(
+                "SELECT team_id FROM team_registrations WHERE id=%s", (registration_id,),
+            ).fetchone()
+            if row is None:
+                raise ExternalIdentityConflict("FAB team registration is missing")
+            team_id = row[0]
+            self.connection.execute(
+                """UPDATE teams SET name=%s, updated_at=CURRENT_TIMESTAMP WHERE id=%s""",
+                (display_name, team_id),
+            )
+            self.connection.execute(
+                """UPDATE team_registrations SET group_id=%s, display_name=%s,
+                   updated_at=CURRENT_TIMESTAMP WHERE id=%s""",
+                (group_id, display_name, registration_id),
+            )
+        else:
+            team_id = self.upsert_from_external(
+                source="FAB_TEAM_NOTIFICATION", entity_type="team",
+                external_id=stable_team_id, values={"name": display_name},
+            )
+            registration_id = self.upsert_from_external(
+                source="FAB_TEAM_NOTIFICATION", entity_type="team_registration",
+                external_id=stable_key,
+                values={"team_id": team_id, "competition_season_id": competition_season_id,
+                        "group_id": group_id, "display_name": display_name},
+            )
+        self.upsert_external_id(
+            source="FAB_TEAM_NOTIFICATION", entity_type="team",
+            external_id=stable_team_id, entity_id=team_id,
+        )
+        self.upsert_external_id(
+            source="FAB_TEAM_NOTIFICATION", entity_type="team_registration",
+            external_id=stable_key, entity_id=registration_id,
+        )
+        # Device handles are optional lookup aliases. An older handle may point
+        # to a duplicate historical row; never silently reassign that alias.
+        for entity_type, external_id, entity_id in (
+            ("team", device_team_id, team_id),
+            ("team_registration", f"{category_competition_id}:{device_team_id}", registration_id),
+        ):
+            existing = self.resolve_external_id(
+                source="FAB", entity_type=entity_type, external_id=external_id,
+            )
+            if existing is None:
+                self.upsert_external_id(
+                    source="FAB", entity_type=entity_type, external_id=external_id,
+                    entity_id=entity_id,
+                )
+        return team_id, registration_id
+
+    def upsert_roster_player(
+        self, *, competition_season_id: UUID, team_registration_id: UUID,
+        display_name: str,
+    ) -> tuple[UUID, bool, str]:
+        """Persist a published roster row, retaining any earlier boxscore UUID."""
+        normalized = normalized_player_name(display_name)
+        if not normalized:
+            raise ExternalIdentityConflict("FAB roster player has no usable name")
+        fingerprint = hashlib.sha256(
+            f"{competition_season_id}:{team_registration_id}:{normalized}".encode()
+        ).hexdigest()
+        roster_key = f"name:{fingerprint}"
+        existing = self.resolve_external_id(
+            source="FAB_ROSTER_NAME", entity_type="player_registration",
+            external_id=roster_key,
+        )
+        with self.connection.transaction():
+            if existing is not None:
+                self.connection.execute(
+                    """UPDATE player_registrations SET roster_seen_at=CURRENT_TIMESTAMP,
+                       updated_at=CURRENT_TIMESTAMP WHERE id=%s""", (existing,),
+                )
+                return existing, False, "EXISTING"
+            candidates = self._name_candidates(team_registration_id, display_name)
+            if len(candidates) > 1:
+                raise ExternalIdentityConflict("FAB roster player name is ambiguous")
+            if candidates:
+                registration_id, player_id, status = candidates[0]
+                next_status = "TENTATIVE" if status == "BOXSCORE_ONLY" else status
+                self.upsert_external_id(
+                    source="FAB_ROSTER_NAME", entity_type="player", external_id=roster_key,
+                    entity_id=player_id,
+                )
+                self.upsert_external_id(
+                    source="FAB_ROSTER_NAME", entity_type="player_registration",
+                    external_id=roster_key, entity_id=registration_id,
+                )
+                self.connection.execute(
+                    """UPDATE player_registrations SET identity_status=%s,
+                       roster_seen_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE id=%s""",
+                    (next_status, registration_id),
+                )
+                return registration_id, False, next_status
+            player_id = self.upsert_from_external(
+                source="FAB_ROSTER_NAME", entity_type="player", external_id=roster_key,
+                values={"display_name": display_name, "provisional": True},
+            )
+            registration_id = self.upsert_from_external(
+                source="FAB_ROSTER_NAME", entity_type="player_registration",
+                external_id=roster_key,
+                values={
+                    "player_id": player_id,
+                    "team_registration_id": team_registration_id,
+                    "competition_season_id": competition_season_id,
+                    "identity_status": "ROSTER_ONLY",
+                    "roster_seen_at": self.connection.execute("SELECT CURRENT_TIMESTAMP").fetchone()[0],
+                },
+            )
+            return registration_id, True, "ROSTER_ONLY"
 
     def mark_game_stats_final(self, game_id: UUID) -> None:
         self.connection.execute(

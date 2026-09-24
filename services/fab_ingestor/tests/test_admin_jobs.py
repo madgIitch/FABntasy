@@ -118,6 +118,7 @@ def test_monitored_competition_job_links_without_fantasy_and_reuses_sync_lock(mo
     repository.advisory_lock.return_value = MagicMock()
     repository.advisory_lock.return_value.__enter__.return_value = True
     repository.is_fantasy_selected.return_value = False
+    repository.is_roster_enabled.return_value = False
     monkeypatch.setattr("fab_ingestor.admin_jobs.sync_competition_teams", Mock(return_value=Mock(teams=4)))
     monkeypatch.setattr("fab_ingestor.admin_jobs.sync_competition_games", Mock(return_value=Mock(games=3)))
     monkeypatch.setattr("fab_ingestor.admin_jobs.sync_competition_stats", Mock(return_value=Mock(rejected=0)))
@@ -134,12 +135,39 @@ def test_monitored_competition_job_links_without_fantasy_and_reuses_sync_lock(mo
     assert counters == {"teams": 4, "games": 3, "rejected": 0}
 
 
+def test_fantasy_competition_job_runs_roster_phase_and_reports_coverage(monkeypatch):
+    repository = Mock()
+    repository.resolve_competition_selection.return_value = ("season-1", "opaque")
+    repository.is_roster_enabled.return_value = True
+    repository.is_fantasy_selected.return_value = False
+    lock = MagicMock()
+    lock.__enter__.return_value = True
+    repository.advisory_lock.return_value = lock
+    monkeypatch.setattr("fab_ingestor.admin_jobs.sync_competition_teams", Mock(return_value=Mock(teams=21)))
+    roster = Mock(return_value=Mock(teams=21, observed=0, created=0, unavailable=21, ambiguous=0))
+    monkeypatch.setattr("fab_ingestor.admin_jobs.sync_competition_rosters", roster)
+    monkeypatch.setattr("fab_ingestor.admin_jobs.sync_competition_games", Mock(return_value=Mock(games=200)))
+    monkeypatch.setattr("fab_ingestor.admin_jobs.sync_competition_stats", Mock(return_value=Mock(rejected=0)))
+
+    counters = execute_job(
+        {"id": "job-1", "type": "COMPETITION", "target": {"categoryId": "9955"}},
+        Mock(), repository,
+    )
+
+    assert counters["rosterUnavailable"] == 21
+    assert counters["rosterObserved"] == 0
+    assert counters["games"] == 200
+    roster.assert_called_once()
+
+
 def test_schedule_failure_commits_completed_team_phase_before_failing_job(monkeypatch):
     repository = Mock()
     repository.resolve_competition_selection.return_value = ("season-1", "opaque-1")
     lock = MagicMock()
     lock.__enter__.return_value = True
     repository.advisory_lock.return_value = lock
+    repository.is_fantasy_selected.return_value = False
+    repository.is_roster_enabled.return_value = False
     teams = Mock(return_value=Mock(teams=4))
     monkeypatch.setattr("fab_ingestor.admin_jobs.sync_competition_teams", teams)
     monkeypatch.setattr(

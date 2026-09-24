@@ -4,6 +4,7 @@
 
 - `services/fab_ingestor/**`
 - `apps/web/src/server/**`
+- `apps/web/src/components/canastio-market.tsx`
 - `apps/web/app/app/admin/ingestion/**`
 - `apps/web/app/api/admin/ingestion/**`
 - `apps/web/app/app/mercado/**`

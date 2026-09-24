@@ -11,6 +11,7 @@ from .client import FabCancelledError, FabClient, FabResponseError
 from .discovery import sync_competition_teams
 from .fantasy_lifecycle import FantasyLifecycleSummary, FantasyLifecycleTransportError
 from .repository import SportsRepository
+from .roster import sync_competition_rosters
 from .schedule import ScheduleContractError, sync_competition_games
 
 
@@ -98,10 +99,25 @@ def execute_job(
             raise IngestionLockedError("competition ingestion is already running")
         try:
             teams = sync_competition_teams(client, repository, category_competition_id=category_id)
+            if repository.is_roster_enabled(competition_season_id):
+                roster = sync_competition_rosters(
+                    client, repository, category_competition_id=category_id,
+                    progress=lambda: repository.connection.execute(
+                        "UPDATE ingestion_jobs SET heartbeat_at=CURRENT_TIMESTAMP WHERE id=%s",
+                        (job["id"],),
+                    ) if job.get("id") else None,
+                )
+                counters.update({
+                    "rosterTeams": roster.teams,
+                    "rosterObserved": roster.observed,
+                    "rosterCreated": roster.created,
+                    "rosterUnavailable": roster.unavailable,
+                    "rosterAmbiguous": roster.ambiguous,
+                })
             games = sync_competition_games(client, repository, category_competition_id=category_id)
             stats = sync_competition_stats(client, repository, category_competition_id=category_id)
             counters = _advance_fantasy(
-                {"teams": teams.teams, "games": games.games, "rejected": stats.rejected},
+                {**counters, "teams": teams.teams, "games": games.games, "rejected": stats.rejected},
                 competition_season_id,
                 fantasy_lifecycle if repository.is_fantasy_selected(competition_season_id) else None,
             )

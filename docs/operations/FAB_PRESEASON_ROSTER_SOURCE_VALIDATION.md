@@ -20,6 +20,10 @@ Las llamadas requieren credenciales de dispositivo FAB. El cliente actual impone
 
 En 10027, un equipo con `IdEquipoNotificacion=119626` devolvió 8 jugadores con `PartidosJugados=0`. Se consultó de nuevo con un segundo dispositivo: se mantuvieron el ID estable de competición (10027), el ID estable de equipo (119626), el orden y los ocho nombres, pero **los ocho `Id` de jugador cambiaron**. `idComponenteClub` también cambió entre dispositivos en una comprobación separada. Este ejemplo demuestra que FAB publica parte de la plantilla antes del primer partido, pero los campos de jugador disponibles no sirven como clave canónica entre dispositivos.
 
+Un smoke de solo lectura del parser de Sprint 37 volvió a recorrer 10027: 48 equipos, 16 con jugadores, 167 fichas aceptadas por el contrato de equipo/categoría/temporada, 32 equipos sin fichas y 0 filas ambiguas. El smoke sustituyó las escrituras por un repositorio en memoria; no activó fantasy ni alteró PostgreSQL.
+
+Los tests de conciliación se ejecutaron sobre un PostgreSQL temporal con el esquema deportivo y la migración nueva: ficha antes de boxscore y boxscore antes de ficha conservan un único UUID; dos dispositivos conservan el equipo por `IdEquipoNotificacion`; un traspaso conserva el `Player` y crea una inscripción nueva sin borrar la anterior. El entorno local no incluye los esquemas `auth` y `storage` de Supabase, así que no se ejecutó allí la cadena completa de migraciones del producto; `prisma validate` y todos los gates del harness sí pasaron.
+
 Forma saneada de una fila observada:
 
 ```json
@@ -35,6 +39,6 @@ Forma saneada de una fila observada:
 
 ## Resultado de la condición de entrada
 
-**PLANTILLA_NO_DISPONIBLE para 9955.** FAB devuelve listas vacías para todos sus equipos y no proporciona señal de que ese vacío sea definitivo. Para 10027 hay jugadores publicados, pero falta una clave de jugador estable compartida o conciliable con `componente_id` de boxscores. No es seguro crear `Player` ni `PlayerRegistration` a partir de los handles o de los nombres: se duplicarían al renovar el dispositivo y no se podría garantizar la unión posterior con la boxscore.
+**PLANTILLA_NO_DISPONIBLE para 9955.** FAB devuelve listas vacías para todos sus equipos y no proporciona señal de que ese vacío sea definitivo. Para 10027 hay jugadores publicados, pero falta una clave de jugador estable compartida o conciliable con `componente_id` de boxscores. No es seguro utilizar los handles como identidad persistente: se duplicarían al renovar el dispositivo.
 
-La ingesta de plantillas de Sprint 37 permanece detenida por la condición de entrada aprobada. La sincronización actual de equipos, calendario y boxscores sigue siendo el único flujo ejecutable. Antes de activar la ingesta de plantillas se necesita una fuente que exponga un ID de jugador estable verificable, o una decisión aprobada sobre otra fuente. No se ha probado que las listas vacías de 9955 signifiquen que FAB no publicará jugadores más adelante.
+La revisión aprobada de Sprint 37 permite almacenar fichas publicadas con identidad provisional y conciliar con boxscores mediante nombre y apellidos normalizados **solo si hay una coincidencia única en equipo, competición y temporada**, marcada `TENTATIVE`. Un ID compartido se adoptará como identidad verificada cuando se contraste sobre el mismo jugador real. Ninguna coincidencia ambigua se fusiona automáticamente. No se ha probado que las listas vacías de 9955 signifiquen que FAB no publicará jugadores más adelante.

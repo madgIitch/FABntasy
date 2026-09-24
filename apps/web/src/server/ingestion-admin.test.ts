@@ -21,6 +21,17 @@ describe("monitored competition team index",()=>{
   expect(buildCompetitionTeamIndexes([catalog()],[],[],now)[0]).toMatchObject({coverageStatus:"NOT_SYNCED",teamCount:null,playerRegistrationCount:null});
   expect(buildCompetitionTeamIndexes([catalog()],[],[run("failed")],now)[0]).toMatchObject({coverageStatus:"FAILED",teamCount:null,playerRegistrationCount:null});
  });
+ it("distinguishes unpublished FAB rosters from a complete team index and boxscore registrations",()=>{
+  const rows=[{catalogId:"catalog-a",competitionSeasonId:season,teamId:"team-a",teamName:"Águilas",playerRegistrationCount:2n,rosterRegistrationCount:0n,tentativeRegistrationCount:0n}];
+  const rosterRun={...run("succeeded",1,"roster"),counters:{teams:1,observed:0,unavailable:1,ambiguous:0}};
+  const result=buildCompetitionTeamIndexes([catalog()],rows,[run(),rosterRun],now)[0];
+  expect(result).toMatchObject({coverageStatus:"COMPLETE",rosterCoverageStatus:"PLANTILLA_NO_DISPONIBLE",playerRegistrationCount:2,rosterRegistrationCount:0});
+ });
+ it("shows a partial roster when FAB publishes some teams and flags ambiguous names",()=>{
+  const rosterRun={...run("succeeded",1,"roster"),counters:{teams:3,observed:10,unavailable:1,ambiguous:2}};
+  const result=buildCompetitionTeamIndexes([catalog()],[],[run(),rosterRun],now)[0];
+  expect(result).toMatchObject({rosterCoverageStatus:"PARTIAL",ambiguousCount:2});
+ });
  it("preserves the last valid rows for partial, stale, and failed coverage",()=>{
   const rows=[{catalogId:"catalog-a",competitionSeasonId:season,teamId:"team-a",teamName:"Águilas",playerRegistrationCount:2n}];
   expect(buildCompetitionTeamIndexes([catalog("PARTIAL")],rows,[run()],now)[0]).toMatchObject({coverageStatus:"PARTIAL",teamCount:1,playerRegistrationCount:2});

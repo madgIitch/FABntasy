@@ -259,15 +259,27 @@ def sync_competition_teams(
         for group_id, _, _, teams in group_rows:
             for team in teams:
                 external_team_id = str(team["Id"])
+                stable_team_id = str(team.get("IdEquipoNotificacion", "")).strip()
                 name = str(team["Nombre"]).strip()
+                assigned_group = (
+                    group_internal_ids[group_id] if len(memberships[external_team_id]) == 1 else None
+                )
+                if stable_team_id and hasattr(repository, "upsert_fab_team_registration"):
+                    repository.upsert_fab_team_registration(
+                        competition_season_id=competition_season_id,
+                        category_competition_id=category_competition_id,
+                        stable_team_id=stable_team_id,
+                        device_team_id=external_team_id,
+                        display_name=name,
+                        group_id=assigned_group,
+                    )
+                    team_ids.add(stable_team_id)
+                    continue
                 team_id = repository.upsert_from_external(
                     source="FAB",
                     entity_type="team",
                     external_id=external_team_id,
                     values={"name": name},
-                )
-                assigned_group = (
-                    group_internal_ids[group_id] if len(memberships[external_team_id]) == 1 else None
                 )
                 repository.upsert_from_external(
                     source="FAB",

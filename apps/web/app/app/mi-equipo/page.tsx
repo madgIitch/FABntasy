@@ -50,10 +50,12 @@ export default async function MyTeamPage() {
   }
 
   const eligiblePlayers = initialTeam ? [] : await db.playerRegistration.findMany({
-    where: { competitionSeasonId: seasonId }, take: 80,
+    where: { competitionSeasonId: seasonId, identityStatus: { not: "CONFLICT" } }, take: 80,
     orderBy: { player: { displayName: "asc" } },
     select: { id: true, player: { select: { displayName: true } }, teamRegistration: { select: { team: { select: { name: true } } } }, prices: { orderBy: { updatedAt: "desc" }, take: 1, select: { currentPrice: true } } },
   });
+
+  if (!initialTeam && eligiblePlayers.length === 0) return <main className="app-main"><section className="empty-state"><h1>Tu plantilla estará disponible pronto</h1><p>Estamos esperando las fichas de jugadores que publique la FAB para esta competición. La sincronización las comprobará periódicamente.</p></section></main>;
 
   return <FantasyTeamManager
     key={league!.id}

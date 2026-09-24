@@ -36,6 +36,9 @@ class Repository:
     def is_fantasy_selected(self, competition_season_id):
         return True
 
+    def is_roster_enabled(self, competition_season_id):
+        return True
+
     def start_ingestion_run(self, job, competition):
         run_id = f"run-{len(self.runs)}"
         self.runs.append((run_id, job, competition))
@@ -65,14 +68,19 @@ def test_sync_all_runs_each_phase_and_records_only_counters(monkeypatch):
         "fab_ingestor.orchestrator.sync_competition_stats",
         lambda *_, **__: calls.append("stats") or {"players": 12},
     )
+    monkeypatch.setattr(
+        "fab_ingestor.orchestrator.sync_competition_rosters",
+        lambda *_, **__: calls.append("roster") or {"observed": 8},
+    )
 
     summary = IngestionOrchestrator(object(), repository).sync_all()
 
-    assert calls == ["competition", "schedule", "stats"]
-    assert (summary.competitions, summary.phases_succeeded, summary.phases_failed) == (1, 3, 0)
+    assert calls == ["competition", "roster", "schedule", "stats"]
+    assert (summary.competitions, summary.phases_succeeded, summary.phases_failed) == (1, 4, 0)
     phase_results = [values for _, values in repository.finished if "counters" in values][:-1]
     assert phase_results == [
         {"status": "succeeded", "counters": {"teams": 4}},
+        {"status": "succeeded", "counters": {"observed": 8}},
         {"status": "succeeded", "counters": {"games": 3}},
         {"status": "succeeded", "counters": {"players": 12}},
     ]
@@ -83,11 +91,12 @@ def test_sync_all_records_safe_trigger_in_run_name(monkeypatch):
     monkeypatch.setattr("fab_ingestor.orchestrator.sync_competition_teams", lambda *_, **__: {})
     monkeypatch.setattr("fab_ingestor.orchestrator.sync_competition_games", lambda *_, **__: {})
     monkeypatch.setattr("fab_ingestor.orchestrator.sync_competition_stats", lambda *_, **__: {})
+    monkeypatch.setattr("fab_ingestor.orchestrator.sync_competition_rosters", lambda *_, **__: {})
 
     IngestionOrchestrator(object(), repository).sync_all(trigger="startup")
 
     assert repository.runs[0][1] == "sync_all_startup"
-    assert {job for _, job, _ in repository.runs[1:]} == {"competition", "schedule", "stats"}
+    assert {job for _, job, _ in repository.runs[1:]} == {"competition", "roster", "schedule", "stats"}
 
 
 def test_sync_all_advances_fantasy_only_after_successful_stats(monkeypatch):
@@ -96,18 +105,20 @@ def test_sync_all_advances_fantasy_only_after_successful_stats(monkeypatch):
     monkeypatch.setattr("fab_ingestor.orchestrator.sync_competition_teams", lambda *_, **__: {})
     monkeypatch.setattr("fab_ingestor.orchestrator.sync_competition_games", lambda *_, **__: {})
     monkeypatch.setattr("fab_ingestor.orchestrator.sync_competition_stats", lambda *_, **__: calls.append("stats") or {})
+    monkeypatch.setattr("fab_ingestor.orchestrator.sync_competition_rosters", lambda *_, **__: calls.append("roster") or {})
 
     summary = IngestionOrchestrator(
         object(), repository, fantasy_lifecycle=lambda season: calls.append(("fantasy", season)) or {"rounds": 1}
     ).sync_all()
 
-    assert calls == ["stats", ("fantasy", "season")]
-    assert summary.phases_succeeded == 4
+    assert calls == ["roster", "stats", ("fantasy", "season")]
+    assert summary.phases_succeeded == 5
 
 
 def test_monitored_competition_sync_does_not_advance_fantasy(monkeypatch):
     repository = Repository()
     repository.is_fantasy_selected = lambda _: False
+    repository.is_roster_enabled = lambda _: False
     monkeypatch.setattr("fab_ingestor.orchestrator.sync_competition_teams", lambda *_, **__: {})
     monkeypatch.setattr("fab_ingestor.orchestrator.sync_competition_games", lambda *_, **__: {})
     monkeypatch.setattr("fab_ingestor.orchestrator.sync_competition_stats", lambda *_, **__: {})

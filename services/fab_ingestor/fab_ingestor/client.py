@@ -210,6 +210,21 @@ class FabClient:
             raise FabResponseError("FAB team phases returned an invalid response")
         return payload
 
+    def get_team_players(self, team_id: str) -> list[dict]:
+        """Read Afición FAB's preseason roster using the current device's team handle."""
+        if not team_id:
+            raise ValueError("team_id cannot be empty")
+        payload = self._post(
+            "/v2/equipo.ashx",
+            {"accion": "jugadores", "id_equipo": team_id},
+        )
+        players = payload.get("misjugadores")
+        if str(payload.get("resultado", "")).casefold() != "correcto" or not isinstance(players, list):
+            raise FabContractError("FAB team players returned an invalid response")
+        if not all(isinstance(player, dict) for player in players):
+            raise FabContractError("FAB team players contained an invalid player")
+        return players
+
     def get_category_phases(
         self,
         category_competition_id: str,

@@ -48,6 +48,31 @@ def test_register_device_rejects_incomplete_response():
         client.register_device()
 
 
+def test_team_roster_uses_current_device_handle_and_validates_rows():
+    calls = []
+
+    def transport(url, fields, timeout):
+        calls.append((url, dict(fields)))
+        return response({"resultado": "correcto", "misjugadores": [{"Nombre": "Ejemplo"}]})
+
+    client = FabClient(
+        MemoryCredentialStore(Credentials("device", "secret")),
+        transport=transport, min_interval=0,
+    )
+    assert client.get_team_players("current-team-handle") == [{"Nombre": "Ejemplo"}]
+    assert calls[0][0].endswith("/v2/equipo.ashx")
+    assert calls[0][1]["accion"] == "jugadores"
+    assert calls[0][1]["id_equipo"] == "current-team-handle"
+
+    invalid = FabClient(
+        MemoryCredentialStore(Credentials("device", "secret")),
+        transport=lambda *_: response({"resultado": "correcto", "misjugadores": [None]}),
+        min_interval=0,
+    )
+    with pytest.raises(FabContractError):
+        invalid.get_team_players("team")
+
+
 @pytest.mark.parametrize(
     ("method", "action", "collection"),
     [

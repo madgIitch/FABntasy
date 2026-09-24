@@ -72,3 +72,6 @@
 
 ## 2026-09-17T18:06:00.000Z — #sprint-35-recent-competition-catalog-order Sprint 35 - Recent Competition Catalog Order → review_pending
 - 1 intento · catálogo ordenado por último cambio o descubrimiento; gates aprobados.
+
+## 2026-09-24 — #sprint-37-fantasy-preseason-registrations → review_pending
+- Spec revisada y aprobada por el usuario. Ingesta de fichas FAB, conciliación tentativa controlada, activación administrativa, cobertura de plantillas y pruebas completadas; smoke de Sevilla pendiente de publicación FAB.

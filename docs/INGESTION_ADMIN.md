@@ -46,3 +46,13 @@ El contrato `ingestion-admin.v1` expone `coverageStatus`, `calculatedAt`, `teams
 `GET /api/admin/ingestion/team-index` exige `INGESTION_ADMIN` y mantiene el 404 opaco para actores no autorizados. No devuelve jugadores, PII, RAW, credenciales ni errores internos.
 
 El rollback de interfaz se activa con `INGESTION_TEAM_INDEX_ENABLED=false`: oculta el índice y evita sus consultas sin eliminar equipos, inscripciones ni historial.
+
+## Inscripciones de pretemporada (Sprint 37)
+
+Aplicar la migración aditiva `20260924000100_preseason_player_identity` antes de desplegar el servidor web o el ingestor nuevos. La activación «Habilitar fantasy» exige una competición monitorizada y ya enlazada a `CompetitionSeason`, queda auditada con `INGESTION_ADMIN` y encola una sincronización `COMPETITION`; repetirla no crea un segundo trabajo activo. Si todavía no está enlazada, se debe usar primero «Sincronizar ahora» para crear sus equipos y calendario.
+
+En competiciones habilitadas, la fase `roster` lee `equipo.ashx` (`accion=jugadores`) entre equipos y calendario, tanto en el scheduler como en la ejecución manual. El scheduler tiene intervalo inactivo de 60 a 180 minutos, inferior al objetivo de seis horas. El job manual actualiza su heartbeat mientras recorre equipos. Cada ficha se guarda con identidad `ROSTER_ONLY` hasta encontrar una boxscore; una coincidencia única de nombre normalizado dentro del equipo y temporada conserva el UUID y se marca `TENTATIVE`. Solo un ID común comprobado sobre el mismo jugador permitiría `VERIFIED`. Homónimos y contradicciones no se fusionan.
+
+El panel separa `coverageStatus` de equipos y `rosterCoverageStatus` de fichas. `PLANTILLA_NO_DISPONIBLE` significa que FAB no devolvió jugadores de los equipos consultados, **no** que haya confirmado una plantilla definitiva de cero. Muestra fichas observadas, uniones tentativas, ambigüedades y última consulta válida sin exponer nombres en la API de índice. Los snapshots RAW de plantillas se reducen a los campos necesarios para auditar la identidad y excluyen credenciales y handles de dispositivo.
+
+El despliegue puede revertir el código conservando las nuevas columnas, jugadores e inscripciones. La fase de boxscores anterior sigue aceptando sus IDs `component:*`.

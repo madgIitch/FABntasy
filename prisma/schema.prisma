@@ -345,6 +345,8 @@ model PlayerRegistration {
   teamRegistrationId  String              @map("team_registration_id") @db.Uuid
   competitionSeasonId String              @map("competition_season_id") @db.Uuid
   shirtNumber         String?             @map("shirt_number")
+  identityStatus      String              @default("BOXSCORE_ONLY") @map("identity_status")
+  rosterSeenAt        DateTime?           @map("roster_seen_at") @db.Timestamptz(3)
   player              Player              @relation(fields: [playerId], references: [id], onDelete: Restrict)
   teamRegistration    TeamRegistration    @relation(fields: [teamRegistrationId], references: [id], onDelete: Cascade)
   competitionSeason   CompetitionSeason   @relation(fields: [competitionSeasonId], references: [id], onDelete: Cascade)

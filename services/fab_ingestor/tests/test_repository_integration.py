@@ -8,7 +8,7 @@ import pytest
 from fab_ingestor.boxscore import sync_game_stats
 from fab_ingestor.repository import ExternalIdentityConflict, SportsRepository
 
-DATABASE_URL = os.getenv("FABNTASY_TEST_DATABASE_URL")
+DATABASE_URL = os.getenv("FABNTASY_TEST_DATABASE_URL") or os.getenv("TEST_DATABASE_URL")
 pytestmark = pytest.mark.skipif(not DATABASE_URL, reason="requires migrated PostgreSQL test database")
 
 
@@ -48,6 +48,122 @@ def test_external_upsert_is_idempotent_and_conflicts_are_rejected():
                 external_id="integration-team-1",
                 entity_id=__import__("uuid").uuid4(),
             )
+
+
+@pytest.mark.parametrize("roster_first", [True, False])
+def test_preseason_roster_and_boxscore_reuse_registration_in_both_orders(roster_first):
+    assert DATABASE_URL is not None
+    suffix = str(__import__("uuid").uuid4())
+    with (
+        SportsRepository.connect(DATABASE_URL) as repository,
+        repository.connection.transaction(force_rollback=True),
+    ):
+        federation_id = repository.upsert_federation(name=f"Roster Federation {suffix}")
+        competition_id = repository.upsert_from_external(
+            source="TEST", entity_type="competition", external_id=f"competition-{suffix}",
+            values={"federation_id": federation_id, "name": f"Competition {suffix}"},
+        )
+        season_id = repository.upsert_from_external(
+            source="TEST", entity_type="season", external_id=f"season-{suffix}",
+            values={"name": f"Season {suffix}"},
+        )
+        competition_season_id = repository.upsert_from_external(
+            source="TEST", entity_type="competition_season", external_id=f"competition-season-{suffix}",
+            values={"competition_id": competition_id, "season_id": season_id},
+        )
+        team_id = repository.upsert_from_external(
+            source="TEST", entity_type="team", external_id=f"team-{suffix}",
+            values={"name": "CB Ejemplo"},
+        )
+        registration_id = repository.upsert_from_external(
+            source="TEST", entity_type="team_registration", external_id=f"team-registration-{suffix}",
+            values={"team_id": team_id, "competition_season_id": competition_season_id},
+        )
+
+        def roster():
+            return repository.upsert_roster_player(
+                competition_season_id=competition_season_id,
+                team_registration_id=registration_id, display_name="María Pérez Gómez",
+            )[0]
+
+        def boxscore():
+            return repository.upsert_player_registration(
+                player_external_id=f"component:{suffix}", display_name="MARIA PEREZ GOMEZ",
+                provisional=False, team_registration_id=registration_id,
+                competition_season_id=competition_season_id, shirt_number="7",
+            )[0]
+
+        first = roster() if roster_first else boxscore()
+        second = boxscore() if roster_first else roster()
+        assert first == second == roster() == boxscore()
+        row = repository.connection.execute(
+            "SELECT identity_status, roster_seen_at FROM player_registrations WHERE id=%s", (first,)
+        ).fetchone()
+        assert row[0] == "TENTATIVE"
+        assert row[1] is not None
+        assert repository.connection.execute(
+            "SELECT count(*) FROM player_registrations WHERE team_registration_id=%s",
+            (registration_id,),
+        ).fetchone()[0] == 1
+
+        new_team_id = repository.upsert_from_external(
+            source="TEST", entity_type="team", external_id=f"transfer-team-{suffix}",
+            values={"name": "CB Destino"},
+        )
+        new_team_registration_id = repository.upsert_from_external(
+            source="TEST", entity_type="team_registration",
+            external_id=f"transfer-registration-{suffix}",
+            values={"team_id": new_team_id, "competition_season_id": competition_season_id},
+        )
+        transferred_registration_id, _ = repository.upsert_player_registration(
+            player_external_id=f"component:{suffix}", display_name="María Pérez Gómez",
+            provisional=False, team_registration_id=new_team_registration_id,
+            competition_season_id=competition_season_id, shirt_number="11",
+        )
+        assert transferred_registration_id != first
+        original_player_id = repository.connection.execute(
+            "SELECT player_id FROM player_registrations WHERE id=%s", (first,)
+        ).fetchone()[0]
+        transferred_player_id = repository.connection.execute(
+            "SELECT player_id FROM player_registrations WHERE id=%s", (transferred_registration_id,)
+        ).fetchone()[0]
+        assert original_player_id == transferred_player_id
+
+
+def test_fab_team_notification_id_reuses_team_across_two_devices():
+    assert DATABASE_URL is not None
+    suffix = str(__import__("uuid").uuid4())
+    with (
+        SportsRepository.connect(DATABASE_URL) as repository,
+        repository.connection.transaction(force_rollback=True),
+    ):
+        federation_id = repository.upsert_federation(name=f"Team Federation {suffix}")
+        competition_id = repository.upsert_from_external(
+            source="TEST", entity_type="competition", external_id=f"competition-{suffix}",
+            values={"federation_id": federation_id, "name": f"Competition {suffix}"},
+        )
+        season_id = repository.upsert_from_external(
+            source="TEST", entity_type="season", external_id=f"season-{suffix}",
+            values={"name": f"Season {suffix}"},
+        )
+        competition_season_id = repository.upsert_from_external(
+            source="TEST", entity_type="competition_season", external_id=f"competition-season-{suffix}",
+            values={"competition_id": competition_id, "season_id": season_id},
+        )
+        first = repository.upsert_fab_team_registration(
+            competition_season_id=competition_season_id, category_competition_id="10027",
+            stable_team_id=f"119626-{suffix}", device_team_id="handle-device-a",
+            display_name="CB Ejemplo", group_id=None,
+        )
+        second = repository.upsert_fab_team_registration(
+            competition_season_id=competition_season_id, category_competition_id="10027",
+            stable_team_id=f"119626-{suffix}", device_team_id="handle-device-b",
+            display_name="CB Ejemplo", group_id=None,
+        )
+        assert first == second
+        assert repository.resolve_roster_team_registration(
+            competition_season_id, "CB Ejemplo", f"119626-{suffix}"
+        ) == first[1]
 
 
 def test_raw_payload_is_sanitized_and_deduplicated():

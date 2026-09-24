@@ -20,6 +20,7 @@ from .fantasy_lifecycle import FantasyLifecycleTransportError
 from .observability import Observability
 from .observability import category as observability_category
 from .repository import SportsRepository
+from .roster import sync_competition_rosters
 from .schedule import ScheduleContractError, sync_competition_games
 
 
@@ -148,6 +149,16 @@ class IngestionOrchestrator:
                             category_competition_id=category_id,
                         ),
                     ),
+                ]
+                if self.repository.is_roster_enabled(competition_season_id):
+                    phases.append((
+                        "roster",
+                        lambda category_id=category_id: sync_competition_rosters(
+                            self.client, self.repository,
+                            category_competition_id=category_id,
+                        ),
+                    ))
+                phases.extend([
                     (
                         "schedule",
                         lambda category_id=category_id: sync_competition_games(
@@ -165,7 +176,7 @@ class IngestionOrchestrator:
                             force=force_stats,
                         ),
                     ),
-                ]
+                ])
                 if self.fantasy_lifecycle and getattr(self.repository, "is_fantasy_selected", lambda _: True)(competition_season_id):
                     phases.append((
                         "fantasy_lifecycle",

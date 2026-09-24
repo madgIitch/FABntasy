@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import re
+from collections import Counter
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
 from .client import FabClient, FabMatchUnavailableError, FabResponseError
-from .repository import SportsRepository
+from .repository import SportsRepository, normalized_player_name
 
 
 class BoxscoreContractError(RuntimeError):
@@ -241,6 +242,13 @@ def _sync_game_stats_unlocked(
 
     stable_ids: set[str] = set()
     seen_registration_ids = set()
+    name_counts = {
+        side: Counter(
+            normalized_player_name(str(row.get("nombre", "")))
+            for row in rows if isinstance(row, dict)
+        )
+        for side, rows, _, _ in sides
+    }
 
     created = 0
     updated = 0
@@ -328,6 +336,7 @@ def _sync_game_stats_unlocked(
                     shirt_number=_text(
                         row.get("dorsal")
                     ),
+                    allow_roster_match=name_counts[side][normalized_player_name(name)] == 1,
                 )
 
                 seen_registration_ids.add(

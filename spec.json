@@ -3252,6 +3252,78 @@
       "answers_hash": "sha256:13f45af4b16f61f03322377f29450f6ca309eebcf42f2a83fe3ed42d78b4a324",
       "approved_by": "peorr",
       "approved_at": "2026-09-17T23:27:09.780Z"
+    },
+    {
+      "id": "sprint-37-fantasy-preseason-registrations",
+      "name": "Sprint 37 - Fantasy Preseason Registrations",
+      "title": "Inscripciones de pretemporada y conciliación con boxscores",
+      "status": "spec_ready",
+      "sdd": true,
+      "spec_approved": true,
+      "priority": "P0",
+      "dependencies": [
+        "sprint-22c-fab-competition-monitoring",
+        "sprint-29-monitored-competition-team-index"
+      ],
+      "description": "Obtener jugadores de competiciones habilitadas para fantasy antes del primer partido, sincronizarlos periódicamente o a petición y conciliar sus inscripciones con las boxscores sin duplicar identidades.",
+      "objective": "Que una competición fantasy tenga una plantilla de jugadores verificable y seleccionable en pretemporada, preservando la misma identidad y sus referencias cuando lleguen las estadísticas de partido.",
+      "user_stories": [
+        {
+          "id": "HU37.1",
+          "story": "Como administrador quiero habilitar una competición monitorizada para fantasy y preparar automáticamente sus inscripciones antes de que comience."
+        },
+        {
+          "id": "HU37.2",
+          "story": "Como manager quiero crear mi plantilla fantasy con jugadores reales de la competición antes del primer partido."
+        },
+        {
+          "id": "HU37.3",
+          "story": "Como operador quiero que plantilla FAB y boxscore actualicen la misma inscripción y que los jugadores nuevos de una boxscore entren en el índice."
+        }
+      ],
+      "tasks": [
+        "Validar y documentar una fuente FAB de plantillas previas y sus IDs estables entre dispositivos y boxscores, con fixtures saneados.",
+        "Añadir selección administrativa auditada y sincronización inicial, periódica y manual de inscripciones para competiciones fantasy.",
+        "Persistir jugadores e inscripciones con identidad canónica, snapshot parcial seguro y conciliación idempotente de boxscores.",
+        "Mostrar cobertura independiente de equipos, inscripciones y estadísticas, con progreso y errores seguros.",
+        "Probar órdenes de llegada, reinicios, cambios de dispositivo, homónimos, referencias fantasy y rollback."
+      ],
+      "deliverable": "Jugadores disponibles para plantillas fantasy antes del inicio y una sola inscripción por identidad verificada al procesar boxscores.",
+      "acceptance": [
+        "La fuente FAB de plantilla previa está validada con fixtures saneados e IDs contrastados entre dos dispositivos y boxscores; si no existe, no se inventan jugadores y se muestra PLANTILLA_NO_DISPONIBLE.",
+        "Una competición monitorizada se habilita para fantasy por ID FAB estable mediante acción INGESTION_ADMIN auditada; inicia una sincronización sin activar otras competiciones.",
+        "Las inscripciones de una competición fantasy se actualizan al menos cada seis horas en pretemporada y con Sincronizar ahora usando el mismo pipeline, lock e idempotencia.",
+        "Los jugadores publicados antes del primer partido son seleccionables con su equipo y precio inicial sin depender de PlayerGameStat.",
+        "Plantilla y boxscore con identidad FAB verificada conservan el mismo Player, PlayerRegistration y referencias fantasy; nombre y dorsal no son claves.",
+        "Un jugador visto primero en una boxscore aparece como inscripción provisional y se concilia después sin duplicarse ni borrar referencias; una identidad ambigua queda pendiente de revisión.",
+        "Fallos, respuestas parciales o vacíos no autoritativos conservan el último snapshot válido y no convierten ausencia de datos en cero legítimo.",
+        "La consola distingue cobertura de equipos, inscripciones y estadísticas, muestra progreso y errores seguros, y no expone secretos ni RAW.",
+        "Tests sin red e integración cubren dos dispositivos, ambos órdenes de llegada, homónimos, cambios de equipo, idempotencia, locks y rollback; pasan los gates del repositorio."
+      ],
+      "scope": [
+        "services/fab_ingestor/**",
+        "apps/web/src/server/**",
+        "apps/web/app/app/admin/ingestion/**",
+        "apps/web/app/api/admin/ingestion/**",
+        "apps/web/app/app/mercado/**",
+        "apps/web/app/app/mi-equipo/**",
+        "apps/web/e2e/**",
+        "prisma/schema.prisma",
+        "prisma/migrations/**",
+        "tests/**",
+        "docs/INGESTION_ADMIN.md",
+        "docs/operations/**",
+        "docs/ARCHITECTURE.md",
+        "docs/DECISIONS.md",
+        "spec/**",
+        "progress/**",
+        ".harness/**",
+        "spec.json"
+      ],
+      "spec_reference": "docs/operations/FANTASY_PRESEASON_REGISTRATIONS_SPEC.md",
+      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-24T11:40:38.532Z"
     }
   ]
 }

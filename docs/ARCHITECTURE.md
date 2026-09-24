@@ -1146,3 +1146,36 @@ Convertir el nombre de la liga en Inicio en un selector rápido inequívoco, con
 - **edge_cases:** Define cero, una y varias ligas; selección de la liga ya activa sin mutación; preferencia o membresía obsoleta; cambios concurrentes y reconciliación entre pestañas; y ligas pertenecientes a competiciones distintas. Con cero ligas se conserva el onboarding actual y con una liga se mantiene el selector informativo y el acceso a gestión.
 - **ui_states:** Quedan definidos contenido, pendiente, error, teclado, foco y reglas de cierre: Escape, clic exterior, selección confirmada y navegación a gestión. Con una sola liga se muestran encabezado, marca de liga actual y enlace de gestión. El estado NO_CALENDAR usa el CTA Ver competición con destino /app/competicion.
 
+<!-- harness:sprint-37-fantasy-preseason-registrations -->
+## sprint-37-fantasy-preseason-registrations · Inscripciones de pretemporada y conciliación con boxscores
+
+Obtener jugadores de competiciones habilitadas para fantasy antes del primer partido, sincronizarlos periódicamente o a petición y conciliar sus inscripciones con las boxscores sin duplicar identidades.
+
+### Scope aprobado
+
+  - `services/fab_ingestor/**`
+  - `apps/web/src/server/**`
+  - `apps/web/app/app/admin/ingestion/**`
+  - `apps/web/app/api/admin/ingestion/**`
+  - `apps/web/app/app/mercado/**`
+  - `apps/web/app/app/mi-equipo/**`
+  - `apps/web/e2e/**`
+  - `prisma/schema.prisma`
+  - `prisma/migrations/**`
+  - `tests/**`
+  - `docs/INGESTION_ADMIN.md`
+  - `docs/operations/**`
+  - `docs/ARCHITECTURE.md`
+  - `docs/DECISIONS.md`
+  - `spec/**`
+  - `progress/**`
+  - `.harness/**`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** Player y PlayerRegistration conservan UUID; nuevas identidades FAB se validan antes de persistir y se protege toda referencia fantasy.
+- **external_contracts:** La fuente de plantilla previa y su clave común con boxscore son condición de entrada verificable; no se supone su existencia.
+- **edge_cases:** Se cubren boxscore antes de plantilla, homónimos, cambios de equipo, reinicios y dos dispositivos.
+- **ui_states:** Cobertura de equipos, inscripciones y estadísticas se representa por separado con fechas y progreso.
+

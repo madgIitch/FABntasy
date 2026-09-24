@@ -721,3 +721,16 @@ Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
 ## 2026-09-24 · Identificador opaco de FAB por dispositivo
 
 La API de FAB devuelve IDs opacos distintos para un mismo `IdCompeticionCategoria` según el dispositivo registrado. Reutilizar el ID opaco del catálogo en otro worker puede producir `fasesGrupos` correcto pero vacío. Las ingestas profundas resuelven el ID opaco con el dispositivo activo y comprueban la identidad estable antes de leer datos. Una búsqueda sin coincidencia inequívoca falla; nunca confirma un snapshot vacío por esta causa.
+
+<!-- harness:sprint-37-fantasy-preseason-registrations -->
+## 2026-09-24 · sprint-37-fantasy-preseason-registrations aprobado
+
+Contexto: se aprobó el spec `sprint-37-fantasy-preseason-registrations` (Inscripciones de pretemporada y conciliación con boxscores).
+
+Decisiones registradas:
+
+- **auth_secrets:** Solo INGESTION_ADMIN activa y solicita jobs; FAB se consulta en servidor y RAW se sanea.
+- **rollback_compat:** Migraciones aditivas y preservación de registros y referencias fantasy existentes.
+- **tests:** Fixtures FAB, unitarias, integración PostgreSQL, UI y gates del repositorio definidos.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

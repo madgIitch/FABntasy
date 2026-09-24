@@ -34,8 +34,9 @@ def normalized_player_name(value: str) -> str:
 class SportsRepository:
     """Transactional PostgreSQL writer for normalized FAB sports data."""
 
-    def __init__(self, connection: Connection[Any]) -> None:
+    def __init__(self, connection: Connection[Any], connection_url: str | None = None) -> None:
         self.connection = connection
+        self._connection_url = connection_url
 
     @classmethod
     @contextmanager
@@ -43,12 +44,13 @@ class SportsRepository:
         # Supabase's transaction pooler can move consecutive statements between
         # backend connections. Client-side prepared statements therefore cannot
         # be reused safely across executions.
+        connection_url = _psycopg_url(database_url)
         with psycopg.connect(
-            _psycopg_url(database_url),
+            connection_url,
             autocommit=True,
             prepare_threshold=None,
         ) as connection:
-            yield cls(connection)
+            yield cls(connection, connection_url)
 
     def upsert_federation(self, *, name: str, country_code: str = "ES") -> UUID:
         entity_id = uuid4()
@@ -440,8 +442,11 @@ class SportsRepository:
         # A dedicated transaction retains the job lock while the writer connection
         # commits each phase. It lets a Fantasy disable observe the latest state
         # without waiting for the whole FAB network job to finish.
+        connection_url = self._connection_url or psycopg.conninfo.make_conninfo(
+            self.connection.info.dsn, password=self.connection.info.password,
+        )
         with psycopg.connect(
-            self.connection.info.dsn, autocommit=True, prepare_threshold=None,
+            connection_url, autocommit=True, prepare_threshold=None,
         ) as lock_connection:
             with lock_connection.transaction():
                 row = lock_connection.execute(

@@ -1203,3 +1203,27 @@ Retirar de Fantasy una competición habilitada, sus equipos, jugadores y ligas p
 - **edge_cases:** Se cubren primaria, selección activa, carreras, reintentos y reactivación.
 - **ui_states:** El panel confirma la edición afectada; ligas suspendidas muestran un estado claro en URL directa.
 
+<!-- harness:sprint-39-rotating-market-blind-bids -->
+## sprint-39-rotating-market-blind-bids · Mercado rotatorio de agentes libres y pujas ciegas
+
+Sustituir la compra directa de jugadores libres por ciclos de mercado de 24 horas con 12 jugadores rotatorios y pujas secretas, preservando ledger, ownership, roster, cláusulas y snapshots de jornada.
+
+### Scope aprobado
+
+  - `apps/web/**`
+  - `packages/domain/**`
+  - `prisma/**`
+  - `tests/**`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+  - `.harness/**`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** El administrador inicia globalmente Market V2 desde Control de acceso; rige para ligas existentes y futuras.
+- **external_contracts:** Los ciclos son 00:00–00:00 en Europe/Madrid; si el administrador inicia durante el día, el primer ciclo abre de inmediato y termina en la medianoche siguiente.
+- **edge_cases:** Los jugadores no fichados regresan a la cola y podrán reaparecer en otro ciclo; el usuario no requiere una regla especial de inventario escaso.
+- **ui_states:** Durante el ciclo cada manager ve solo su puja. Tras el cierre, la liga ve ganador y precio; los postores ven el resultado propio y los importes e identidad de las demás pujas de ese jugador.
+

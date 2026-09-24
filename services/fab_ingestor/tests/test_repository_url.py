@@ -36,9 +36,8 @@ def test_advisory_lock_reuses_authenticated_connection_url(monkeypatch):
     monkeypatch.setattr("fab_ingestor.repository.psycopg.connect", connect)
     url = "postgresql://user:secret@db.example.test:6543/postgres"
 
-    with SportsRepository.connect(url) as repository:
-        with repository.advisory_lock("sync_all", "competition-id") as acquired:
-            assert acquired is True
+    with SportsRepository.connect(url) as repository, repository.advisory_lock("sync_all", "competition-id") as acquired:
+        assert acquired is True
 
     assert connect.call_count == 2
     assert connect.call_args.args == (url,)

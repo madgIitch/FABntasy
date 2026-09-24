@@ -17,7 +17,7 @@ export type LineupInput = Readonly<{
 }>;
 
 export class FantasyTeamServiceError extends Error {
-  constructor(public readonly code: FantasyTeamRuleError["code"], public readonly status: number) { super(code); }
+  constructor(public readonly code: FantasyTeamRuleError["code"] | "MARKET_V2_ACTIVE", public readonly status: number) { super(code); }
 }
 
 function fail(code: FantasyTeamRuleError["code"], status = 409): never { throw new FantasyTeamServiceError(code, status); }
@@ -103,6 +103,8 @@ export async function putRoster(actor: TeamActor, competitionSeasonId: string, i
   const selectedLeagueId = await resolveActiveLeagueId(actor);
   try {
     const result = await db.$transaction(async (tx) => {
+      await tx.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext('market-v2:activation'))`);
+      if (await tx.marketV2Setting.findUnique({ where: { id: "global" } })) throw new FantasyTeamServiceError("MARKET_V2_ACTIVE", 409);
       await requireFantasyCompetition(tx, competitionSeasonId);
       const owner = await profileId(tx, actor, true);
       const rules = await activeRules(tx, competitionSeasonId);

@@ -447,13 +447,12 @@ class SportsRepository:
         )
         with psycopg.connect(
             connection_url, autocommit=True, prepare_threshold=None,
-        ) as lock_connection:
-            with lock_connection.transaction():
-                row = lock_connection.execute(
-                    "SELECT pg_try_advisory_xact_lock(hashtextextended(%s, 0))", (lock_key,)
-                ).fetchone()
-                acquired = bool(row and row[0])
-                yield acquired
+        ) as lock_connection, lock_connection.transaction():
+            row = lock_connection.execute(
+                "SELECT pg_try_advisory_xact_lock(hashtextextended(%s, 0))", (lock_key,)
+            ).fetchone()
+            acquired = bool(row and row[0])
+            yield acquired
 
     @contextmanager
     def advisory_game_lock(self, external_game_id: str):

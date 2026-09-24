@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { FantasyTeamManager } from "../../../src/components/fantasy-team-manager";
 import { getServerUser } from "../../../src/lib/supabase/server";
 import { db } from "../../../src/server/db";
 import { FantasyTeamServiceError, getFantasyTeam } from "../../../src/server/fantasy-team";
+import { marketV2State } from "../../../src/server/market-v2";
 import { listLeagues, resolveActiveLeagueId } from "../../../src/server/private-leagues";
 
 export default async function MyTeamPage() {
@@ -27,6 +29,8 @@ export default async function MyTeamPage() {
   } catch (error) {
     if (!(error instanceof FantasyTeamServiceError) || error.code !== "TEAM_NOT_FOUND") throw error;
   }
+
+  if (!initialTeam && (await marketV2State()).active) return <main className="app-main"><section className="empty-state"><h1>Empieza en el mercado</h1><p>Los jugadores libres se consiguen mediante las pujas diarias de tu liga.</p><Link className="primary-action" href="/app/mercado">Ver pujas de hoy →</Link></section></main>;
 
   const playerMetrics: Record<string, { roundPoints: number | null; recentPoints: number[] }> = {};
   if (initialTeam) {

@@ -50,8 +50,8 @@
 .change[data-trend="UP"] { color:var(--color-brand-text) }
 .change[data-trend="DOWN"] { color:var(--color-danger) }
 .marketActions { display:flex; justify-content:flex-end; gap:6px }
-.marketActions button { min-height:44px; padding:0 12px; border:1px solid var(--color-brand); border-radius:var(--radius-control); background:transparent; color:var(--color-brand-text); font-size:.78rem; font-weight:700; white-space:nowrap; cursor:pointer }
-.marketActions button:hover { background:var(--color-brand-soft) }
+.marketActions button,.marketActions a { display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:0 12px; border:1px solid var(--color-brand); border-radius:var(--radius-control); background:transparent; color:var(--color-brand-text); font-size:.78rem; font-weight:700; white-space:nowrap; cursor:pointer }
+.marketActions button:hover,.marketActions a:hover { background:var(--color-brand-soft) }
 .marketActions button:disabled { opacity:.45; cursor:not-allowed }
 .message,.empty { margin:0; padding:24px 20px; color:var(--color-text-muted); font-size:.82rem }
 .message { color:var(--color-danger) }

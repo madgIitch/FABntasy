@@ -5,7 +5,12 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from .client import FabClient, FabContractError
-from .repository import ExternalIdentityConflict, FantasyCompetitionDisabled, SportsRepository, normalized_player_name
+from .repository import (
+    ExternalIdentityConflict,
+    FantasyCompetitionDisabled,
+    SportsRepository,
+    normalized_player_name,
+)
 from .selection import resolve_current_category_id
 
 

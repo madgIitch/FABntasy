@@ -751,3 +751,16 @@ Decisiones registradas:
 - **tests:** Se requieren pruebas de autorización, lecturas, mutaciones, ingestor, concurrencia y gates.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-39-rotating-market-blind-bids -->
+## 2026-09-24 · sprint-39-rotating-market-blind-bids aprobado
+
+Contexto: se aprobó el spec `sprint-39-rotating-market-blind-bids` (Mercado rotatorio de agentes libres y pujas ciegas).
+
+Decisiones registradas:
+
+- **auth_secrets:** Identidad de sesión, permisos de liga y privacidad de pujas están fijados por los contratos actuales.
+- **rollback_compat:** No existe acción administrativa de desactivar Market V2 durante la temporada. Los datos y el histórico se preservan; la suspensión excepcional de una competición Fantasy sigue cancelando sus ciclos y liberando reservas.
+- **tests:** Se exige cobertura de selección, reservas, concurrencia, cutoff, disable e idempotencia.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

@@ -58,7 +58,7 @@ await page.route('**/api/**',route=>{
 try{
  for(const width of [320,375,768,1024,1440]){
   await page.setViewportSize({width,height:900});
-  for(const name of ['register','onboarding','home','home-live','home-final','home-degraded','market','team','journey','league','profile','preferences','admin','corrections','sports','states']){
+  for(const name of (process.env.VISUAL_ONLY ? process.env.VISUAL_ONLY.split(',') : ['register','onboarding','home','home-live','home-final','home-degraded','market','market-v2','team','journey','league','profile','preferences','admin','corrections','sports','states'])){
    await page.goto('http://127.0.0.1:4178/?case='+name);await page.locator('main').waitFor({timeout:30000}).catch(error=>{throw new Error(`${name} failed to render at ${width}px: ${error.message}; page errors: ${errors.join(' | ')}`)});await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:path.join(capture,`${name}-${width}.png`),fullPage:true});
    if(name==='home'&&width<=720){const nav=page.locator('.bottom-nav');if(!await nav.isVisible())throw Error(`Mobile navigation hidden at ${width}px`);const pinned=await nav.evaluate(el=>{const rect=el.parentElement.getBoundingClientRect();return Math.abs(rect.bottom-innerHeight)<2&&rect.left===0&&Math.abs(rect.right-innerWidth)<2});if(!pinned)throw Error(`Mobile navigation is not pinned at ${width}px`);}
    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);
@@ -69,6 +69,7 @@ try{
    if(violations.length)throw Error(`${name} has serious axe violations at ${width}px: ${violations.join(', ')}`);
   }
  }
+ if(!process.env.VISUAL_ONLY){
  await page.setViewportSize({width:375,height:900});
  await page.goto('http://127.0.0.1:4178/?case=register');
  const username=page.locator('input[name="username"]');
@@ -116,6 +117,7 @@ try{
  if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1))throw Error('Home overflows at 200% zoom');
  await page.screenshot({path:path.join(capture,'home-degraded-zoom200.png'),fullPage:true});
  await page.setViewportSize({width:768,height:900});await page.goto('http://127.0.0.1:4178/?case=onboarding');await page.evaluate(()=>document.body.style.zoom='2');await page.screenshot({path:path.join(capture,'onboarding-zoom200.png'),fullPage:true});
- fs.writeFileSync(path.join(capture,'results.json'),JSON.stringify({results,errors,smoke:'username required/validity/focus, onboarding navigation gate, five destinations/current section, market dialog/Escape/focus restoration/filter, team tabs, profile dialog, league leave cancellation, correction preview/cancel/conflict/reversal, reduced motion, zoom'},null,2));
+ }
+ fs.writeFileSync(path.join(capture,'results.json'),JSON.stringify({results,errors,smoke:process.env.VISUAL_ONLY ? 'targeted visual and accessibility review' : 'username required/validity/focus, onboarding navigation gate, five destinations/current section, market dialog/Escape/focus restoration/filter, team tabs, profile dialog, league leave cancellation, correction preview/cancel/conflict/reversal, reduced motion, zoom'},null,2));
  console.log(JSON.stringify({overflows:results.filter(r=>r.overflow),errors,captures:results.length}));
 }finally{await browser.close();server.close();}

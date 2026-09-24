@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => {
       findUniqueOrThrow: vi.fn(), findFirst: vi.fn(), update: vi.fn(),
     },
     $queryRaw: vi.fn(),
+    marketV2Cycle: { findMany: vi.fn().mockResolvedValue([]) },
     adminAuditEvent: { create: vi.fn() },
     ingestionJob: { create: vi.fn() },
   };
@@ -75,6 +76,7 @@ describe("fantasy suspension", () => {
     expect(mocks.transaction.competitionSeason.update).toHaveBeenCalledWith({
       where: { id: seasonId }, data: { fantasyEnabled: false, fantasyRole: "disabled" },
     });
+    expect(mocks.transaction.marketV2Cycle.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { status: "OPEN", league: { competitionSeasonId: seasonId } } }));
     expect(mocks.transaction.competitionSeason.findFirst).toHaveBeenCalledWith(expect.objectContaining({
       where: { fantasyEnabled: true, id: { not: seasonId } }, orderBy: { id: "asc" },
     }));

@@ -88,3 +88,11 @@
 
 ## 2026-09-24 — #sprint-37-fantasy-preseason-registrations → review_pending
 - Spec revisada y aprobada por el usuario. Ingesta de fichas FAB, conciliación tentativa controlada, activación administrativa, cobertura de plantillas y pruebas completadas; smoke de Sevilla pendiente de publicación FAB.
+
+## 2026-09-24 — #sprint-39-rotating-market-blind-bids → in_progress
+- Spec aprobada tras entrevista. Implementación de mercado global, ciclos, rotación, pujas, liquidación y UI terminada dentro del scope.
+- Gates web, Python pytest, Prisma, E2E, diff-scope e integración PostgreSQL correctos. Ruff bloqueado por tres infracciones previas en `services/fab_ingestor/`, fuera del scope aprobado.
+
+## 2026-09-24 — #sprint-39-rotating-market-blind-bids → review_pending
+- El usuario autorizó ampliar el scope solo a tres archivos Python para resolver Ruff preexistente. Correcciones aplicadas; Ruff y pytest pasan.
+- Batería completa del harness: `passed: true`. Implementación lista para smoke humano antes de `done`.

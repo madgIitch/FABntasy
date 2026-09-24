@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import { cancelCompetitionMarketV2 } from "./market-v2";
 import { db } from "./db";
 
 export class AdminError extends Error { constructor(public code: string, public status = 400) { super(code); } }
@@ -303,6 +304,7 @@ export async function disableCompetitionFantasy(actorProfileId: string, catalogI
         where: { id: entry.competitionSeasonId! },
         data: { fantasyEnabled: false, fantasyRole: "disabled" },
       });
+      await cancelCompetitionMarketV2(tx, entry.competitionSeasonId!);
       if (current.fantasyRole === "primary") {
         const replacement = await tx.competitionSeason.findFirst({
           where: { fantasyEnabled: true, id: { not: entry.competitionSeasonId! } },

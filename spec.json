@@ -3384,9 +3384,9 @@
       "id": "sprint-39-rotating-market-blind-bids",
       "name": "Sprint 39 - Rotating Free-Agent Market & Blind Bidding",
       "title": "Mercado rotatorio de agentes libres y pujas ciegas",
-      "status": "spec_ready",
+      "status": "review_pending",
       "sdd": true,
-      "spec_approved": false,
+      "spec_approved": true,
       "priority": "P0",
       "milestone": "1.5.0",
       "dependencies": [
@@ -3421,19 +3421,22 @@
       ],
       "deliverable": "Mercado diario rotatorio de agentes libres con pujas secretas y adjudicación automática.",
       "acceptance": [
-        "Una liga Market V2 muestra como máximo 12 agentes libres por ciclo de 24 horas y desactiva la compra directa normal de cualquier jugador libre.",
-        "Cada listing captura un precio de referencia y toda puja debe igualarlo o superarlo.",
-        "Las pujas rivales y sus importes no se exponen; cada manager solo ve su propia puja mientras el ciclo está abierto.",
-        "Cada puja activa reserva exactamente su importe y un hueco de roster, evitando sobrecompromiso de saldo o plantilla.",
-        "El manager puede sustituir o cancelar una puja antes del cierre y las reservas se actualizan atómicamente.",
-        "Gana la mayor puja válida; en empate, la puja activa con timestamp más antiguo y después ID estable.",
-        "Settlement debita el importe ganador, transfiere ownership, añade al roster, guarda acquisitionPrice y aplica la cláusula existente en una única transacción.",
-        "Las pujas perdedoras o invalidadas liberan reservas y nunca crean propiedad ni ledger económico.",
-        "Dos workers concurrentes convergen en un único ganador y una sola transacción económica.",
-        "La rotación prioriza jugadores menos recientemente listados y es determinista con los mismos inputs.",
-        "Deshabilitar Fantasy cancela ciclos abiertos y libera reservas sin borrar históricos.",
-        "Una adjudicación posterior al cutoff no modifica el snapshot congelado de la jornada actual.",
-        "Tests cubren selección, pujas, reservas, empates, presupuesto, roster, carreras, cutoff, disable e idempotencia."
+        "Un administrador puede iniciar Market V2 mediante un botón nuevo en Control de acceso. La activación global afecta a todas las ligas Fantasy existentes y futuras, sin activar el mercado por liga.",
+        "Si el administrador inicia Market V2 a mitad del día, el primer ciclo comienza de inmediato y termina a la siguiente medianoche Europe/Madrid. Los siguientes ciclos van de 00:00 a 00:00; cada liga presenta como máximo 12 agentes libres por ciclo y deshabilita la compra libre directa.",
+        "Los jugadores que no reciben adjudicación vuelven a la cola de rotación y pueden reaparecer en un ciclo posterior.",
+        "Cada listing fija el precio de referencia vigente al abrirse; una puja activa debe igualarlo o superarlo.",
+        "Cada manager autenticado solo puede consultar, sustituir o cancelar sus propias pujas antes del cierre.",
+        "La suma de pujas activas reserva presupuesto y huecos de roster sin sobrecomprometer ninguno de los dos.",
+        "El settlement usa importe descendente; si dos pujas tienen el mismo importe, gana la registrada primero, con ID estable como último desempate técnico. Es idempotente bajo workers concurrentes.",
+        "La adjudicación crea una sola transferencia de ownership, roster y ledger, guarda acquisitionPrice y aplica la cláusula existente.",
+        "Las pujas perdedoras, canceladas o invalidadas liberan reservas exactamente una vez y no producen débito económico.",
+        "La rotación es determinista y prioriza a quienes llevan más tiempo sin aparecer.",
+        "Deshabilitar Fantasy cancela ciclos abiertos y libera reservas sin borrar el histórico.",
+        "Una adjudicación posterior al cutoff no altera el snapshot congelado de la jornada.",
+        "Durante el ciclo las pujas rivales siguen ocultas. Después del cierre la liga ve ganador y precio adjudicado; cada postor ve si su puja fue adjudicada y el detalle de las demás pujas por ese jugador, incluidos importe y manager.",
+        "Las pujas son específicas de un ciclo: la puja del día anterior queda en el histórico y no se presenta automáticamente al ciclo siguiente.",
+        "Las pruebas cubren selección, pujas, reservas, desempates, visibilidad antes y después del cierre, elegibilidad, carreras, cutoff, suspensión e idempotencia.",
+        "No hay acción administrativa para apagar Market V2 durante la temporada. La activación persiste para ligas actuales y futuras; el historial de ciclos y pujas queda conservado."
       ],
       "scope": [
         "apps/web/**",
@@ -3444,11 +3447,17 @@
         "spec/**",
         "progress/**",
         ".harness/**",
-        "spec.json"
+        "spec.json",
+        "services/fab_ingestor/fab_ingestor/repository.py",
+        "services/fab_ingestor/fab_ingestor/roster.py",
+        "services/fab_ingestor/tests/test_repository_url.py"
       ],
       "spec_reference": "docs/market/SPRINT_39_ROTATING_MARKET_BLIND_BIDS_SPEC.md",
       "manual_spec_ready": true,
-      "manual_spec_ready_reason": "La mecánica de mercado objetivo está definida: rotación de 12 agentes libres cada 24 h, pujas secretas, reservas y settlement determinista sobre los invariantes económicos existentes."
+      "manual_spec_ready_reason": "Entrevista de producto completada: activación global administrativa, primer ciclo inmediato hasta medianoche Europe/Madrid, rotación, desempate por primera puja, transparencia tras cierre y sin apagado administrativo durante la temporada.",
+      "answers_hash": "sha256:b85c0ab8dd2fd3ec1caa554182183e0fa592ca050d6d5c1033e7755d2d2e156b",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-24T18:25:49.364Z"
     },
     {
       "id": "sprint-40-manager-offers-transfer-listings",

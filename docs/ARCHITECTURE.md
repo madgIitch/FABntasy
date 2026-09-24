@@ -1179,3 +1179,27 @@ Obtener jugadores de competiciones habilitadas para fantasy antes del primer par
 - **edge_cases:** Se cubren boxscore antes de plantilla, homónimos, cambios de equipo, reinicios y dos dispositivos.
 - **ui_states:** Cobertura de equipos, inscripciones y estadísticas se representa por separado con fechas y progreso.
 
+<!-- harness:sprint-38-disable-fantasy-competition -->
+## sprint-38-disable-fantasy-competition · Deshabilitar una competición para Fantasy
+
+Retirar de Fantasy una competición habilitada, sus equipos, jugadores y ligas privadas, conservando los datos deportivos y Fantasy para una reactivación segura.
+
+### Scope aprobado
+
+  - `apps/web/**`
+  - `services/fab_ingestor/**`
+  - `prisma/**`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+  - `tests/**`
+  - `.harness/**`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** Se reutilizan `fantasy_enabled` y `fantasy_role` sin borrar entidades ni referencias históricas.
+- **external_contracts:** La monitorización deportiva continúa y el ingestor omite fases Fantasy mientras esté deshabilitada.
+- **edge_cases:** Se cubren primaria, selección activa, carreras, reintentos y reactivación.
+- **ui_states:** El panel confirma la edición afectada; ligas suspendidas muestran un estado claro en URL directa.
+

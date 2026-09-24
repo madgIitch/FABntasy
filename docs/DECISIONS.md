@@ -738,3 +738,16 @@ Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
 ## 2026-09-24 · Revisión de identidad de fichas FAB
 
 La fuente `equipo.ashx` (`accion=jugadores`) publica algunas plantillas antes del primer partido, pero el `Id` de jugador cambia entre dispositivos y no se ha demostrado una equivalencia con `componente_id` de boxscores. La revisión aprobada de Sprint 37 permite crear fichas provisionales y conciliar mediante nombre y apellidos normalizados solo cuando la coincidencia es única dentro de equipo, competición y temporada. Estas uniones se marcan `TENTATIVE`; nunca se presentan como identidad FAB verificada. Los homónimos y contradicciones se ponen en `CONFLICT` o quedan pendientes sin fusión automática. Los ID de equipo `IdEquipoNotificacion` sí se usan como identidad estable para evitar duplicados al rotar dispositivo. La falta de fichas publicadas en Sevilla se muestra como `PLANTILLA_NO_DISPONIBLE` y no equivale a una plantilla vacía confirmada.
+
+<!-- harness:sprint-38-disable-fantasy-competition -->
+## 2026-09-24 · sprint-38-disable-fantasy-competition aprobado
+
+Contexto: se aprobó el spec `sprint-38-disable-fantasy-competition` (Deshabilitar una competición para Fantasy).
+
+Decisiones registradas:
+
+- **auth_secrets:** La acción exige INGESTION_ADMIN, verificación de origen y auditoría; no expone secretos FAB.
+- **rollback_compat:** La desactivación es reversible y preserva UUID, ligas, plantillas, saldos e historial.
+- **tests:** Se requieren pruebas de autorización, lecturas, mutaciones, ingestor, concurrencia y gates.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

@@ -1,5 +1,9 @@
 # Historial de sesiones
 
+## 2026-09-24 — transición Sprint 37 → Sprint 38
+- Sprint 37 cerrado como `done` por solicitud del usuario tras comprobar en producción que las 167 fichas N1 MAS coinciden con FAB, en 16 de 48 equipos; los otros 32 no publican fichas en el endpoint consultado. La validación de ficha real y boxscore de Sevilla 9955 sigue pendiente de que FAB publique jugadores y se mantiene como seguimiento operativo.
+- Sprint 38 aprobado e iniciado. Primera pieza: desactivación transaccional aislada, auditoría, reasignación primaria y pruebas focalizadas. Pendientes los guardas de producto y la UI antes de exponer la acción.
+
 ## 2026-09-16 — #sprint-31-catalog-link-and-retired-games → review_pending
 - Corregidos enlace estable de catálogo, deduplicación y partidos retirados; gates completos correctos. Pendiente de deploy y smoke productivo.
 

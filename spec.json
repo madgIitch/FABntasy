@@ -3330,9 +3330,9 @@
       "id": "sprint-38-disable-fantasy-competition",
       "name": "Sprint 38 - Disable Fantasy Competition",
       "title": "Deshabilitar una competición para Fantasy",
-      "status": "spec_ready",
+      "status": "in_progress",
       "sdd": true,
-      "spec_approved": false,
+      "spec_approved": true,
       "priority": "P0",
       "dependencies": [
         "sprint-37-fantasy-preseason-registrations"
@@ -3375,7 +3375,10 @@
         ".harness/**",
         "spec.json"
       ],
-      "spec_reference": "docs/operations/FANTASY_COMPETITION_DISABLE_SPEC.md"
+      "spec_reference": "docs/operations/FANTASY_COMPETITION_DISABLE_SPEC.md",
+      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-24T16:00:32.95Z"
     }
   ]
 }

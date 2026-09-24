@@ -3257,7 +3257,7 @@
       "id": "sprint-37-fantasy-preseason-registrations",
       "name": "Sprint 37 - Fantasy Preseason Registrations",
       "title": "Inscripciones de pretemporada y conciliación con boxscores",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "spec_approved": true,
       "priority": "P0",
@@ -3325,6 +3325,57 @@
       "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
       "approved_by": "peorr",
       "approved_at": "2026-09-24T12:38:31.807Z"
+    },
+    {
+      "id": "sprint-38-disable-fantasy-competition",
+      "name": "Sprint 38 - Disable Fantasy Competition",
+      "title": "Deshabilitar una competición para Fantasy",
+      "status": "spec_ready",
+      "sdd": true,
+      "spec_approved": false,
+      "priority": "P0",
+      "dependencies": [
+        "sprint-37-fantasy-preseason-registrations"
+      ],
+      "description": "Retirar de Fantasy una competición habilitada, sus equipos, jugadores y ligas privadas, conservando los datos deportivos y Fantasy para una reactivación segura.",
+      "objective": "Que un administrador pueda deshabilitar y reactivar una competición sin borrar datos y sin permitir operaciones Fantasy durante la desactivación.",
+      "user_stories": [
+        {
+          "id": "HU38.1",
+          "story": "Como administrador quiero deshabilitar una competición para que sus equipos y jugadores dejen de estar disponibles en Fantasy."
+        },
+        {
+          "id": "HU38.2",
+          "story": "Como manager de una liga afectada quiero entender que está suspendida y conservar mi plantilla e historial para una posible reactivación."
+        }
+      ],
+      "tasks": [
+        "Añadir acción administrativa auditada e idempotente para deshabilitar y reactivar Fantasy sin alterar la monitorización FAB.",
+        "Filtrar ligas, equipos y jugadores deshabilitados en todas las lecturas Fantasy y proteger cada mutación del servidor.",
+        "Conservar ligas, plantillas, saldos e historial, resolver la competición primaria y la liga activa, e invalidar cachés.",
+        "Detener las fases de plantillas y puntuación Fantasy de la edición deshabilitada; probar carreras y reactivación."
+      ],
+      "deliverable": "Desactivación reversible de una competición Fantasy desde el panel, con sus equipos y jugadores excluidos de toda operación Fantasy.",
+      "acceptance": [
+        "INGESTION_ADMIN puede deshabilitar y reactivar una competición con auditoría e idempotencia, sin cambiar monitored ni borrar datos.",
+        "Equipos, jugadores y ligas privadas de la edición deshabilitada desaparecen de las superficies Fantasy y las URLs directas muestran un estado suspendido; otras ediciones no se afectan.",
+        "Las mutaciones de ligas, mercado y plantillas rechazan IDs de una edición deshabilitada aun con una sesión antigua.",
+        "La ingesta deportiva monitorizada continúa, pero las fases de plantillas y puntuación Fantasy se detienen hasta reactivar.",
+        "Reactivar conserva UUID, ligas privadas, plantillas, saldos e historial y solicita una nueva sincronización.",
+        "Tests cubren competición primaria, ligas existentes, concurrencia y reactivación; pasan los gates."
+      ],
+      "scope": [
+        "apps/web/**",
+        "services/fab_ingestor/**",
+        "prisma/**",
+        "docs/**",
+        "spec/**",
+        "progress/**",
+        "tests/**",
+        ".harness/**",
+        "spec.json"
+      ],
+      "spec_reference": "docs/operations/FANTASY_COMPETITION_DISABLE_SPEC.md"
     }
   ]
 }

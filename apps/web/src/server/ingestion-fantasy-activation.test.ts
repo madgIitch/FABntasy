@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => {
     competitionSeason: {
       findUniqueOrThrow: vi.fn(), findFirst: vi.fn(), update: vi.fn(),
     },
+    $queryRaw: vi.fn(),
     adminAuditEvent: { create: vi.fn() },
     ingestionJob: { create: vi.fn() },
   };
@@ -22,7 +23,7 @@ vi.mock("./db", () => ({
   },
 }));
 
-import { enableCompetitionFantasy } from "./ingestion-admin";
+import { disableCompetitionFantasy, enableCompetitionFantasy } from "./ingestion-admin";
 
 const catalogId = "11111111-1111-4111-8111-111111111111";
 const seasonId = "22222222-2222-4222-8222-222222222222";
@@ -57,6 +58,45 @@ describe("fantasy activation", () => {
       id: catalogId, categoryCompetitionId: "10027", competitionSeasonId: seasonId, monitored: false,
     });
     await expect(enableCompetitionFantasy("admin-id", catalogId)).rejects.toMatchObject({ code: "MONITORED_COMPETITION_REQUIRED" });
+    expect(mocks.transactionRunner).not.toHaveBeenCalled();
+  });
+});
+
+describe("fantasy suspension", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.catalogFindUnique.mockResolvedValue({ id: catalogId, categoryCompetitionId: "10027", competitionSeasonId: seasonId, monitored: true });
+    mocks.transaction.competitionSeason.findUniqueOrThrow.mockResolvedValue({ fantasyEnabled: true, fantasyRole: "primary" });
+    mocks.transaction.competitionSeason.findFirst.mockResolvedValue({ id: "another-season" });
+  });
+
+  it("disables the selected season and promotes a deterministic replacement", async () => {
+    await expect(disableCompetitionFantasy("admin-id", catalogId, "10027")).resolves.toEqual({ alreadyDisabled: false });
+    expect(mocks.transaction.competitionSeason.update).toHaveBeenCalledWith({
+      where: { id: seasonId }, data: { fantasyEnabled: false, fantasyRole: "disabled" },
+    });
+    expect(mocks.transaction.competitionSeason.findFirst).toHaveBeenCalledWith(expect.objectContaining({
+      where: { fantasyEnabled: true, id: { not: seasonId } }, orderBy: { id: "asc" },
+    }));
+    expect(mocks.transaction.competitionSeason.update).toHaveBeenCalledWith({
+      where: { id: "another-season" }, data: { fantasyRole: "primary" },
+    });
+    expect(mocks.transaction.adminAuditEvent.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ action: "COMPETITION_FANTASY_DISABLE", resourceId: catalogId, result: "SUCCESS" }),
+    });
+  });
+
+  it("is idempotent and does not change any season again", async () => {
+    mocks.transaction.competitionSeason.findUniqueOrThrow.mockResolvedValue({ fantasyEnabled: false, fantasyRole: "disabled" });
+    await expect(disableCompetitionFantasy("admin-id", catalogId, "10027")).resolves.toEqual({ alreadyDisabled: true });
+    expect(mocks.transaction.competitionSeason.update).not.toHaveBeenCalled();
+    expect(mocks.transaction.adminAuditEvent.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ result: "DUPLICATE" }),
+    });
+  });
+
+  it("requires the exact FAB category ID before disabling", async () => {
+    await expect(disableCompetitionFantasy("admin-id", catalogId, "9955")).rejects.toMatchObject({ code: "CONFIRMATION_REQUIRED" });
     expect(mocks.transactionRunner).not.toHaveBeenCalled();
   });
 });

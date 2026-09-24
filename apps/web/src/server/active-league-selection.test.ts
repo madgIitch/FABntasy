@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 describe("active league selection contract", () => {
   it("validates an ACTIVE membership and falls back deterministically", () => {
     const service = readFileSync(new URL("./private-leagues.ts", import.meta.url), "utf8");
-    expect(service).toContain('status: "ACTIVE", league: { status: "ACTIVE", legacyTeamId: null }');
+    expect(service).toContain('status: "ACTIVE", league: { status: "ACTIVE", legacyTeamId: null, competitionSeason: { fantasyEnabled: true } }');
     expect(service).toContain('orderBy: [{ joinedAt: "desc" }, { id: "asc" }]');
     expect(service).toContain("memberships.some((membership) => membership.leagueId === profile.activeLeagueId)");
     expect(service).toContain("activeLeagueId: leagueId");

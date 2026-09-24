@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { PLAYER_PRICING_V1, calculatePriceCohort, type PricingPlayerInput, type RoundOutcome } from "../../../../packages/domain/player-pricing";
 import { db } from "./db";
+import { requireFantasyCompetition } from "./fantasy-availability";
 
 export type PlayerPriceDto = {
   playerRegistrationId: string; playerId: string; displayName: string; realTeamName: string;
@@ -19,6 +20,7 @@ export async function recomputePlayerPrices(competitionSeasonId: string, roundNu
   if (algorithmVersion !== PLAYER_PRICING_V1.version) throw new Error("UNSUPPORTED_ALGORITHM_VERSION");
   if (!Number.isSafeInteger(roundNumber) || roundNumber < 1) throw new Error("INVALID_ROUND_NUMBER");
   return retrySerializable(() => db.$transaction(async (tx) => {
+    await requireFantasyCompetition(tx, competitionSeasonId);
     await tx.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${`player-pricing:${competitionSeasonId}:${algorithmVersion}`}))`);
     const registrations = (await tx.playerRegistration.findMany({
       where: { competitionSeasonId },
@@ -119,7 +121,7 @@ export async function backfillPlayerPrices(competitionSeasonId: string, throughR
 
 export async function getPlayerPrices(params: { competitionSeasonId: string; playerRegistrationId?: string; algorithmVersion?: string }): Promise<PlayerPriceDto[]> {
   const algorithmVersion = params.algorithmVersion ?? PLAYER_PRICING_V1.version;
-  const prices = await db.playerPrice.findMany({ where: { competitionSeasonId: params.competitionSeasonId, playerRegistrationId: params.playerRegistrationId, algorithmVersion },
+  const prices = await db.playerPrice.findMany({ where: { competitionSeasonId: params.competitionSeasonId, competitionSeason: { fantasyEnabled: true }, playerRegistrationId: params.playerRegistrationId, algorithmVersion },
     include: { playerRegistration: { include: { player: true, teamRegistration: { include: { team: true } } } }, events: { orderBy: { createdAt: "desc" }, take: 1 } }, orderBy: [{ currentPrice: "desc" }, { playerRegistration: { player: { displayName: "asc" } } }] });
   return prices.filter((price) => !isAggregatePlayerName(price.playerRegistration.player.displayName)).map((price) => {
     const previous = price.events[0] ? Number(price.events[0].previousPrice) : null;

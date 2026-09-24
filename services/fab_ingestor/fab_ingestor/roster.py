@@ -5,7 +5,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from .client import FabClient, FabContractError
-from .repository import ExternalIdentityConflict, SportsRepository, normalized_player_name
+from .repository import ExternalIdentityConflict, FantasyCompetitionDisabled, SportsRepository, normalized_player_name
 from .selection import resolve_current_category_id
 
 
@@ -50,8 +50,19 @@ def sync_competition_rosters(
                 teams[stable_id] = team
 
     observed = created = tentative = ambiguous = unavailable = teams_with_players = 0
+    def summary() -> RosterSyncSummary:
+        return RosterSyncSummary(
+            teams=len(teams), teams_with_players=teams_with_players,
+            observed=observed, created=created, tentative=tentative,
+            ambiguous=ambiguous, unavailable=unavailable,
+        )
+
     for stable_id, team in teams.items():
+        if not repository.is_roster_enabled(competition_season_id):
+            break
         rows = client.get_team_players(str(team["Id"]))
+        if not repository.is_roster_enabled(competition_season_id):
+            break
         repository.save_raw_payload(
             endpoint="/v2/equipo.ashx?action=jugadores",
             entity_type="team_roster",
@@ -82,7 +93,10 @@ def sync_competition_rosters(
             normalized = normalized_player_name(name)
             if not normalized or names[normalized] != 1:
                 if normalized and names[normalized] != 1:
-                    repository.mark_roster_name_conflict(team_registration_id, name)
+                    try:
+                        repository.mark_roster_name_conflict(team_registration_id, name)
+                    except FantasyCompetitionDisabled:
+                        return summary()
                 ambiguous += 1
                 continue
             if (
@@ -101,13 +115,11 @@ def sync_competition_rosters(
                     team_registration_id=team_registration_id,
                     display_name=name,
                 )
+            except FantasyCompetitionDisabled:
+                return summary()
             except ExternalIdentityConflict:
                 ambiguous += 1
                 continue
             created += int(was_created)
             tentative += int(status == "TENTATIVE")
-    return RosterSyncSummary(
-        teams=len(teams), teams_with_players=teams_with_players,
-        observed=observed, created=created, tentative=tentative,
-        ambiguous=ambiguous, unavailable=unavailable,
-    )
+    return summary()

@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { calculateRoundScore, rankTeams, type PlayerScoreStatus } from "../../../../packages/domain/round-scoring";
 import { db } from "./db";
+import { requireFantasyCompetition } from "./fantasy-availability";
 import { cached, cacheTags, invalidateCache, measured, privateCacheKey } from "./performance";
 import { enqueuePushEvent, wakePushWorker } from "./push-outbox";
 import { appendLeagueEvent } from "./social-league";
@@ -13,6 +14,7 @@ export async function recomputeRoundRankings(competitionSeasonId: string, roundN
   if (!enabled()) throw new RoundRankingError("FEATURE_DISABLED");
   if (!competitionSeasonId || !Number.isInteger(roundNumber) || roundNumber < 1) throw new RoundRankingError("INVALID_INPUT", 422);
   return measured("publish", () => db.$transaction(async (tx) => {
+    await requireFantasyCompetition(tx, competitionSeasonId);
     const ruleSet = await tx.fantasyScoringRuleSet.findFirst({ where: { competitionSeasonId, status: "ACTIVE" }, orderBy: { publishedAt: "desc" } });
     if (!ruleSet) throw new RoundRankingError("RULESET_UNAVAILABLE");
     const games = await tx.game.findMany({ where: { competitionSeasonId, roundNumber, syncStatus: "active" }, select: { id: true, status: true } });
@@ -121,6 +123,8 @@ async function loadRanking(actorAuthUserId: string, params: { competitionSeasonI
 
 export async function getRanking(actorAuthUserId: string, params: { competitionSeasonId: string; leagueId?: string; roundNumber?: number }) {
   if (!params.competitionSeasonId) throw new RoundRankingError("COMPETITION_SEASON_REQUIRED", 400);
+  const season = await db.competitionSeason.findFirst({ where: { id: params.competitionSeasonId, fantasyEnabled: true }, select: { id: true } });
+  if (!season) throw new RoundRankingError("COMPETITION_DISABLED", 409);
   const profile = await db.userProfile.findUnique({ where: { authUserId: actorAuthUserId }, select: { id: true } });
   if (!profile) throw new RoundRankingError("AUTH_REQUIRED", 401);
   if (params.leagueId) {

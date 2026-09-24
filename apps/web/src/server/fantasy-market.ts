@@ -5,6 +5,7 @@ import { db } from "./db";
 import { cached, cacheTags, invalidateCache, privateCacheKey } from "./performance";
 import { enqueuePushEvent, wakePushWorker } from "./push-outbox";
 import { appendLeagueEvent } from "./social-league";
+import { requireFantasyCompetition } from "./fantasy-availability";
 
 export const FANTASY_MARKET_SCHEMA_VERSION="fantasy-market-api.v1" as const;
 export const MARKET_INITIAL_PRICE=PLAYER_PRICING_V1.initialPrice;
@@ -18,6 +19,7 @@ const clauseBase=calculateClauseBase;
 async function context(tx:Prisma.TransactionClient|typeof db,actor:MarketActor,leagueId:string){
   const profile=await tx.userProfile.findUnique({where:{authUserId:actor.authUserId},select:{id:true}}); if(!profile)fail("AUTH_REQUIRED",401);
   const team=await tx.fantasyTeam.findFirst({where:{leagueId,userProfileId:profile.id,league:{status:"ACTIVE",memberships:{some:{userProfileId:profile.id,status:"ACTIVE"}}}},include:{rosterRuleSet:true}}); if(!team)fail("TEAM_NOT_FOUND",404);
+  await requireFantasyCompetition(tx,team.competitionSeasonId);
   if(team.balanceCredits===null){const spent=await tx.fantasyRosterSlot.aggregate({where:{fantasyTeamId:team.id},_sum:{acquisitionPrice:true}});const balance=team.rosterRuleSet.budgetCredits-(spent._sum.acquisitionPrice??0n);await tx.fantasyTeam.update({where:{id:team.id},data:{balanceCredits:balance}});await tx.fantasyBudgetLedgerEntry.create({data:{fantasyTeamId:team.id,leagueId,entryType:"INITIAL_BALANCE",amountCredits:balance,balanceAfter:balance}});team.balanceCredits=balance;}
   const next=await tx.game.findFirst({where:{competitionSeasonId:team.competitionSeasonId,scheduledAt:{gte:new Date()},roundNumber:{not:null}},orderBy:{scheduledAt:"asc"},select:{roundNumber:true,scheduledAt:true}});
   return {profile,team,roundNumber:next?.roundNumber??1,nextRoundAt:next?.scheduledAt??new Date(Date.now()+7*86400000)};
@@ -28,6 +30,7 @@ async function ensureMarketTeam(actor:MarketActor,leagueId:string){
     if(!profile)fail("AUTH_REQUIRED",401);if(!profile.username)fail("INVALID_INPUT",422);
     const league=await tx.fantasyLeague.findFirst({where:{id:leagueId,status:"ACTIVE",memberships:{some:{userProfileId:profile.id,status:"ACTIVE"}}},select:{competitionSeasonId:true}});
     if(!league)fail("TEAM_NOT_FOUND",404);
+    await requireFantasyCompetition(tx,league.competitionSeasonId);
     const activeRules=await tx.fantasyRosterRuleSet.findFirst({where:{competitionSeasonId:league.competitionSeasonId,status:"ACTIVE"},orderBy:{createdAt:"asc"}});
     const rules=activeRules??await tx.fantasyRosterRuleSet.upsert({where:{competitionSeasonId_identifier_version:{competitionSeasonId:league.competitionSeasonId,identifier:COLD_START_RULES.identifier,version:COLD_START_RULES.version}},update:{},create:{competitionSeasonId:league.competitionSeasonId,identifier:COLD_START_RULES.identifier,version:COLD_START_RULES.version,budgetCredits:BigInt(COLD_START_RULES.budgetCredits),rosterSize:COLD_START_RULES.rosterSize,starterCount:COLD_START_RULES.starters,substituteCount:COLD_START_RULES.substitutes,maxPerRealTeam:COLD_START_RULES.maxPerRealTeam,positionLimits:COLD_START_RULES.positionLimits,coldStartPriceCredits:BigInt(COLD_START_RULES.coldStartPriceCredits)}});
     await tx.fantasyTeam.upsert({where:{userProfileId_leagueId:{userProfileId:profile.id,leagueId}},update:{},create:{userProfileId:profile.id,leagueId,competitionSeasonId:league.competitionSeasonId,rosterRuleSetId:rules.id}});

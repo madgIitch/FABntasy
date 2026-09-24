@@ -5,6 +5,7 @@ import { db } from "./db";
 import { enqueuePushEvent, wakePushWorker } from "./push-outbox";
 import { cacheTags, invalidateCache } from "./performance";
 import { resolveActiveLeagueId } from "./private-leagues";
+import { requireFantasyCompetition } from "./fantasy-availability";
 
 type Client = PrismaClient | Prisma.TransactionClient;
 export type TeamActor = Readonly<{ authUserId: string }>;
@@ -76,10 +77,12 @@ async function serializeTeam(client: Client, teamId: string, roundNumber?: numbe
 }
 
 export async function getFantasyTeam(actor: TeamActor, competitionSeasonId: string, roundNumber?: number, selectedLeagueId?: string) {
+  const season = await db.competitionSeason.findUnique({ where: { id: competitionSeasonId }, select: { fantasyEnabled: true } });
+  if (!season?.fantasyEnabled) fail("TEAM_NOT_FOUND", 404);
   const owner = await profileId(db, actor);
   const leagueId = selectedLeagueId ?? await resolveActiveLeagueId(actor);
   if (!leagueId) fail("TEAM_NOT_FOUND", 404);
-  const team = await db.fantasyTeam.findFirst({ where: { userProfileId: owner, competitionSeasonId, leagueId, league: { status: "ACTIVE", memberships: { some: { userProfileId: owner, status: "ACTIVE" } } } }, select: { id: true } });
+  const team = await db.fantasyTeam.findFirst({ where: { userProfileId: owner, competitionSeasonId, leagueId, league: { status: "ACTIVE", competitionSeason: { fantasyEnabled: true }, memberships: { some: { userProfileId: owner, status: "ACTIVE" } } } }, select: { id: true } });
   if (!team) fail("TEAM_NOT_FOUND", 404);
   if (roundNumber !== undefined) await lockExpiredLineup(team.id, roundNumber);
   return serializeTeam(db, team.id, roundNumber);
@@ -100,6 +103,7 @@ export async function putRoster(actor: TeamActor, competitionSeasonId: string, i
   const selectedLeagueId = await resolveActiveLeagueId(actor);
   try {
     const result = await db.$transaction(async (tx) => {
+      await requireFantasyCompetition(tx, competitionSeasonId);
       const owner = await profileId(tx, actor, true);
       const rules = await activeRules(tx, competitionSeasonId);
       const registrations = await tx.playerRegistration.findMany({ where: { id: { in: [...input.playerRegistrationIds] }, competitionSeasonId, identityStatus: { not: "CONFLICT" } }, include: {
@@ -144,8 +148,9 @@ export async function putLineup(actor: TeamActor, competitionSeasonId: string, r
   if (!leagueId) fail("TEAM_NOT_FOUND", 404);
   try {
     const result = await db.$transaction(async (tx) => {
+      await requireFantasyCompetition(tx, competitionSeasonId);
       const owner = await profileId(tx, actor, true);
-      const team = await tx.fantasyTeam.findFirst({ where: { userProfileId: owner, competitionSeasonId, leagueId, league: { status: "ACTIVE", memberships: { some: { userProfileId: owner, status: "ACTIVE" } } } }, include: { rosterRuleSet: true, rosterSlots: { select: playerSelect } } });
+      const team = await tx.fantasyTeam.findFirst({ where: { userProfileId: owner, competitionSeasonId, leagueId, league: { status: "ACTIVE", competitionSeason: { fantasyEnabled: true }, memberships: { some: { userProfileId: owner, status: "ACTIVE" } } } }, include: { rosterRuleSet: true, rosterSlots: { select: playerSelect } } });
       if (!team) fail("TEAM_NOT_FOUND", 404);
       if (team.version !== input.expectedVersion) fail("VERSION_CONFLICT");
       validateLineup(input.starterPlayerRegistrationIds, input.substitutePlayerRegistrationIds, team.rosterSlots.map((x) => x.playerRegistrationId), {

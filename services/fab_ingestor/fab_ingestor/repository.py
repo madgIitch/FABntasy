@@ -20,6 +20,10 @@ class ExternalIdentityConflict(RuntimeError):
     pass
 
 
+class FantasyCompetitionDisabled(RuntimeError):
+    pass
+
+
 def normalized_player_name(value: str) -> str:
     """A candidate key only; never evidence of a verified sporting identity."""
     folded = unicodedata.normalize("NFKD", value.casefold())
@@ -331,6 +335,15 @@ class SportsRepository:
         ).fetchone()
         return bool(row and row[0])
 
+    def require_roster_enabled_for_write(self, competition_season_id: UUID) -> None:
+        """Call inside a write transaction to serialize with Fantasy suspension."""
+        row = self.connection.execute(
+            "SELECT fantasy_enabled FROM competition_seasons WHERE id=%s FOR SHARE",
+            (competition_season_id,),
+        ).fetchone()
+        if not row or not row[0]:
+            raise FantasyCompetitionDisabled("Fantasy roster synchronization was disabled")
+
     def is_fantasy_lifecycle_due(self, competition_season_id: UUID) -> bool:
         """Scoring has work only after live or final statistics arrive."""
         row = self.connection.execute(
@@ -424,12 +437,18 @@ class SportsRepository:
     @contextmanager
     def advisory_lock(self, job_name: str, competition_season_id: UUID):
         lock_key = f"fabntasy:{job_name}:{competition_season_id}"
-        with self.connection.transaction():
-            row = self.connection.execute(
-                "SELECT pg_try_advisory_xact_lock(hashtextextended(%s, 0))", (lock_key,)
-            ).fetchone()
-            acquired = bool(row and row[0])
-            yield acquired
+        # A dedicated transaction retains the job lock while the writer connection
+        # commits each phase. It lets a Fantasy disable observe the latest state
+        # without waiting for the whole FAB network job to finish.
+        with psycopg.connect(
+            self.connection.info.dsn, autocommit=True, prepare_threshold=None,
+        ) as lock_connection:
+            with lock_connection.transaction():
+                row = lock_connection.execute(
+                    "SELECT pg_try_advisory_xact_lock(hashtextextended(%s, 0))", (lock_key,)
+                ).fetchone()
+                acquired = bool(row and row[0])
+                yield acquired
 
     @contextmanager
     def advisory_game_lock(self, external_game_id: str):
@@ -723,6 +742,13 @@ class SportsRepository:
     def mark_roster_name_conflict(self, team_registration_id: UUID, display_name: str) -> int:
         """Quarantine previously published candidates when a new homonym appears."""
         with self.connection.transaction():
+            season = self.connection.execute(
+                "SELECT competition_season_id FROM team_registrations WHERE id=%s",
+                (team_registration_id,),
+            ).fetchone()
+            if season is None:
+                raise ExternalIdentityConflict("FAB roster team is missing")
+            self.require_roster_enabled_for_write(season[0])
             candidates = self._name_candidates(team_registration_id, display_name)
             for registration_id, _, status in candidates:
                 if status in {"ROSTER_ONLY", "TENTATIVE"}:
@@ -909,6 +935,7 @@ class SportsRepository:
             external_id=roster_key,
         )
         with self.connection.transaction():
+            self.require_roster_enabled_for_write(competition_season_id)
             if existing is not None:
                 self.connection.execute(
                     """UPDATE player_registrations SET roster_seen_at=CURRENT_TIMESTAMP,

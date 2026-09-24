@@ -11,7 +11,7 @@ function contributions(value:unknown):Contribution[]{if(!value||typeof value!=="
 export async function getJourney(authUserId:string,requestedRound?:number,selectedLeagueId?:string):Promise<JourneyData|null>{
  const profile=await db.userProfile.findUnique({where:{authUserId},select:{id:true}});if(!profile)return null;
  const leagueId=selectedLeagueId??await resolveActiveLeagueId({authUserId});if(!leagueId)return null;
- const team=await db.fantasyTeam.findFirst({where:{userProfileId:profile.id,leagueId,league:{status:"ACTIVE",memberships:{some:{userProfileId:profile.id,status:"ACTIVE"}}}},include:{league:true,competitionSeason:{include:{competition:true}}}});if(!team)return null;
+ const team=await db.fantasyTeam.findFirst({where:{userProfileId:profile.id,leagueId,league:{status:"ACTIVE",competitionSeason:{fantasyEnabled:true},memberships:{some:{userProfileId:profile.id,status:"ACTIVE"}}}},include:{league:true,competitionSeason:{include:{competition:true}}}});if(!team)return null;
  const games=await db.game.findMany({where:{competitionSeasonId:team.competitionSeasonId,syncStatus:"active",roundNumber:{not:null}},orderBy:{scheduledAt:"asc"},select:{id:true,roundNumber:true,status:true,sourceStatus:true,scheduledAt:true,homeTeamId:true,awayTeamId:true}});
  const rounds=[...new Set(games.map(game=>game.roundNumber).filter((round):round is number=>round!==null))].sort((a,b)=>b-a);
  const active=games.find(game=>game.status!=="finished")?.roundNumber??rounds[0]??1;const roundNumber=requestedRound&&rounds.includes(requestedRound)?requestedRound:active;

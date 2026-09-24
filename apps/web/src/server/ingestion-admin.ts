@@ -225,7 +225,7 @@ export async function getIngestionDashboard(actorProfileId: string, filters: { s
     db.ingestionHeartbeat.findFirst({ orderBy: { seenAt: "desc" } }),
     db.ingestionRun.findFirst({ where: { status: "SUCCEEDED" }, orderBy: { finishedAt: "desc" } }),
     db.fabCompetitionCatalog.findMany({ where: catalogWhere, orderBy: RECENT_CATALOG_ORDER, take: 200,
-      include: { competitionSeason: { include: { competition: true, season: true, games: { where: { syncStatus: "active" }, select: { status: true, statsSyncStatus: true, scheduledAt: true, roundNumber: true } } } } } }),
+      include: { competitionSeason: { include: { competition: true, season: true, _count: { select: { fantasyLeagues: { where: { status: "ACTIVE" } } } }, games: { where: { syncStatus: "active" }, select: { status: true, statsSyncStatus: true, scheduledAt: true, roundNumber: true } } } } } }),
     db.fabCompetitionCatalogScan.findFirst({ orderBy: { startedAt: "desc" } }),
     db.fabCompetitionCatalog.findMany({ distinct: ["delegationName"], orderBy: { delegationName: "asc" }, select: { delegationName: true } }),
     db.season.findMany({ orderBy: { name: "desc" }, select: { name: true } }),
@@ -257,12 +257,13 @@ export async function enableCompetitionFantasy(actorProfileId: string, catalogId
   if (!entry?.monitored) throw new AdminError("MONITORED_COMPETITION_REQUIRED", 404);
   if (!entry.competitionSeasonId) throw new AdminError("SYNC_COMPETITION_FIRST", 409);
   const result = await db.$transaction(async tx => {
+    await tx.$queryRaw(Prisma.sql`SELECT id FROM competition_seasons WHERE id=${entry.competitionSeasonId}::uuid FOR UPDATE`);
     const current = await tx.competitionSeason.findUniqueOrThrow({
       where: { id: entry.competitionSeasonId! }, select: { fantasyEnabled: true, fantasyRole: true },
     });
     if (!current.fantasyEnabled) {
       const primary = await tx.competitionSeason.findFirst({
-        where: { fantasyRole: "primary" }, select: { id: true },
+        where: { fantasyRole: "primary", fantasyEnabled: true }, select: { id: true },
       });
       await tx.competitionSeason.update({
         where: { id: entry.competitionSeasonId! },
@@ -274,12 +275,48 @@ export async function enableCompetitionFantasy(actorProfileId: string, catalogId
         resourceId: catalogId, result: current.fantasyEnabled ? "DUPLICATE" : "SUCCESS" },
     });
     return { alreadyEnabled: current.fantasyEnabled };
-  });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   const queued = await enqueueIngestionJob(actorProfileId, {
     type: "COMPETITION", target: { categoryId: entry.categoryCompetitionId },
     reason: "Preparar plantillas fantasy",
   });
   return { ...result, jobId: queued.job.id, duplicateJob: queued.duplicate };
+}
+
+/** Stage one of suspension: atomically revoke Fantasy eligibility without deleting sports data. */
+export async function disableCompetitionFantasy(actorProfileId: string, catalogId: string, confirmation: string) {
+  if (!/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(catalogId)) throw new AdminError("INVALID_TARGET");
+  const entry = await db.fabCompetitionCatalog.findUnique({
+    where: { id: catalogId },
+    select: { id: true, categoryCompetitionId: true, competitionSeasonId: true, monitored: true },
+  });
+  if (!entry?.monitored) throw new AdminError("MONITORED_COMPETITION_REQUIRED", 404);
+  if (confirmation !== entry.categoryCompetitionId) throw new AdminError("CONFIRMATION_REQUIRED", 422);
+  if (!entry.competitionSeasonId) throw new AdminError("SYNC_COMPETITION_FIRST", 409);
+  return db.$transaction(async tx => {
+    await tx.$queryRaw(Prisma.sql`SELECT id FROM competition_seasons WHERE id=${entry.competitionSeasonId}::uuid FOR UPDATE`);
+    const current = await tx.competitionSeason.findUniqueOrThrow({
+      where: { id: entry.competitionSeasonId! }, select: { fantasyEnabled: true, fantasyRole: true },
+    });
+    if (current.fantasyEnabled) {
+      await tx.competitionSeason.update({
+        where: { id: entry.competitionSeasonId! },
+        data: { fantasyEnabled: false, fantasyRole: "disabled" },
+      });
+      if (current.fantasyRole === "primary") {
+        const replacement = await tx.competitionSeason.findFirst({
+          where: { fantasyEnabled: true, id: { not: entry.competitionSeasonId! } },
+          orderBy: { id: "asc" }, select: { id: true },
+        });
+        if (replacement) await tx.competitionSeason.update({ where: { id: replacement.id }, data: { fantasyRole: "primary" } });
+      }
+    }
+    await tx.adminAuditEvent.create({ data: {
+      actorProfileId, action: "COMPETITION_FANTASY_DISABLE", resourceType: "FAB_COMPETITION",
+      resourceId: catalogId, result: current.fantasyEnabled ? "SUCCESS" : "DUPLICATE",
+    } });
+    return { alreadyDisabled: !current.fantasyEnabled };
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 }
 
 export function parseMonitoringUpdate(catalogId: string, monitored: unknown) {

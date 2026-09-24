@@ -49,7 +49,7 @@ export const getCompetitionOverview = unstable_cache(async () => {
     updatedAt: season.updatedAt.toISOString(),
     standings,
   };
-}, ["sports-competition-overview"], { revalidate: 60 });
+}, ["sports-competition-overview"], { revalidate: 60, tags: ["fantasy-sports"] });
 
 export async function listGames(page = 1, round?: number) {
   const competition = await db.competitionSeason.findFirst({ where: { fantasyEnabled: true }, orderBy: { updatedAt: "desc" } });
@@ -62,15 +62,15 @@ export async function listGames(page = 1, round?: number) {
   return { items: games.map((game) => ({ ...game, scheduledAt: game.scheduledAt?.toISOString() ?? null, sourceUpdatedAt: game.sourceUpdatedAt?.toISOString() ?? null, lastSeenAt: game.lastSeenAt.toISOString(), createdAt: game.createdAt.toISOString(), updatedAt: game.updatedAt.toISOString() })), page, pages: Math.ceil(total / PAGE_SIZE), total, updatedAt: competition.updatedAt.toISOString() };
 }
 
-export const getGame = unstable_cache(async (id: string) => db.game.findUnique({
-  where: { id },
+export const getGame = unstable_cache(async (id: string) => db.game.findFirst({
+  where: { id, competitionSeason: { fantasyEnabled: true } },
   include: {
     competitionSeason: { include: { competition: true, season: true } },
     homeTeam: true,
     awayTeam: true,
     playerStats: { include: { playerRegistration: { include: { player: true, teamRegistration: { include: { team: true } } } } }, orderBy: [{ points: "desc" }] },
   },
-}), ["sports-game"], { revalidate: 10 });
+}), ["sports-game"], { revalidate: 10, tags: ["fantasy-sports"] });
 
 export async function listPlayers(page = 1, query = "") {
   const competition = await db.competitionSeason.findFirst({ where: { fantasyEnabled: true }, orderBy: { updatedAt: "desc" } });
@@ -92,18 +92,18 @@ export async function listPlayers(page = 1, query = "") {
 }
 
 export const getPlayer = unstable_cache(async (id: string) => {
-  const player = await db.player.findUnique({ where: { id }, include: { registrations: { include: { teamRegistration: { include: { team: true } }, competitionSeason: { include: { competition: true, season: true } }, stats: { include: { game: { include: { homeTeam: true, awayTeam: true } } }, orderBy: { game: { scheduledAt: "desc" } } } } } } });
+  const player = await db.player.findFirst({ where: { id, registrations: { some: { competitionSeason: { fantasyEnabled: true } } } }, include: { registrations: { where: { competitionSeason: { fantasyEnabled: true } }, include: { teamRegistration: { include: { team: true } }, competitionSeason: { include: { competition: true, season: true } }, stats: { include: { game: { include: { homeTeam: true, awayTeam: true } } }, orderBy: { game: { scheduledAt: "desc" } } } } } } });
   if (!player) return null;
   const stats = player.registrations.flatMap((registration) => registration.stats);
   const sum = (key: "points" | "rebounds" | "assists" | "steals" | "valuation") => stats.reduce((total, stat) => total + (stat[key] ?? 0), 0);
   return { player, games: stats.length, totals: { points: sum("points"), rebounds: sum("rebounds"), assists: sum("assists"), steals: sum("steals"), valuation: sum("valuation") } };
-}, ["sports-player"], { revalidate: 60 });
+}, ["sports-player"], { revalidate: 60, tags: ["fantasy-sports"] });
 
-export const getTeam = unstable_cache(async (id: string) => db.team.findUnique({
-  where: { id },
+export const getTeam = unstable_cache(async (id: string) => db.team.findFirst({
+  where: { id, registrations: { some: { competitionSeason: { fantasyEnabled: true } } } },
   include: {
-    registrations: { include: { competitionSeason: { include: { season: true } }, playerRegistrations: { include: { player: true, stats: true }, orderBy: { player: { displayName: "asc" } } } } },
-    homeGames: { include: { homeTeam: true, awayTeam: true }, orderBy: { scheduledAt: "desc" }, take: 10 },
-    awayGames: { include: { homeTeam: true, awayTeam: true }, orderBy: { scheduledAt: "desc" }, take: 10 },
+    registrations: { where: { competitionSeason: { fantasyEnabled: true } }, include: { competitionSeason: { include: { season: true } }, playerRegistrations: { include: { player: true, stats: true }, orderBy: { player: { displayName: "asc" } } } } },
+    homeGames: { where: { competitionSeason: { fantasyEnabled: true } }, include: { homeTeam: true, awayTeam: true }, orderBy: { scheduledAt: "desc" }, take: 10 },
+    awayGames: { where: { competitionSeason: { fantasyEnabled: true } }, include: { homeTeam: true, awayTeam: true }, orderBy: { scheduledAt: "desc" }, take: 10 },
   },
-}), ["sports-team"], { revalidate: 60 });
+}), ["sports-team"], { revalidate: 60, tags: ["fantasy-sports"] });

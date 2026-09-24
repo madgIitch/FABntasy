@@ -4,6 +4,7 @@ import {
   sourceStatsVersion, type CanonicalBoxscoreSnapshot, type FantasyBreakdown, type FantasyRuleSet,
 } from "../../../../packages/domain/fantasy-scoring";
 import { db } from "./db";
+import { requireFantasyCompetition } from "./fantasy-availability";
 import { recomputeRoundRankings } from "./round-rankings";
 
 export interface FantasyScoreDto {
@@ -72,6 +73,7 @@ export async function retireRuleSet(ruleSetId: string, actor: string, reason: st
 
 export async function recomputeRound(competitionSeasonId: string, roundNumber: number, ruleSetId: string) {
   const count = await retrySerializable(() => db.$transaction(async (tx) => {
+    await requireFantasyCompetition(tx, competitionSeasonId);
     const storedRuleSet = await tx.fantasyScoringRuleSet.findUniqueOrThrow({ where: { id: ruleSetId } });
     if (storedRuleSet.competitionSeasonId !== competitionSeasonId || !storedRuleSet.publishedAt) throw new Error("INVALID_RULESET");
     const ruleset = storedRuleSet.definition as unknown as FantasyRuleSet;
@@ -101,6 +103,7 @@ export async function getFantasyScores(params: { playerId?: string; gameId?: str
   if (!params.rulesetId && !params.rulesetVersion) throw new Error("RULESET_VERSION_REQUIRED");
   const scores = await db.fantasyPlayerGameScore.findMany({ where: {
     playerId: params.playerId, gameId: params.gameId, ruleSetId: params.rulesetId, ruleSetVersion: params.rulesetVersion,
+    game: { competitionSeason: { fantasyEnabled: true } },
   }, include: { game: { include: { competitionSeason: true } }, ruleSet: true }, orderBy: { createdAt: "desc" } });
   return scores.map((score) => ({
     status: score.status, errorCode: score.errorCode, playerId: score.playerId, gameId: score.gameId,

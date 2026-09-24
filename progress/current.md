@@ -1,6 +1,6 @@
 # Sesión actual
 
-Feature: **sprint-38-disable-fantasy-competition · Sprint 38 - Disable Fantasy Competition** — spec aprobada; implementación iniciada.
+Feature: **sprint-38-disable-fantasy-competition · Sprint 38 - Disable Fantasy Competition** — estado: `review_pending`.
 
 - agente: codex
 - rama: `main`
@@ -9,12 +9,14 @@ Feature: **sprint-38-disable-fantasy-competition · Sprint 38 - Disable Fantasy 
 
 ## Siguiente acción
 
-- Completar los filtros de lectura y las guardas transaccionales de todas las mutaciones Fantasy.
-- Integrar la acción en el panel únicamente cuando esas guardas estén completas.
-- Cubrir carreras, estado suspendido, reactivación e ingestor; ejecutar los gates antes de `review_pending`.
+- Revisar el diff y hacer smoke humano del panel de ingesta, deshabilitación, URL suspendida y reactivación.
+- Ejecutar una competición de prueba y confirmar que la monitorización deportiva continúa mientras se omiten las fases Fantasy.
+- Cerrar con `node .harness/spec.mjs done sprint-38-disable-fantasy-competition` tras la revisión humana.
 
 ## Evidencia
 
-- Desactivación server-side aislada y auditada implementada, todavía sin ruta pública.
-- `ingestion-fantasy-activation.test.ts`: 4 pruebas correctas.
-- `corepack pnpm typecheck`: correcto.
+- Desactivación y reactivación server-side auditadas con confirmación exacta del ID FAB.
+- Lecturas Fantasy filtran ediciones suspendidas; mutaciones y fases de puntuación usan bloqueo de fila.
+- UI de administración, estado suspendido en URL directa e invalidación de caché implementados.
+- `corepack pnpm typecheck`: correcto; `corepack pnpm lint`: correcto con 3 avisos preexistentes.
+- Web: 192 pruebas correctas; Python: 126 correctas y 8 omitidas; `prisma validate`: correcto.

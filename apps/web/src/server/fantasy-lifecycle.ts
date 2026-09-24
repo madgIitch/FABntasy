@@ -38,6 +38,8 @@ export function provisionalRoundNumbers(games: LifecycleGame[]) {
 
 export async function advanceFantasyLifecycle(competitionSeasonId: string) {
   if (!competitionSeasonId) throw new Error("COMPETITION_SEASON_REQUIRED");
+  const season = await db.competitionSeason.findUnique({ where: { id: competitionSeasonId }, select: { fantasyEnabled: true } });
+  if (!season?.fantasyEnabled) return { competitionSeasonId, eligibleRounds: 0, processed: [], skipped: "COMPETITION_DISABLED" as const };
   const [games, ruleSet] = await Promise.all([
     db.game.findMany({
       where: { competitionSeasonId, syncStatus: "active", roundNumber: { not: null } },

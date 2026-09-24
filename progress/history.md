@@ -4,6 +4,11 @@
 - Sprint 37 cerrado como `done` por solicitud del usuario tras comprobar en producción que las 167 fichas N1 MAS coinciden con FAB, en 16 de 48 equipos; los otros 32 no publican fichas en el endpoint consultado. La validación de ficha real y boxscore de Sevilla 9955 sigue pendiente de que FAB publique jugadores y se mantiene como seguimiento operativo.
 - Sprint 38 aprobado e iniciado. Primera pieza: desactivación transaccional aislada, auditoría, reasignación primaria y pruebas focalizadas. Pendientes los guardas de producto y la UI antes de exponer la acción.
 
+## 2026-09-24 — #sprint-38-disable-fantasy-competition → review_pending
+- Desactivación reversible desde el panel con confirmación por ID FAB, auditoría e idempotencia; las ligas afectadas quedan suspendidas y sus datos se conservan.
+- Lecturas y mutaciones Fantasy, puntuación, precios, rankings, follows y ciclo de ingesta respetan `fantasy_enabled`; la monitorización deportiva permanece activa.
+- Gates: typecheck, lint, 192 tests web, 126 tests Python, Prisma validate y diff-check correctos. Pendiente smoke humano para cerrar.
+
 ## 2026-09-16 — #sprint-31-catalog-link-and-retired-games → review_pending
 - Corregidos enlace estable de catálogo, deduplicación y partidos retirados; gates completos correctos. Pendiente de deploy y smoke productivo.
 

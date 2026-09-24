@@ -3379,6 +3379,151 @@
       "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
       "approved_by": "peorr",
       "approved_at": "2026-09-24T16:00:32.95Z"
+    },
+    {
+      "id": "sprint-39-rotating-market-blind-bids",
+      "name": "Sprint 39 - Rotating Free-Agent Market & Blind Bidding",
+      "title": "Mercado rotatorio de agentes libres y pujas ciegas",
+      "status": "spec_ready",
+      "sdd": true,
+      "spec_approved": false,
+      "priority": "P0",
+      "milestone": "1.5.0",
+      "dependencies": [
+        "sprint-13-market-transactions",
+        "sprint-37-fantasy-preseason-registrations",
+        "sprint-38-disable-fantasy-competition"
+      ],
+      "description": "Sustituir la compra directa de jugadores libres por ciclos de mercado de 24 horas con 12 jugadores rotatorios y pujas secretas, preservando ledger, ownership, roster, cláusulas y snapshots de jornada.",
+      "objective": "Crear escasez y competición real por los jugadores libres mediante un mercado rotatorio, secreto, determinista y seguro frente a concurrencia.",
+      "user_stories": [
+        {
+          "id": "HU39.1",
+          "story": "Como manager quiero ver solo una selección rotatoria de jugadores libres para que el momento de mercado importe."
+        },
+        {
+          "id": "HU39.2",
+          "story": "Como manager quiero pujar de forma secreta y poder modificar o cancelar mi puja antes del cierre."
+        },
+        {
+          "id": "HU39.3",
+          "story": "Como manager quiero que el mercado se resuelva automáticamente sin inconsistencias de saldo, roster u ownership."
+        }
+      ],
+      "tasks": [
+        "Crear configuración y ciclos de mercado por liga con 24 horas y 12 agentes libres por defecto.",
+        "Crear listings de agentes libres y selección determinista priorizando jugadores menos recientemente expuestos.",
+        "Implementar pujas ciegas con precio de referencia, reserva de presupuesto y reserva de hueco de plantilla.",
+        "Implementar modificación/cancelación y settlement serializable con desempate determinista.",
+        "Integrar adquisición, ledger, acquisitionPrice y cláusula existentes sin reescribir históricos.",
+        "Adaptar Mercado, actividad y notificaciones sin exponer pujas rivales.",
+        "Cubrir cutoff, competición deshabilitada, idempotencia, carreras y rollback mediante tests."
+      ],
+      "deliverable": "Mercado diario rotatorio de agentes libres con pujas secretas y adjudicación automática.",
+      "acceptance": [
+        "Una liga Market V2 muestra como máximo 12 agentes libres por ciclo de 24 horas y desactiva la compra directa normal de cualquier jugador libre.",
+        "Cada listing captura un precio de referencia y toda puja debe igualarlo o superarlo.",
+        "Las pujas rivales y sus importes no se exponen; cada manager solo ve su propia puja mientras el ciclo está abierto.",
+        "Cada puja activa reserva exactamente su importe y un hueco de roster, evitando sobrecompromiso de saldo o plantilla.",
+        "El manager puede sustituir o cancelar una puja antes del cierre y las reservas se actualizan atómicamente.",
+        "Gana la mayor puja válida; en empate, la puja activa con timestamp más antiguo y después ID estable.",
+        "Settlement debita el importe ganador, transfiere ownership, añade al roster, guarda acquisitionPrice y aplica la cláusula existente en una única transacción.",
+        "Las pujas perdedoras o invalidadas liberan reservas y nunca crean propiedad ni ledger económico.",
+        "Dos workers concurrentes convergen en un único ganador y una sola transacción económica.",
+        "La rotación prioriza jugadores menos recientemente listados y es determinista con los mismos inputs.",
+        "Deshabilitar Fantasy cancela ciclos abiertos y libera reservas sin borrar históricos.",
+        "Una adjudicación posterior al cutoff no modifica el snapshot congelado de la jornada actual.",
+        "Tests cubren selección, pujas, reservas, empates, presupuesto, roster, carreras, cutoff, disable e idempotencia."
+      ],
+      "scope": [
+        "apps/web/**",
+        "packages/domain/**",
+        "prisma/**",
+        "tests/**",
+        "docs/**",
+        "spec/**",
+        "progress/**",
+        ".harness/**",
+        "spec.json"
+      ],
+      "spec_reference": "docs/market/SPRINT_39_ROTATING_MARKET_BLIND_BIDS_SPEC.md",
+      "manual_spec_ready": true,
+      "manual_spec_ready_reason": "La mecánica de mercado objetivo está definida: rotación de 12 agentes libres cada 24 h, pujas secretas, reservas y settlement determinista sobre los invariantes económicos existentes."
+    },
+    {
+      "id": "sprint-40-manager-offers-transfer-listings",
+      "name": "Sprint 40 - Manager Offers, Transfer Listings & Instant Sale",
+      "title": "Ofertas entre mánagers, jugadores en venta y venta inmediata",
+      "status": "spec_ready",
+      "sdd": true,
+      "spec_approved": false,
+      "priority": "P0",
+      "milestone": "1.5.1",
+      "dependencies": [
+        "sprint-39-rotating-market-blind-bids",
+        "sprint-13-market-transactions"
+      ],
+      "description": "Añadir negociación privada entre mánagers, jugadores En venta, contraofertas, oferta automática de Canastio y venta inmediata al 80% sin sustituir el clausulazo.",
+      "objective": "Convertir el mercado en una superficie de negociación social con caminos diferenciados para negociar, vender con paciencia, obtener liquidez inmediata o ejecutar una cláusula.",
+      "user_stories": [
+        {
+          "id": "HU40.1",
+          "story": "Como manager quiero hacer una oferta por un jugador rival aunque no esté en venta."
+        },
+        {
+          "id": "HU40.2",
+          "story": "Como propietario quiero aceptar, rechazar o contraofertar sin perder el control de mi jugador."
+        },
+        {
+          "id": "HU40.3",
+          "story": "Como propietario quiero poner un jugador En venta y recibir ofertas de otros mánagers y de Canastio."
+        },
+        {
+          "id": "HU40.4",
+          "story": "Como propietario quiero vender inmediatamente al sistema al 80% del valor cuando necesite liquidez."
+        }
+      ],
+      "tasks": [
+        "Crear threads y propuestas inmutables de ofertas privadas con expiración, reservas y contraofertas.",
+        "Crear listings públicos En venta de 72 horas sin transferir ownership hasta aceptar una operación.",
+        "Generar una oferta de Canastio por ciclo al 100% del valor de mercado vigente para jugadores listados.",
+        "Implementar venta inmediata al 80% con quote server-side y reconfirmación ante cambio de precio.",
+        "Resolver aceptación de oferta, sistema, venta inmediata y clausulazo con locks e invalidación cruzada.",
+        "Añadir UI Hacer oferta, Poner en venta, Venta inmediata y Mis ofertas, preservando Pagar cláusula como acción distinta.",
+        "Integrar actividad, push, permisos, rate limit, cutoff y snapshots.",
+        "Cubrir carreras accept/clause/instant-sale, expiración, disable, idempotencia y privacidad mediante tests."
+      ],
+      "deliverable": "Mercado negociado entre mánagers con ofertas, contraofertas, listing voluntario, oferta del sistema y venta inmediata.",
+      "acceptance": [
+        "Un manager puede ofertar créditos por cualquier jugador elegible de otro manager aunque no esté listado.",
+        "El propietario puede aceptar, rechazar o contraofertar; la oferta permanece privada entre las partes.",
+        "Una propuesta activa reserva presupuesto y un hueco de roster del comprador y no permite sobrecompromiso.",
+        "Aceptar una oferta mueve saldo, ownership y roster atómicamente, registra acquisitionPrice y reutiliza la cláusula de Sprint 13.",
+        "Poner En venta no cambia ownership y publica al jugador para la liga durante 72 horas por defecto.",
+        "Los listings de managers no consumen los 12 huecos del mercado de agentes libres.",
+        "Canastio crea como máximo una oferta activa por listing y ciclo por el 100% del valor de mercado vigente al generarla.",
+        "Aceptar la oferta de Canastio deja al jugador libre y elegible para ciclos futuros sin insertarlo a la fuerza en el ciclo actual.",
+        "Venta inmediata paga el 80% del valor vigente y exige reconfirmación si cambia el quote autoritativo.",
+        "Cualquier cambio de ownership invalida ofertas/listings incompatibles y libera reservas exactamente una vez.",
+        "El clausulazo sigue siendo no rechazable según Sprint 13 y gana las carreras de forma transaccional sin dobles resultados.",
+        "Los snapshots congelados de la jornada no se reescriben aunque el ownership cambie después del cutoff.",
+        "La UI distingue claramente negociar, listar, vender inmediatamente y pagar cláusula.",
+        "Tests cubren ofertas, contraofertas, listing, oferta del sistema, venta inmediata, quote cambiado, carreras, disable, privacidad e idempotencia."
+      ],
+      "scope": [
+        "apps/web/**",
+        "packages/domain/**",
+        "prisma/**",
+        "tests/**",
+        "docs/**",
+        "spec/**",
+        "progress/**",
+        ".harness/**",
+        "spec.json"
+      ],
+      "spec_reference": "docs/market/SPRINT_40_MANAGER_OFFERS_LISTINGS_SPEC.md",
+      "manual_spec_ready": true,
+      "manual_spec_ready_reason": "La negociación queda separada del clausulazo y define ofertas privadas, contraofertas, listing voluntario, oferta del sistema y venta inmediata con reglas económicas y de concurrencia explícitas."
     }
   ]
 }

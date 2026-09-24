@@ -743,6 +743,39 @@ class SportsRepository:
         )
         return candidates[0]
 
+    def upsert_fab_group(
+        self, *, competition_season_id: UUID, group_id: str, name: str,
+    ) -> UUID:
+        """Reuse a group when FAB rotates its device-scoped handle."""
+        entity_id = self.resolve_external_id(
+            source="FAB", entity_type="group", external_id=group_id,
+        )
+        if entity_id is not None:
+            owner = self.connection.execute(
+                "SELECT competition_season_id FROM groups WHERE id=%s", (entity_id,),
+            ).fetchone()
+            if owner is None or owner[0] != competition_season_id:
+                raise ExternalIdentityConflict("FAB group handle belongs to another competition")
+            self.connection.execute(
+                "UPDATE groups SET name=%s, updated_at=CURRENT_TIMESTAMP WHERE id=%s",
+                (name, entity_id),
+            )
+            return entity_id
+        row = self.connection.execute(
+            "SELECT id FROM groups WHERE competition_season_id=%s AND name=%s",
+            (competition_season_id, name),
+        ).fetchone()
+        if row is not None:
+            self.upsert_external_id(
+                source="FAB", entity_type="group", external_id=group_id,
+                entity_id=row[0],
+            )
+            return row[0]
+        return self.upsert_from_external(
+            source="FAB", entity_type="group", external_id=group_id,
+            values={"competition_season_id": competition_season_id, "name": name},
+        )
+
     def upsert_fab_team_registration(
         self, *, competition_season_id: UUID, category_competition_id: str,
         stable_team_id: str, device_team_id: str, display_name: str,

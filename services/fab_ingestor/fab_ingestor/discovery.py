@@ -241,12 +241,19 @@ def sync_competition_teams(
 
         group_internal_ids: dict[str, Any] = {}
         for group_id, group_name, phase_id, _ in group_rows:
-            internal_id = repository.upsert_from_external(
-                source="FAB",
-                entity_type="group",
-                external_id=group_id,
-                values={"competition_season_id": competition_season_id, "name": group_name},
-            )
+            if hasattr(repository, "upsert_fab_group"):
+                internal_id = repository.upsert_fab_group(
+                    competition_season_id=competition_season_id,
+                    group_id=group_id,
+                    name=group_name,
+                )
+            else:
+                internal_id = repository.upsert_from_external(
+                    source="FAB",
+                    entity_type="group",
+                    external_id=group_id,
+                    values={"competition_season_id": competition_season_id, "name": group_name},
+                )
             repository.upsert_external_id(
                 source="FAB_PHASE",
                 entity_type="group",

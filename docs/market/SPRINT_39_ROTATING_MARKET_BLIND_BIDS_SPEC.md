@@ -1,6 +1,6 @@
 # Sprint 39 · Mercado rotatorio y pujas ciegas
 
-Estado: implementación terminada y gates aprobados; pendiente del smoke humano para cerrar el sprint.
+Estado: `done` por solicitud del usuario el 2026-09-25, tras la revisión de la interfaz en producción y con todos los gates aprobados.
 
 ## Decisiones de producto
 
@@ -14,6 +14,10 @@ Estado: implementación terminada y gates aprobados; pendiente del smoke humano 
 - La adjudicación conserva ledger, propiedad, plantilla, precio de adquisición, cláusulas y snapshots de jornada. Una puja excepcionalmente invalidada no debe generar débito ni adjudicación; se evalúa la siguiente válida.
 - Cada petición de puja o cancelación guarda una clave de idempotencia inmutable; repetir una petición anterior no modifica una puja cambiada después.
 - La suspensión de Fantasy para una competición sigue cancelando sus ciclos abiertos y liberando reservas. Esto es una medida excepcional distinta de apagar globalmente Market V2.
+
+## Presentación del mercado
+
+Con Market V2 activo, `/app/mercado` muestra una sola lista de agentes libres del ciclo. La búsqueda, filtros y ficha resumida de todos los jugadores están en `Mercado → Explorar jugadores` (`/app/mercado?view=explore`), donde siguen disponibles las acciones de venta, blindaje, inversión en cláusula y clausulazo. Los jugadores libres fuera del ciclo figuran como no disponibles hoy. Las filas de puja usan nombres legibles y precios en millones, y el resumen distingue saldo libre, créditos comprometidos en pujas y huecos realmente disponibles.
 
 ## Contratos previos
 

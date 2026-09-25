@@ -149,7 +149,7 @@ export async function advanceMarketV2(leagueId: string, now = new Date()) {
 export async function getMarketV2ForActor(authUserId: string, leagueId: string) {
   const profile = await db.userProfile.findUnique({ where: { authUserId }, select: { id: true } });
   if (!profile) fail("AUTH_REQUIRED", 401);
-  const team = await db.fantasyTeam.findFirst({ where: { leagueId, userProfileId: profile.id, league: { status: "ACTIVE", memberships: { some: { userProfileId: profile.id, status: "ACTIVE" } } } }, select: { id: true } });
+  const team = await db.fantasyTeam.findFirst({ where: { leagueId, userProfileId: profile.id, league: { status: "ACTIVE", memberships: { some: { userProfileId: profile.id, status: "ACTIVE" } } } }, select: { id: true, rosterRuleSet: { select: { rosterSize: true } }, _count: { select: { rosterSlots: true } } } });
   if (!team) fail("TEAM_NOT_FOUND", 404);
   const setting = await marketV2State();
   if (!setting.active) return { active: false as const, cycle: null, listings: [], history: [] };
@@ -159,7 +159,7 @@ export async function getMarketV2ForActor(authUserId: string, leagueId: string) 
     db.marketV2Listing.findMany({ where: { leagueId, cycle: { status: "SETTLED" } }, include: { bids: { include: { fantasyTeam: { include: { userProfile: { select: { username: true, displayName: true } } } } } } }, orderBy: { createdAt: "desc" }, take: 12 }),
     db.marketV2Bid.findMany({ where: { fantasyTeamId: team.id, status: "ACTIVE" }, select: { amountCredits: true } }),
   ]);
-  return { active: true as const, cycle: cycle ? { id: cycle.id, opensAt: cycle.opensAt.toISOString(), closesAt: cycle.closesAt.toISOString() } : null, reservedCredits: Number(activeBids.reduce((sum, bid) => sum + bid.amountCredits, 0n)), reservedSlots: activeBids.length, listings: listings.map(x => ({ id: x.id, playerRegistrationId: x.playerRegistrationId, referencePrice: Number(x.referencePrice), myBid: x.bids[0] ? { amountCredits: Number(x.bids[0].amountCredits), status: x.bids[0].status } : null })), history: history.map(x => projectMarketResult(x.playerRegistrationId, x.bids, team.id)) };
+  return { active: true as const, cycle: cycle ? { id: cycle.id, opensAt: cycle.opensAt.toISOString(), closesAt: cycle.closesAt.toISOString() } : null, reservedCredits: Number(activeBids.reduce((sum, bid) => sum + bid.amountCredits, 0n)), reservedSlots: activeBids.length, rosterCount: team._count.rosterSlots, rosterSize: team.rosterRuleSet.rosterSize, listings: listings.map(x => ({ id: x.id, playerRegistrationId: x.playerRegistrationId, referencePrice: Number(x.referencePrice), myBid: x.bids[0] ? { amountCredits: Number(x.bids[0].amountCredits), status: x.bids[0].status } : null })), history: history.map(x => projectMarketResult(x.playerRegistrationId, x.bids, team.id)) };
 }
 
 export async function submitMarketV2Bid(authUserId: string, input: { leagueId: string; listingId: string; amountCredits?: number; action: "BID" | "CANCEL"; idempotencyKey: string }) {

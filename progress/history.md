@@ -96,3 +96,11 @@
 ## 2026-09-24 — #sprint-39-rotating-market-blind-bids → review_pending
 - El usuario autorizó ampliar el scope solo a tres archivos Python para resolver Ruff preexistente. Correcciones aplicadas; Ruff y pytest pasan.
 - Batería completa del harness: `passed: true`. Implementación lista para smoke humano antes de `done`.
+
+## 2026-09-25 — Ajuste de revisión Sprint 39
+- Mercado diario simplificado a una única lista de pujas; búsqueda, filtros y operaciones de propiedad/cláusula trasladados a la vista Explorar jugadores.
+- Filas de puja compactas con nombres legibles, importes en M, reservas y huecos disponibles claros.
+
+## 2026-09-25 — #sprint-39-rotating-market-blind-bids → done
+- Cierre solicitado explícitamente por el usuario tras revisión de la interfaz en producción. El harness marcó `spec.json` como `done`.
+- El ajuste de Mercado pasó todos los gates; la comprobación manual de adjudicación con dos managers tras el cierre en producción no consta en el registro.

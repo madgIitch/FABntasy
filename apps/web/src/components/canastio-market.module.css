@@ -123,3 +123,8 @@
  .pulse dl div { justify-items:start }
  .identity em { display:none }
 }
+.marketViewNav { display:flex; justify-content:flex-end; margin:-5px 0 18px }
+.marketViewNav a { color:var(--color-brand-text); font-size:.8rem; font-weight:750; text-decoration:none }
+.marketViewNav a:hover { text-decoration:underline }
+.marketViewNav a:focus-visible { outline:3px solid var(--color-brand); outline-offset:3px }
+.unavailable { color:var(--color-text-muted); font-size:.75rem }

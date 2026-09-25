@@ -3463,9 +3463,9 @@
       "id": "sprint-40-manager-offers-transfer-listings",
       "name": "Sprint 40 - Manager Offers, Transfer Listings & Instant Sale",
       "title": "Ofertas entre mánagers, jugadores en venta y venta inmediata",
-      "status": "spec_ready",
+      "status": "review_pending",
       "sdd": true,
-      "spec_approved": false,
+      "spec_approved": true,
       "priority": "P0",
       "milestone": "1.5.1",
       "dependencies": [
@@ -3494,8 +3494,8 @@
       ],
       "tasks": [
         "Crear threads y propuestas inmutables de ofertas privadas con expiración, reservas y contraofertas.",
-        "Crear listings públicos En venta de 72 horas sin transferir ownership hasta aceptar una operación.",
-        "Generar una oferta de Canastio por ciclo al 100% del valor de mercado vigente para jugadores listados.",
+        "Crear listings públicos En venta de 72 horas con precio deseado opcional y no vinculante, sin transferir ownership hasta aceptar una operación.",
+        "Generar la primera oferta de Canastio en el siguiente cambio de ciclo y renovarla mientras siga En venta: una oferta activa por listing y ciclo al 100% del valor de mercado vigente al generarla, válida hasta el siguiente ciclo.",
         "Implementar venta inmediata al 80% con quote server-side y reconfirmación ante cambio de precio.",
         "Resolver aceptación de oferta, sistema, venta inmediata y clausulazo con locks e invalidación cruzada.",
         "Añadir UI Hacer oferta, Poner en venta, Venta inmediata y Mis ofertas, preservando Pagar cláusula como acción distinta.",
@@ -3505,12 +3505,12 @@
       "deliverable": "Mercado negociado entre mánagers con ofertas, contraofertas, listing voluntario, oferta del sistema y venta inmediata.",
       "acceptance": [
         "Un manager puede ofertar créditos por cualquier jugador elegible de otro manager aunque no esté listado.",
-        "El propietario puede aceptar, rechazar o contraofertar; la oferta permanece privada entre las partes.",
+        "El propietario puede aceptar, rechazar o contraofertar; cada oferta o contraoferta permanece privada entre las partes, caduca a las 48 horas y cada contraoferta reinicia ese plazo.",
         "Una propuesta activa reserva presupuesto y un hueco de roster del comprador y no permite sobrecompromiso.",
         "Aceptar una oferta mueve saldo, ownership y roster atómicamente, registra acquisitionPrice y reutiliza la cláusula de Sprint 13.",
-        "Poner En venta no cambia ownership y publica al jugador para la liga durante 72 horas por defecto.",
+        "Poner En venta no cambia ownership y publica al jugador para la liga durante 72 horas. El propietario puede indicar un precio deseado opcional, visible como señal de negociación; no ejecuta una venta automática ni sustituye la cláusula.",
         "Los listings de managers no consumen los 12 huecos del mercado de agentes libres.",
-        "Canastio crea como máximo una oferta activa por listing y ciclo por el 100% del valor de mercado vigente al generarla.",
+        "Canastio no oferta al publicar el listing. En el siguiente cambio de ciclo de 00:00 Europe/Madrid crea como máximo una oferta activa por listing por el 100% del valor de mercado vigente al generarla; la anterior caduca y se renueva en cada ciclo mientras el listing siga En venta.",
         "Aceptar la oferta de Canastio deja al jugador libre y elegible para ciclos futuros sin insertarlo a la fuerza en el ciclo actual.",
         "Venta inmediata paga el 80% del valor vigente y exige reconfirmación si cambia el quote autoritativo.",
         "Cualquier cambio de ownership invalida ofertas/listings incompatibles y libera reservas exactamente una vez.",
@@ -3532,7 +3532,10 @@
       ],
       "spec_reference": "docs/market/SPRINT_40_MANAGER_OFFERS_LISTINGS_SPEC.md",
       "manual_spec_ready": true,
-      "manual_spec_ready_reason": "La negociación queda separada del clausulazo y define ofertas privadas, contraofertas, listing voluntario, oferta del sistema y venta inmediata con reglas económicas y de concurrencia explícitas."
+      "manual_spec_ready_reason": "La negociación queda separada del clausulazo. Entrevista de producto del 25/09/2026: precio deseado opcional y no vinculante, oferta de Canastio del 100% del valor vigente desde el siguiente ciclo de 00:00 Europe/Madrid y renovada por ciclo, ofertas privadas de 48 horas con plazo reiniciado por contraoferta, listing de 72 horas y venta inmediata al 80%.",
+      "answers_hash": "sha256:86bdb56e34c8714db01b95cbe797a21dfb2229280e43a66debf33ceb18106b33",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-25T15:25:18.121Z"
     }
   ]
 }

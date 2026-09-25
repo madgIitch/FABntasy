@@ -1227,3 +1227,27 @@ Sustituir la compra directa de jugadores libres por ciclos de mercado de 24 hora
 - **edge_cases:** Los jugadores no fichados regresan a la cola y podrán reaparecer en otro ciclo; el usuario no requiere una regla especial de inventario escaso.
 - **ui_states:** Durante el ciclo cada manager ve solo su puja. Tras el cierre, la liga ve ganador y precio; los postores ven el resultado propio y los importes e identidad de las demás pujas de ese jugador.
 
+<!-- harness:sprint-40-manager-offers-transfer-listings -->
+## sprint-40-manager-offers-transfer-listings · Ofertas entre mánagers, jugadores en venta y venta inmediata
+
+Añadir negociación privada entre mánagers, jugadores En venta, contraofertas, oferta automática de Canastio y venta inmediata al 80% sin sustituir el clausulazo.
+
+### Scope aprobado
+
+  - `apps/web/**`
+  - `packages/domain/**`
+  - `prisma/**`
+  - `tests/**`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+  - `.harness/**`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** Ofertas privadas, propuestas inmutables, anuncios con precio deseado opcional, ofertas de Canastio por ciclo y transacciones con ledger.
+- **external_contracts:** No hay nueva API externa; Canastio usa precio de mercado propio y el ciclo diario de Sprint 39.
+- **edge_cases:** Aceptación, clausulazo, venta inmediata y settlement concurrentes se resuelven sin doble ownership ni cargo.
+- **ui_states:** Negociar, listar, venta inmediata y cláusula son acciones distintas; precio deseado y oferta de sistema muestran vigencia.
+

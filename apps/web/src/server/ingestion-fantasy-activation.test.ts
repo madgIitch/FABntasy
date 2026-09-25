@@ -23,6 +23,7 @@ vi.mock("./db", () => ({
     $transaction: mocks.transactionRunner,
   },
 }));
+vi.mock("./market-offer-invalidation", () => ({ cancelCompetitionNegotiations: vi.fn().mockResolvedValue(undefined) }));
 
 import { disableCompetitionFantasy, enableCompetitionFantasy } from "./ingestion-admin";
 

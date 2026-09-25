@@ -104,3 +104,13 @@
 ## 2026-09-25 — #sprint-39-rotating-market-blind-bids → done
 - Cierre solicitado explícitamente por el usuario tras revisión de la interfaz en producción. El harness marcó `spec.json` como `done`.
 - El ajuste de Mercado pasó todos los gates; la comprobación manual de adjudicación con dos managers tras el cierre en producción no consta en el registro.
+
+## 2026-09-25 — #sprint-40-manager-offers-transfer-listings → spec_ready
+- Entrevista de producto completada a partir del material aportado por el usuario. Precio deseado opcional no vinculante; Canastio oferta en el siguiente ciclo diario al 100 % del valor vigente y renueva por ciclo; ofertas privadas de 48 h; anuncio de 72 h; venta inmediata al 80 %.
+- Spec sin aprobar y sin implementación.
+
+## 2026-09-25 — #sprint-40-manager-offers-transfer-listings → review_pending
+
+- Spec aprobada por el usuario e implementación completada: ofertas privadas, contraofertas, anuncios de 72 h, oferta diaria de Canastio y venta inmediata al 80 %.
+- Migración aplicada en `canastio_test`; integración PostgreSQL con carreras, privacidad, expiración, renovación, disable e idempotencia superada.
+- Revisión visual de cinco anchuras correcta y gates del harness aprobados con servidor E2E propio; smoke humano pendiente.

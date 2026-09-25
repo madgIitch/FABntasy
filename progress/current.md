@@ -1,17 +1,17 @@
 # Sesión actual
 
-Feature: **sprint-39-rotating-market-blind-bids · Mercado rotatorio y pujas ciegas** — estado: `done`.
+Feature: **sprint-40-manager-offers-transfer-listings · Ofertas entre mánagers, jugadores en venta y venta inmediata** — estado: `review_pending`, `spec_approved: true`.
 
 - agente: codex
 - rama: `main`
-- Spec aprobada (`spec_approved: true`) y decisiones de entrevista en `docs/market/SPRINT_39_ROTATING_MARKET_BLIND_BIDS_SPEC.md`.
-- Cerrada por solicitud explícita del usuario el 2026-09-25 tras revisión de la interfaz en producción y simplificación de Mercado.
+- Sprint 39 cerrado (`done`).
+- Entrevista de producto basada en el material aportado por el usuario: precio deseado opcional, oferta de Canastio desde el siguiente ciclo diario al 100 % del VM, ofertas privadas de 48 h, anuncios de 72 h y venta inmediata al 80 %.
+- Contrato durable en `docs/market/SPRINT_40_MANAGER_OFFERS_LISTINGS_SPEC.md`.
 
-## Evidencia
+- Implementación y migración validadas en PostgreSQL local `canastio_test`; pruebas de concurrencia, privacidad, expiración, idempotencia y suspensión correctas.
+- Revisión visual de cinco anchuras sin desbordes ni errores graves de accesibilidad.
+- Gates del harness aprobados con E2E dirigido al servidor Canastio en `127.0.0.1:3001`.
 
-- Mercado global, ciclos Madrid, rotación de hasta 12 jugadores, pujas ciegas, reservas, liquidación serializable, privacidad posterior al cierre y cancelación por suspensión implementados.
-- Mercado diario con una sola lista de pujas; búsqueda, filtros y operaciones de propiedad/cláusula en Explorar jugadores.
-- `runGates` del harness: `passed: true` tras el ajuste de interfaz; incluye typecheck, lint, tests web, pytest, Ruff, Prisma, E2E, datos de prueba y diff-scope.
-- Integración PostgreSQL con workers concurrentes, idempotencia y privacidad: correcta con base de test local.
-- QA visual de ambas vistas a 320, 375, 768, 1024 y 1440 px: sin desbordes, errores de página ni infracciones graves de accesibilidad.
-- No consta una comprobación manual de adjudicación entre dos managers tras el cierre de un ciclo en producción.
+## Siguiente acción
+
+- Realizar smoke test humano de traspasos, cotización y cierre diario antes de `node .harness/spec.mjs done sprint-40-manager-offers-transfer-listings`.

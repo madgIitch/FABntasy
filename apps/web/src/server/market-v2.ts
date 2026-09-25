@@ -5,6 +5,8 @@ import { requireFantasyCompetition } from "./fantasy-availability";
 import { invalidateCache, cacheTags } from "./performance";
 import { appendLeagueEvent } from "./social-league";
 import { enqueuePushEvent, wakePushWorker } from "./push-outbox";
+import { invalidatePlayerNegotiations } from "./market-offer-invalidation";
+import { activeOfferReservations } from "./market-reservations";
 
 type Tx = Prisma.TransactionClient;
 export class MarketV2Error extends Error { constructor(public code: string, public status = 409) { super(code); } }
@@ -96,14 +98,15 @@ async function settleCycle(tx: Tx, cycleId: string, now: Date) {
     let winnerId: string | null = null;
     if (!owner) for (const bid of bids) {
       const team = await tx.fantasyTeam.findUnique({ where: { id: bid.fantasyTeamId }, include: { rosterRuleSet: true, userProfile: true } });
-      if (!team || team.balanceCredits === null || team.balanceCredits < bid.amountCredits) { await tx.marketV2Bid.update({ where: { id: bid.id }, data: { status: "INVALID" } }); continue; }
-      const [count, player] = await Promise.all([tx.fantasyRosterSlot.count({ where: { fantasyTeamId: team.id } }), tx.playerRegistration.findUnique({ where: { id: listing.playerRegistrationId }, select: { teamRegistrationId: true, identityStatus: true } })]);
-      if (!player || player.identityStatus === "CONFLICT" || count >= team.rosterRuleSet.rosterSize) { await tx.marketV2Bid.update({ where: { id: bid.id }, data: { status: "INVALID" } }); continue; }
+      if (!team || team.balanceCredits === null) { await tx.marketV2Bid.update({ where: { id: bid.id }, data: { status: "INVALID" } }); continue; }
+      const [count, player, offers] = await Promise.all([tx.fantasyRosterSlot.count({ where: { fantasyTeamId: team.id } }), tx.playerRegistration.findUnique({ where: { id: listing.playerRegistrationId }, select: { teamRegistrationId: true, identityStatus: true } }), activeOfferReservations(tx, team.id, now)]);
+      if (team.balanceCredits < bid.amountCredits + offers.amount || !player || player.identityStatus === "CONFLICT" || count + offers.count >= team.rosterRuleSet.rosterSize) { await tx.marketV2Bid.update({ where: { id: bid.id }, data: { status: "INVALID" } }); continue; }
       const same = await tx.fantasyRosterSlot.count({ where: { fantasyTeamId: team.id, playerRegistration: { teamRegistrationId: player.teamRegistrationId } } });
-      if (same >= team.rosterRuleSet.maxPerRealTeam) { await tx.marketV2Bid.update({ where: { id: bid.id }, data: { status: "INVALID" } }); continue; }
+      if (same + offers.teamIds.filter(id => id === player.teamRegistrationId).length >= team.rosterRuleSet.maxPerRealTeam) { await tx.marketV2Bid.update({ where: { id: bid.id }, data: { status: "INVALID" } }); continue; }
       const balance = team.balanceCredits - bid.amountCredits;
       const transaction = await tx.marketTransaction.create({ data: { leagueId: cycle.leagueId, playerRegistrationId: listing.playerRegistrationId, buyerTeamId: team.id, transactionType: "AUCTION", priceCredits: bid.amountCredits, marketPriceCredits: listing.referencePrice, idempotencyKey: `market-v2:${listing.id}` } });
       await tx.fantasyRosterSlot.create({ data: { fantasyTeamId: team.id, leagueId: cycle.leagueId, playerRegistrationId: listing.playerRegistrationId, acquisitionPrice: bid.amountCredits } });
+      await invalidatePlayerNegotiations(tx, cycle.leagueId, listing.playerRegistrationId);
       await tx.fantasyTeam.update({ where: { id: team.id }, data: { balanceCredits: balance, version: { increment: 1 } } });
       await tx.fantasyBudgetLedgerEntry.create({ data: { fantasyTeamId: team.id, leagueId: cycle.leagueId, transactionId: transaction.id, entryType: "AUCTION_BUY", amountCredits: -bid.amountCredits, balanceAfter: balance } });
       const nextGame = await tx.game.findFirst({ where: { competitionSeasonId: team.competitionSeasonId, scheduledAt: { gt: now }, roundNumber: { not: null } }, orderBy: { scheduledAt: "asc" }, select: { roundNumber: true, scheduledAt: true } });
@@ -155,11 +158,12 @@ export async function getMarketV2ForActor(authUserId: string, leagueId: string) 
   if (!setting.active) return { active: false as const, cycle: null, listings: [], history: [] };
   const cycle = await advanceMarketV2(leagueId);
   const listings = cycle ? await db.marketV2Listing.findMany({ where: { cycleId: cycle.id }, include: { bids: { where: { fantasyTeamId: team.id }, select: { amountCredits: true, status: true } } }, orderBy: { createdAt: "asc" } }) : [];
-  const [history, activeBids] = await Promise.all([
+  const [history, activeBids, activeOffers] = await Promise.all([
     db.marketV2Listing.findMany({ where: { leagueId, cycle: { status: "SETTLED" } }, include: { bids: { include: { fantasyTeam: { include: { userProfile: { select: { username: true, displayName: true } } } } } } }, orderBy: { createdAt: "desc" }, take: 12 }),
     db.marketV2Bid.findMany({ where: { fantasyTeamId: team.id, status: "ACTIVE" }, select: { amountCredits: true } }),
+    db.marketOfferProposal.findMany({ where: { proposerTeamId: team.id, status: "ACTIVE", expiresAt: { gt: new Date() }, thread: { buyerTeamId: team.id, status: "OPEN" } }, select: { amountCredits: true } }),
   ]);
-  return { active: true as const, cycle: cycle ? { id: cycle.id, opensAt: cycle.opensAt.toISOString(), closesAt: cycle.closesAt.toISOString() } : null, reservedCredits: Number(activeBids.reduce((sum, bid) => sum + bid.amountCredits, 0n)), reservedSlots: activeBids.length, rosterCount: team._count.rosterSlots, rosterSize: team.rosterRuleSet.rosterSize, listings: listings.map(x => ({ id: x.id, playerRegistrationId: x.playerRegistrationId, referencePrice: Number(x.referencePrice), myBid: x.bids[0] ? { amountCredits: Number(x.bids[0].amountCredits), status: x.bids[0].status } : null })), history: history.map(x => projectMarketResult(x.playerRegistrationId, x.bids, team.id)) };
+  return { active: true as const, cycle: cycle ? { id: cycle.id, opensAt: cycle.opensAt.toISOString(), closesAt: cycle.closesAt.toISOString() } : null, reservedCredits: Number(activeBids.reduce((sum, bid) => sum + bid.amountCredits, 0n)), reservedSlots: activeBids.length, reservedOfferCredits: Number(activeOffers.reduce((sum, offer) => sum + offer.amountCredits, 0n)), reservedOfferSlots: activeOffers.length, rosterCount: team._count.rosterSlots, rosterSize: team.rosterRuleSet.rosterSize, listings: listings.map(x => ({ id: x.id, playerRegistrationId: x.playerRegistrationId, referencePrice: Number(x.referencePrice), myBid: x.bids[0] ? { amountCredits: Number(x.bids[0].amountCredits), status: x.bids[0].status } : null })), history: history.map(x => projectMarketResult(x.playerRegistrationId, x.bids, team.id)) };
 }
 
 export async function submitMarketV2Bid(authUserId: string, input: { leagueId: string; listingId: string; amountCredits?: number; action: "BID" | "CANCEL"; idempotencyKey: string }) {
@@ -186,18 +190,20 @@ export async function submitMarketV2Bid(authUserId: string, input: { leagueId: s
     const amount = BigInt(input.amountCredits!);
     if (amount < listing.referencePrice) fail("BID_BELOW_REFERENCE", 422);
     const currentTeam = await tx.fantasyTeam.findUniqueOrThrow({ where: { id: team.id }, include: { rosterRuleSet: true } });
-    const [activeBids, rosterCount, player] = await Promise.all([
+    const [activeBids, activeOffers, rosterCount, player] = await Promise.all([
       tx.marketV2Bid.findMany({ where: { fantasyTeamId: team.id, status: "ACTIVE", id: existing ? { not: existing.id } : undefined }, select: { amountCredits: true, listing: { select: { playerRegistration: { select: { teamRegistrationId: true } } } } } }),
+      activeOfferReservations(tx, team.id),
       tx.fantasyRosterSlot.count({ where: { fantasyTeamId: team.id } }),
       tx.playerRegistration.findUnique({ where: { id: listing.playerRegistrationId }, select: { teamRegistrationId: true } }),
     ]);
     if (!player) fail("PLAYER_NOT_FOUND", 404);
     const reserved = activeBids.reduce((sum, b) => sum + b.amountCredits, 0n);
-    if (currentTeam.balanceCredits === null || reserved + amount > currentTeam.balanceCredits) fail("INSUFFICIENT_BALANCE");
-    if (rosterCount + activeBids.length + 1 > currentTeam.rosterRuleSet.rosterSize) fail("ROSTER_FULL");
+    if (currentTeam.balanceCredits === null || reserved + activeOffers.amount + amount > currentTeam.balanceCredits) fail("INSUFFICIENT_BALANCE");
+    if (rosterCount + activeBids.length + activeOffers.count + 1 > currentTeam.rosterRuleSet.rosterSize) fail("ROSTER_FULL");
     const sameRoster = await tx.fantasyRosterSlot.count({ where: { fantasyTeamId: team.id, playerRegistration: { teamRegistrationId: player.teamRegistrationId } } });
     const sameBids = activeBids.filter(b => b.listing.playerRegistration.teamRegistrationId === player.teamRegistrationId).length;
-    if (sameRoster + sameBids + 1 > currentTeam.rosterRuleSet.maxPerRealTeam) fail("REAL_TEAM_LIMIT");
+    const sameOffers = activeOffers.teamIds.filter(id => id === player.teamRegistrationId).length;
+    if (sameRoster + sameBids + sameOffers + 1 > currentTeam.rosterRuleSet.maxPerRealTeam) fail("REAL_TEAM_LIMIT");
     const bid = existing ? await tx.marketV2Bid.update({ where: { id: existing.id }, data: { amountCredits: amount, status: "ACTIVE", bidAt: now } }) : await tx.marketV2Bid.create({ data: { listingId: listing.id, fantasyTeamId: team.id, amountCredits: amount, bidAt: now } });
     await tx.marketV2Request.create({ data: { idempotencyKey: input.idempotencyKey, listingId: listing.id, fantasyTeamId: team.id, action: "BID", amountCredits: amount, bidId: bid.id, resultStatus: bid.status } });
     return { bidId: bid.id, status: bid.status, amountCredits: Number(bid.amountCredits) };

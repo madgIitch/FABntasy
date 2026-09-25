@@ -764,3 +764,20 @@ Decisiones registradas:
 - **tests:** Se exige cobertura de selección, reservas, concurrencia, cutoff, disable e idempotencia.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-40-manager-offers-transfer-listings -->
+## 2026-09-25 · sprint-40-manager-offers-transfer-listings aprobado
+
+Contexto: se aprobó el spec `sprint-40-manager-offers-transfer-listings` (Ofertas entre mánagers, jugadores en venta y venta inmediata).
+
+Decisiones registradas:
+
+- **auth_secrets:** Supabase Auth y membresía activa; ofertas privadas solo visibles a las partes, anuncio visible a la liga.
+- **rollback_compat:** Migración aditiva e historial preservado; venta anterior al 100 % se reemplaza explícitamente por venta inmediata al 80 % al activar Sprint 40.
+- **tests:** Unitarias e integración PostgreSQL para expiración, reservas, privacidad, cotización y carreras; gates del repo.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+## 2026-09-25 · Reservas y clausulazo en Sprint 40
+
+Las ofertas privadas originadas por el comprador reservan saldo y un hueco. Una contraoferta originada por el vendedor se revalida cuando el comprador la acepta, sin reservarle recursos antes de ese consentimiento. Si el comprador ejecuta un clausulazo por un jugador sobre el que tenía una oferta activa, esa reserva se sustituye por el coste y el hueco del clausulazo dentro de la misma transacción; el cambio de propiedad invalida la oferta.

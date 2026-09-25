@@ -45,7 +45,7 @@ export function MarketV2Panel({ v2, leagueId, players }: { v2: MarketV2View; lea
     finally { setPending(null); }
   }
 
-  const freeSlots = Math.max(0, v2.rosterSize - v2.rosterCount - v2.reservedSlots);
+  const freeSlots = Math.max(0, v2.rosterSize - v2.rosterCount - (v2.reservedSlots + v2.reservedOfferSlots));
   return <section id="market-v2" className={styles.panel} aria-labelledby="market-v2-heading">
     <header className={styles.header}>
       <div>
@@ -54,9 +54,9 @@ export function MarketV2Panel({ v2, leagueId, players }: { v2: MarketV2View; lea
         <p>{v2.cycle ? `Cierre: ${new Date(v2.cycle.closesAt).toLocaleString("es-ES", { timeZone: "Europe/Madrid", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}` : "Preparando el siguiente ciclo."} Las pujas rivales se revelan al cierre.</p>
       </div>
       <div className={styles.reserve}>
-        <strong>{millions(v2.reservedCredits)}</strong>
-        <span>en pujas</span>
-        <small>{v2.reservedSlots} {v2.reservedSlots === 1 ? "puja realizada" : "pujas realizadas"} · {freeSlots === 0 ? "Plantilla completa" : `${freeSlots} huecos disponibles`}</small>
+        <strong>{millions((v2.reservedCredits + v2.reservedOfferCredits))}</strong>
+        <span>reservados en pujas y ofertas</span>
+        <small>{v2.reservedSlots} {v2.reservedSlots === 1 ? "puja" : "pujas"} · {v2.reservedOfferSlots} {v2.reservedOfferSlots === 1 ? "oferta" : "ofertas"} · {freeSlots === 0 ? "Plantilla completa" : `${freeSlots} huecos disponibles`}</small>
       </div>
     </header>
     {message && <p className={styles.message} role="status">{message}</p>}

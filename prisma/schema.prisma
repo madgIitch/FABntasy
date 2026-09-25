@@ -340,16 +340,16 @@ model Player {
 }
 
 model PlayerRegistration {
-  id                  String              @id @default(uuid()) @db.Uuid
-  playerId            String              @map("player_id") @db.Uuid
-  teamRegistrationId  String              @map("team_registration_id") @db.Uuid
-  competitionSeasonId String              @map("competition_season_id") @db.Uuid
-  shirtNumber         String?             @map("shirt_number")
-  identityStatus      String              @default("BOXSCORE_ONLY") @map("identity_status")
-  rosterSeenAt        DateTime?           @map("roster_seen_at") @db.Timestamptz(3)
-  player              Player              @relation(fields: [playerId], references: [id], onDelete: Restrict)
-  teamRegistration    TeamRegistration    @relation(fields: [teamRegistrationId], references: [id], onDelete: Cascade)
-  competitionSeason   CompetitionSeason   @relation(fields: [competitionSeasonId], references: [id], onDelete: Cascade)
+  id                  String                  @id @default(uuid()) @db.Uuid
+  playerId            String                  @map("player_id") @db.Uuid
+  teamRegistrationId  String                  @map("team_registration_id") @db.Uuid
+  competitionSeasonId String                  @map("competition_season_id") @db.Uuid
+  shirtNumber         String?                 @map("shirt_number")
+  identityStatus      String                  @default("BOXSCORE_ONLY") @map("identity_status")
+  rosterSeenAt        DateTime?               @map("roster_seen_at") @db.Timestamptz(3)
+  player              Player                  @relation(fields: [playerId], references: [id], onDelete: Restrict)
+  teamRegistration    TeamRegistration        @relation(fields: [teamRegistrationId], references: [id], onDelete: Cascade)
+  competitionSeason   CompetitionSeason       @relation(fields: [competitionSeasonId], references: [id], onDelete: Cascade)
   stats               PlayerGameStat[]
   fantasyRosterSlots  FantasyRosterSlot[]
   fantasyLineupSlots  FantasyLineupSlot[]
@@ -358,9 +358,11 @@ model PlayerRegistration {
   marketTransactions  MarketTransaction[]
   marketProtections   MarketProtection[]
   marketV2Listings    MarketV2Listing[]
+  transferListings    MarketTransferListing[]
+  offerThreads        MarketOfferThread[]
   followers           PlayerFollow[]
-  createdAt           DateTime            @default(now()) @map("created_at")
-  updatedAt           DateTime            @updatedAt @map("updated_at")
+  createdAt           DateTime                @default(now()) @map("created_at")
+  updatedAt           DateTime                @updatedAt @map("updated_at")
 
   @@unique([playerId, teamRegistrationId])
   @@index([competitionSeasonId])
@@ -390,30 +392,34 @@ model FantasyRosterRuleSet {
 }
 
 model FantasyTeam {
-  id                  String                     @id @default(uuid()) @db.Uuid
-  name                String                     @default("Mi equipo") @db.VarChar(60)
-  userProfileId       String                     @map("user_profile_id") @db.Uuid
-  competitionSeasonId String                     @map("competition_season_id") @db.Uuid
-  rosterRuleSetId     String                     @map("roster_rule_set_id") @db.Uuid
-  leagueId            String                     @map("league_id") @db.Uuid
-  version             Int                        @default(1)
-  balanceCredits      BigInt?                    @map("balance_credits")
-  userProfile         UserProfile                @relation(fields: [userProfileId], references: [id], onDelete: Restrict)
-  competitionSeason   CompetitionSeason          @relation(fields: [competitionSeasonId], references: [id], onDelete: Restrict)
-  rosterRuleSet       FantasyRosterRuleSet       @relation(fields: [rosterRuleSetId], references: [id], onDelete: Restrict)
-  league              FantasyLeague              @relation(fields: [leagueId], references: [id], onDelete: Restrict)
-  rosterSlots         FantasyRosterSlot[]
-  lineups             FantasyLineup[]
-  budgetLedger        FantasyBudgetLedgerEntry[]
-  purchases           MarketTransaction[]        @relation("MarketBuyer")
-  sales               MarketTransaction[]        @relation("MarketSeller")
-  marketProtections   MarketProtection[]
-  marketV2Bids        MarketV2Bid[]
-  marketV2Requests    MarketV2Request[]
-  roundScores         FantasyRoundScore[]
-  total               FantasyTeamTotal?
-  createdAt           DateTime                   @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt           DateTime                   @updatedAt @map("updated_at") @db.Timestamptz(3)
+  id                   String                     @id @default(uuid()) @db.Uuid
+  name                 String                     @default("Mi equipo") @db.VarChar(60)
+  userProfileId        String                     @map("user_profile_id") @db.Uuid
+  competitionSeasonId  String                     @map("competition_season_id") @db.Uuid
+  rosterRuleSetId      String                     @map("roster_rule_set_id") @db.Uuid
+  leagueId             String                     @map("league_id") @db.Uuid
+  version              Int                        @default(1)
+  balanceCredits       BigInt?                    @map("balance_credits")
+  userProfile          UserProfile                @relation(fields: [userProfileId], references: [id], onDelete: Restrict)
+  competitionSeason    CompetitionSeason          @relation(fields: [competitionSeasonId], references: [id], onDelete: Restrict)
+  rosterRuleSet        FantasyRosterRuleSet       @relation(fields: [rosterRuleSetId], references: [id], onDelete: Restrict)
+  league               FantasyLeague              @relation(fields: [leagueId], references: [id], onDelete: Restrict)
+  rosterSlots          FantasyRosterSlot[]
+  lineups              FantasyLineup[]
+  budgetLedger         FantasyBudgetLedgerEntry[]
+  purchases            MarketTransaction[]        @relation("MarketBuyer")
+  sales                MarketTransaction[]        @relation("MarketSeller")
+  marketProtections    MarketProtection[]
+  marketV2Bids         MarketV2Bid[]
+  marketV2Requests     MarketV2Request[]
+  transferListings     MarketTransferListing[]
+  sentOfferThreads     MarketOfferThread[]        @relation("OfferBuyer")
+  receivedOfferThreads MarketOfferThread[]        @relation("OfferSeller")
+  offerProposals       MarketOfferProposal[]
+  roundScores          FantasyRoundScore[]
+  total                FantasyTeamTotal?
+  createdAt            DateTime                   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime                   @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@unique([userProfileId, leagueId])
   @@index([competitionSeasonId])
@@ -441,6 +447,8 @@ model FantasyLeague {
   marketProtections   MarketProtection[]
   marketV2Cycles      MarketV2Cycle[]
   marketV2Listings    MarketV2Listing[]
+  transferListings    MarketTransferListing[]
+  offerThreads        MarketOfferThread[]
   createdAt           DateTime                   @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt           DateTime                   @updatedAt @map("updated_at") @db.Timestamptz(3)
   fantasyRosterSlots  FantasyRosterSlot[]
@@ -625,6 +633,8 @@ model MarketTransaction {
   sellerTeam              FantasyTeam?               @relation("MarketSeller", fields: [sellerTeamId], references: [id], onDelete: Restrict)
   ledgerEntries           FantasyBudgetLedgerEntry[]
   marketV2WinningBid      MarketV2Bid?
+  acceptedOfferProposal   MarketOfferProposal?
+  acceptedSystemOffer     MarketSystemOffer?
   createdAt               DateTime                   @default(now()) @map("created_at") @db.Timestamptz(3)
 
   @@index([leagueId, createdAt])
@@ -642,15 +652,16 @@ model MarketV2Setting {
 }
 
 model MarketV2Cycle {
-  id        String            @id @default(uuid()) @db.Uuid
-  leagueId  String            @map("league_id") @db.Uuid
-  opensAt   DateTime          @map("opens_at") @db.Timestamptz(3)
-  closesAt  DateTime          @map("closes_at") @db.Timestamptz(3)
-  status    String            @default("OPEN") @db.VarChar(16)
-  settledAt DateTime?         @map("settled_at") @db.Timestamptz(3)
-  league    FantasyLeague     @relation(fields: [leagueId], references: [id], onDelete: Restrict)
-  listings  MarketV2Listing[]
-  createdAt DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  id           String              @id @default(uuid()) @db.Uuid
+  leagueId     String              @map("league_id") @db.Uuid
+  opensAt      DateTime            @map("opens_at") @db.Timestamptz(3)
+  closesAt     DateTime            @map("closes_at") @db.Timestamptz(3)
+  status       String              @default("OPEN") @db.VarChar(16)
+  settledAt    DateTime?           @map("settled_at") @db.Timestamptz(3)
+  league       FantasyLeague       @relation(fields: [leagueId], references: [id], onDelete: Restrict)
+  listings     MarketV2Listing[]
+  systemOffers MarketSystemOffer[]
+  createdAt    DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
 
   @@unique([leagueId, opensAt])
   @@index([status, closesAt])
@@ -710,6 +721,99 @@ model MarketV2Request {
 
   @@index([fantasyTeamId, createdAt])
   @@map("market_v2_requests")
+}
+
+model MarketTransferListing {
+  id                   String              @id @default(uuid()) @db.Uuid
+  leagueId             String              @map("league_id") @db.Uuid
+  playerRegistrationId String              @map("player_registration_id") @db.Uuid
+  sellerTeamId         String              @map("seller_team_id") @db.Uuid
+  desiredPriceCredits  BigInt?             @map("desired_price_credits")
+  status               String              @default("OPEN") @db.VarChar(16)
+  listedAt             DateTime            @map("listed_at") @db.Timestamptz(3)
+  expiresAt            DateTime            @map("expires_at") @db.Timestamptz(3)
+  league               FantasyLeague       @relation(fields: [leagueId], references: [id], onDelete: Restrict)
+  playerRegistration   PlayerRegistration  @relation(fields: [playerRegistrationId], references: [id], onDelete: Restrict)
+  sellerTeam           FantasyTeam         @relation(fields: [sellerTeamId], references: [id], onDelete: Restrict)
+  threads              MarketOfferThread[]
+  systemOffers         MarketSystemOffer[]
+  createdAt            DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([leagueId, playerRegistrationId, status])
+  @@index([status, expiresAt])
+  @@map("market_transfer_listings")
+}
+
+model MarketOfferThread {
+  id                   String                 @id @default(uuid()) @db.Uuid
+  leagueId             String                 @map("league_id") @db.Uuid
+  playerRegistrationId String                 @map("player_registration_id") @db.Uuid
+  buyerTeamId          String                 @map("buyer_team_id") @db.Uuid
+  sellerTeamId         String                 @map("seller_team_id") @db.Uuid
+  listingId            String?                @map("listing_id") @db.Uuid
+  status               String                 @default("OPEN") @db.VarChar(16)
+  league               FantasyLeague          @relation(fields: [leagueId], references: [id], onDelete: Restrict)
+  playerRegistration   PlayerRegistration     @relation(fields: [playerRegistrationId], references: [id], onDelete: Restrict)
+  buyerTeam            FantasyTeam            @relation("OfferBuyer", fields: [buyerTeamId], references: [id], onDelete: Restrict)
+  sellerTeam           FantasyTeam            @relation("OfferSeller", fields: [sellerTeamId], references: [id], onDelete: Restrict)
+  listing              MarketTransferListing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  proposals            MarketOfferProposal[]
+  createdAt            DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime               @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([leagueId, playerRegistrationId, status])
+  @@index([buyerTeamId, status])
+  @@index([sellerTeamId, status])
+  @@map("market_offer_threads")
+}
+
+model MarketOfferProposal {
+  id             String             @id @default(uuid()) @db.Uuid
+  threadId       String             @map("thread_id") @db.Uuid
+  proposerTeamId String             @map("proposer_team_id") @db.Uuid
+  amountCredits  BigInt             @map("amount_credits")
+  status         String             @default("ACTIVE") @db.VarChar(16)
+  expiresAt      DateTime           @map("expires_at") @db.Timestamptz(3)
+  transactionId  String?            @unique @map("transaction_id") @db.Uuid
+  thread         MarketOfferThread  @relation(fields: [threadId], references: [id], onDelete: Restrict)
+  proposerTeam   FantasyTeam        @relation(fields: [proposerTeamId], references: [id], onDelete: Restrict)
+  transaction    MarketTransaction? @relation(fields: [transactionId], references: [id], onDelete: Restrict)
+  createdAt      DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([threadId, status, createdAt])
+  @@index([status, expiresAt])
+  @@map("market_offer_proposals")
+}
+
+model MarketSystemOffer {
+  id            String                @id @default(uuid()) @db.Uuid
+  listingId     String                @map("listing_id") @db.Uuid
+  cycleId       String                @map("cycle_id") @db.Uuid
+  amountCredits BigInt                @map("amount_credits")
+  status        String                @default("ACTIVE") @db.VarChar(16)
+  expiresAt     DateTime              @map("expires_at") @db.Timestamptz(3)
+  transactionId String?               @unique @map("transaction_id") @db.Uuid
+  listing       MarketTransferListing @relation(fields: [listingId], references: [id], onDelete: Restrict)
+  cycle         MarketV2Cycle         @relation(fields: [cycleId], references: [id], onDelete: Restrict)
+  transaction   MarketTransaction?    @relation(fields: [transactionId], references: [id], onDelete: Restrict)
+  createdAt     DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([listingId, cycleId])
+  @@index([status, expiresAt])
+  @@map("market_system_offers")
+}
+
+model MarketNegotiationRequest {
+  idempotencyKey String   @id @map("idempotency_key") @db.VarChar(100)
+  actorTeamId    String   @map("actor_team_id") @db.Uuid
+  action         String   @db.VarChar(32)
+  payloadHash    String   @map("payload_hash") @db.Char(64)
+  result         Json
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([actorTeamId, createdAt])
+  @@map("market_negotiation_requests")
 }
 
 model ClauseInvestment {
@@ -1137,12 +1241,12 @@ model AdminAuditEvent {
 }
 
 model RolloutSetting {
-  id                   String       @id @default("global") @db.VarChar(32)
-  state                String       @default("PREVIEW") @db.VarChar(16)
-  version              Int          @default(1)
-  updatedAt            DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
-  updatedByProfileId   String?      @map("updated_by_profile_id") @db.Uuid
-  updatedBy            UserProfile? @relation("RolloutSettingActor", fields: [updatedByProfileId], references: [id], onDelete: SetNull)
+  id                 String       @id @default("global") @db.VarChar(32)
+  state              String       @default("PREVIEW") @db.VarChar(16)
+  version            Int          @default(1)
+  updatedAt          DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedByProfileId String?      @map("updated_by_profile_id") @db.Uuid
+  updatedBy          UserProfile? @relation("RolloutSettingActor", fields: [updatedByProfileId], references: [id], onDelete: SetNull)
 
   @@map("rollout_settings")
 }

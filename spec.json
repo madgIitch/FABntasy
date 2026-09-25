@@ -3384,7 +3384,7 @@
       "id": "sprint-39-rotating-market-blind-bids",
       "name": "Sprint 39 - Rotating Free-Agent Market & Blind Bidding",
       "title": "Mercado rotatorio de agentes libres y pujas ciegas",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "spec_approved": true,
       "priority": "P0",

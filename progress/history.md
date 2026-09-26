@@ -114,3 +114,8 @@
 - Spec aprobada por el usuario e implementación completada: ofertas privadas, contraofertas, anuncios de 72 h, oferta diaria de Canastio y venta inmediata al 80 %.
 - Migración aplicada en `canastio_test`; integración PostgreSQL con carreras, privacidad, expiración, renovación, disable e idempotencia superada.
 - Revisión visual de cinco anchuras correcta y gates del harness aprobados con servidor E2E propio; smoke humano pendiente.
+
+## 2026-09-26 — #sprint-41-league-invite-links → review_pending
+
+- Spec aprobada por el usuario con enlace reutilizable hasta que el propietario lo regenere. Implementación completa de creación, compartición, landing, autenticación, unión y retirada de código/contraseña de liga.
+- Migración local, integración PostgreSQL de capacidad concurrente y revocación, 202 pruebas unitarias, build Next y revisión visual dirigida correctas. Smoke humano en cuentas reales pendiente.

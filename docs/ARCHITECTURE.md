@@ -1251,3 +1251,27 @@ Añadir negociación privada entre mánagers, jugadores En venta, contraofertas,
 - **edge_cases:** Aceptación, clausulazo, venta inmediata y settlement concurrentes se resuelven sin doble ownership ni cargo.
 - **ui_states:** Negociar, listar, venta inmediata y cláusula son acciones distintas; precio deseado y oferta de sistema muestran vigencia.
 
+<!-- harness:sprint-41-league-invite-links -->
+## sprint-41-league-invite-links · Invitación a ligas mediante enlace
+
+Sustituir la creación y unión a ligas con código y contraseña por un enlace de invitación compartible; el invitado abre el enlace, se autentica si hace falta y confirma su entrada sin introducir credenciales de liga.
+
+### Scope aprobado
+
+  - `apps/web/**`
+  - `packages/domain/**`
+  - `prisma/**`
+  - `tests/**`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+  - `.harness/**`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** Invitación por liga con token opaco, hash de validación y copia cifrada recuperable por el propietario.
+- **external_contracts:** Envelope fantasy-league-api.v1 y rutas descritas en docs/league/SPRINT_41_INVITE_LINKS_SPEC.md.
+- **edge_cases:** Reingreso, usuario ya miembro, carrera por última plaza y regeneración concurrente.
+- **ui_states:** Crear, compartir, landing, autenticación, confirmación, éxito y error sin código o contraseña de liga.
+

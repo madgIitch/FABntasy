@@ -1,15 +1,26 @@
 import { Prisma } from "@prisma/client";
-import { INVITE_TTL_MS, MAX_LEAGUE_MEMBERS, createInviteToken, createLeagueCode, hashInviteToken, hashLeaguePassword, normalizeLeagueCode, validLeagueName, validLeaguePassword, verifyLeaguePassword, type LeagueErrorCode } from "../../../../packages/domain/private-league";
+import { MAX_LEAGUE_MEMBERS, createInviteToken, createLeagueCode, hashInviteToken, validLeagueName, type LeagueErrorCode } from "../../../../packages/domain/private-league";
 import { db } from "./db";
 import { enqueuePushEvent, wakePushWorker } from "./push-outbox";
 import { appendLeagueEvent } from "./social-league";
 import { requireFantasyCompetition } from "./fantasy-availability";
 import { cancelLeagueMarketV2 } from "./market-v2";
 import { cancelLeagueNegotiations } from "./market-offer-invalidation";
+import { decryptInviteToken, encryptInviteToken } from "./league-invite-crypto";
 
 export type LeagueActor = { authUserId: string };
 export class LeagueServiceError extends Error { constructor(public code: LeagueErrorCode, public status = 409) { super(code); } }
 function fail(code: LeagueErrorCode, status = 409): never { throw new LeagueServiceError(code, status); }
+async function retrySerializable<T>(operation: () => Promise<T>): Promise<T> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try { return await operation(); }
+    catch (error) {
+      if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034")) throw error;
+      if (attempt === 2) fail("VERSION_CONFLICT");
+    }
+  }
+  throw new LeagueServiceError("VERSION_CONFLICT");
+}
 const enabled = () => process.env.FANTASY_LEAGUE_MUTATIONS_ENABLED !== "false";
 async function profileId(client: Prisma.TransactionClient | typeof db, actor: LeagueActor, requireComplete = false) { const p = await client.userProfile.findUnique({ where: { authUserId: actor.authUserId }, select: { id: true, username: true } }); if (!p) fail("LEAGUE_NOT_FOUND", 404); if (requireComplete && !p.username) fail("INVALID_INPUT", 422); return p.id; }
 async function requireLeagueFantasy(tx: Prisma.TransactionClient, leagueId: string) {
@@ -18,7 +29,7 @@ async function requireLeagueFantasy(tx: Prisma.TransactionClient, leagueId: stri
   await requireFantasyCompetition(tx, league.competitionSeasonId);
 }
 
-export async function listLeagues(actor: LeagueActor) { const userProfileId = await profileId(db, actor); return db.fantasyLeague.findMany({ where: { memberships: { some: { userProfileId, status: "ACTIVE" } }, status: "ACTIVE", legacyTeamId: null, competitionSeason: { fantasyEnabled: true } }, omit:{passwordHash:true},include: { competitionSeason: { include: { competition: true } }, memberships: { where: { status: "ACTIVE" }, include: { userProfile: true } } }, orderBy: { updatedAt: "desc" } }); }
+export async function listLeagues(actor: LeagueActor) { const userProfileId = await profileId(db, actor); return db.fantasyLeague.findMany({ where: { memberships: { some: { userProfileId, status: "ACTIVE" } }, status: "ACTIVE", legacyTeamId: null, competitionSeason: { fantasyEnabled: true } }, omit:{passwordHash:true,leagueCode:true},include: { competitionSeason: { include: { competition: true } }, memberships: { where: { status: "ACTIVE" }, include: { userProfile: true } } }, orderBy: { updatedAt: "desc" } }); }
 export async function resolveActiveLeagueId(actor: LeagueActor) {
   const profile = await db.userProfile.findUnique({ where: { authUserId: actor.authUserId }, select: { id: true, activeLeagueId: true } });
   if (!profile) fail("LEAGUE_NOT_FOUND", 404);
@@ -37,11 +48,99 @@ export async function selectActiveLeague(actor: LeagueActor, leagueId: string) {
   await db.userProfile.update({ where: { id: profile.id }, data: { activeLeagueId: leagueId } });
   return { activeLeagueId: leagueId };
 }
-export async function getLeague(actor: LeagueActor, leagueId: string) { const userProfileId = await profileId(db, actor); const league = await db.fantasyLeague.findFirst({ where: { id: leagueId, status: "ACTIVE", memberships: { some: { userProfileId, status: "ACTIVE" } } },omit:{passwordHash:true}, include: { competitionSeason: { include: { competition: true } }, memberships: { where: { status: "ACTIVE" }, include: { userProfile: true }, orderBy: { joinedAt: "asc" } } } }); if (!league) fail("LEAGUE_NOT_FOUND", 404); if (!league.competitionSeason.fantasyEnabled) fail("COMPETITION_DISABLED"); return league; }
-export async function createLeague(actor: LeagueActor, input: { name: string; competitionSeasonId: string; password:string }) { if (!enabled()) fail("FEATURE_DISABLED"); const name = validLeagueName(input.name);const passwordHash=await hashLeaguePassword(validLeaguePassword(input.password)); return db.$transaction(async tx => { await requireFantasyCompetition(tx,input.competitionSeasonId); const ownerProfileId = await profileId(tx, actor, true);let leagueCode=createLeagueCode();for(let attempt=0;attempt<5;attempt++){if(!await tx.fantasyLeague.findUnique({where:{leagueCode}}))break;leagueCode=createLeagueCode()} const league = await tx.fantasyLeague.create({ data: { name, competitionSeasonId: input.competitionSeasonId, ownerProfileId, memberLimit: MAX_LEAGUE_MEMBERS,leagueCode,passwordHash },omit:{passwordHash:true} }); await tx.leagueMembership.create({ data: { leagueId: league.id, userProfileId: ownerProfileId, role: "OWNER" } }); await enqueuePushEvent(tx,{userProfileId:ownerProfileId,leagueId:league.id,intent:"LEAGUE_ACTIVITY",eventKey:`league:${league.id}:created`,title:"Liga creada",body:"Tu nueva liga ya está disponible.",destination:`/app/ligas/${league.id}`}); return league; }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }).then(result=>{void wakePushWorker();return result;}); }
-export async function createInvite(actor: LeagueActor, leagueId: string) { if (!enabled()) fail("FEATURE_DISABLED"); const token = createInviteToken(); await db.$transaction(async tx => { const owner = await profileId(tx, actor, true); const league = await tx.fantasyLeague.findFirst({ where: { id: leagueId, ownerProfileId: owner, status: "ACTIVE" } }); if (!league) fail("LEAGUE_NOT_FOUND", 404); await requireFantasyCompetition(tx,league.competitionSeasonId); await tx.leagueInvite.updateMany({ where: { leagueId, status: "ACTIVE" }, data: { status: "REVOKED", revokedAt: new Date() } }); await tx.leagueInvite.create({ data: { leagueId, tokenHash: hashInviteToken(token), expiresAt: new Date(Date.now() + INVITE_TTL_MS) } }); }); return { token, expiresAt: new Date(Date.now() + INVITE_TTL_MS).toISOString() }; }
-export async function invitePreview(token: string) { let hash: string; try { hash = hashInviteToken(token); } catch { return fail("INVITE_INVALID", 404); } const invite = await db.leagueInvite.findUnique({ where: { tokenHash: hash }, include: { league: { include: { competitionSeason: { include: { competition: true } }, memberships: { where: { status: "ACTIVE" } } } } } }); if (!invite) fail("INVITE_INVALID", 404); if (!invite.league.competitionSeason.fantasyEnabled) fail("COMPETITION_DISABLED"); if (invite.status === "REVOKED") fail("INVITE_REVOKED"); if (invite.expiresAt <= new Date()) fail("INVITE_EXPIRED"); return { name: invite.league.name, competition: invite.league.competitionSeason.competition.name, members: invite.league.memberships.length, limit: invite.league.memberLimit }; }
-export async function joinLeague(actor: LeagueActor, input:{code:string;password:string}) { if (!enabled()) fail("FEATURE_DISABLED");let code:string;try{code=normalizeLeagueCode(input.code)}catch{fail("INVALID_CREDENTIALS",401)}const candidate=await db.fantasyLeague.findUnique({where:{leagueCode:code},select:{id:true,passwordHash:true}});if(!candidate?.passwordHash||!await verifyLeaguePassword(input.password,candidate.passwordHash))fail("INVALID_CREDENTIALS",401); return db.$transaction(async tx => { const userProfileId = await profileId(tx, actor, true);await tx.$queryRaw(Prisma.sql`SELECT id FROM fantasy_leagues WHERE id=${candidate.id}::uuid FOR UPDATE`);const league=await tx.fantasyLeague.findUnique({where:{id:candidate.id},omit:{passwordHash:true}});if(!league||league.status!=="ACTIVE")fail("LEAGUE_NOT_FOUND",404); await requireLeagueFantasy(tx,league.id); const existing = await tx.leagueMembership.findUnique({ where: { leagueId_userProfileId: { leagueId: league.id, userProfileId } } }); if (existing?.status === "ACTIVE") fail("ALREADY_MEMBER"); const count = await tx.leagueMembership.count({ where: { leagueId: league.id, status: "ACTIVE" } }); if (count >= league.memberLimit) fail("LEAGUE_FULL"); await tx.leagueMembership.upsert({ where: { leagueId_userProfileId: { leagueId: league.id, userProfileId } }, create: { leagueId: league.id, userProfileId }, update: { status: "ACTIVE", role: "MEMBER", leftAt: null, joinedAt: new Date() } });const profile=await tx.userProfile.findUnique({where:{id:userProfileId},select:{username:true,displayName:true}});await appendLeagueEvent(tx,{leagueId:league.id,type:"MEMBER_JOINED",actorProfileId:userProfileId,sourceType:"LEAGUE_MEMBERSHIP",sourceId:`${userProfileId}:${new Date().toISOString().slice(0,10)}`,payload:{affectedName:profile?.username?`@${profile.username}`:profile?.displayName??"Nuevo manager",destination:`/app/ligas/${league.id}?tab=members`}}); await enqueuePushEvent(tx,{userProfileId,leagueId:league.id,intent:"LEAGUE_ACTIVITY",eventKey:`league:${league.id}:member:${userProfileId}:joined`,title:"Te has unido a la liga",body:"Ya puedes participar en la liga.",destination:`/app/ligas/${league.id}`}); return league; }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }).then(result=>{void wakePushWorker();return result;}); }
-export async function updateLeaguePassword(actor:LeagueActor,leagueId:string,password:string){if(!enabled())fail("FEATURE_DISABLED");const passwordHash=await hashLeaguePassword(validLeaguePassword(password));const ownerProfileId=await profileId(db,actor,true);const result=await db.$transaction(async tx=>{await requireLeagueFantasy(tx,leagueId);return tx.fantasyLeague.updateMany({where:{id:leagueId,ownerProfileId,status:"ACTIVE"},data:{passwordHash,version:{increment:1}}});});if(!result.count)fail("LEAGUE_NOT_FOUND",404);return {updated:true};}
+export async function getLeague(actor: LeagueActor, leagueId: string) { const userProfileId = await profileId(db, actor); const league = await db.fantasyLeague.findFirst({ where: { id: leagueId, status: "ACTIVE", memberships: { some: { userProfileId, status: "ACTIVE" } } },omit:{passwordHash:true,leagueCode:true}, include: { competitionSeason: { include: { competition: true } }, memberships: { where: { status: "ACTIVE" }, include: { userProfile: true }, orderBy: { joinedAt: "asc" } } } }); if (!league) fail("LEAGUE_NOT_FOUND", 404); if (!league.competitionSeason.fantasyEnabled) fail("COMPETITION_DISABLED"); return league; }
+export async function createLeague(actor: LeagueActor, input: { name: string; competitionSeasonId: string }) {
+  if (!enabled()) fail("FEATURE_DISABLED");
+  const name = validLeagueName(input.name);
+  const token = createInviteToken();
+  const ciphertext = encryptInviteToken(token);
+  return db.$transaction(async tx => {
+    await requireFantasyCompetition(tx, input.competitionSeasonId);
+    const ownerProfileId = await profileId(tx, actor, true);
+    let leagueCode = createLeagueCode();
+    for (let attempt = 0; attempt < 5; attempt++) {
+      if (!await tx.fantasyLeague.findUnique({ where: { leagueCode } })) break;
+      leagueCode = createLeagueCode();
+    }
+    const league = await tx.fantasyLeague.create({ data: { name, competitionSeasonId: input.competitionSeasonId, ownerProfileId, memberLimit: MAX_LEAGUE_MEMBERS, leagueCode, passwordHash: null }, omit: { passwordHash: true, leagueCode: true } });
+    await tx.leagueMembership.create({ data: { leagueId: league.id, userProfileId: ownerProfileId, role: "OWNER" } });
+    await tx.leagueInvite.create({ data: { leagueId: league.id, tokenHash: hashInviteToken(token), tokenCiphertext: ciphertext, expiresAt: null } });
+    await enqueuePushEvent(tx, { userProfileId: ownerProfileId, leagueId: league.id, intent: "LEAGUE_ACTIVITY", eventKey: `league:${league.id}:created`, title: "Liga creada", body: "Tu nueva liga ya está disponible.", destination: `/app/ligas/${league.id}` });
+    return league;
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }).then(result => { void wakePushWorker(); return result; });
+}
+
+export async function getInvite(actor: LeagueActor, leagueId: string) {
+  if (!enabled()) fail("FEATURE_DISABLED");
+  return retrySerializable(() => db.$transaction(async tx => {
+    const ownerProfileId = await profileId(tx, actor, true);
+    await tx.$queryRaw(Prisma.sql`SELECT id FROM fantasy_leagues WHERE id=${leagueId}::uuid FOR UPDATE`);
+    const league = await tx.fantasyLeague.findFirst({ where: { id: leagueId, ownerProfileId, status: "ACTIVE", legacyTeamId: null }, select: { competitionSeasonId: true } });
+    if (!league) fail("LEAGUE_NOT_FOUND", 404);
+    await requireFantasyCompetition(tx, league.competitionSeasonId);
+    const active = await tx.leagueInvite.findFirst({ where: { leagueId, status: "ACTIVE" } });
+    if (active?.tokenCiphertext) {
+      try { return { token: decryptInviteToken(active.tokenCiphertext) }; }
+      catch { fail("SERVICE_UNAVAILABLE", 503); }
+    }
+    if (active) await tx.leagueInvite.update({ where: { id: active.id }, data: { status: "REVOKED", revokedAt: new Date() } });
+    const token = createInviteToken();
+    await tx.leagueInvite.create({ data: { leagueId, tokenHash: hashInviteToken(token), tokenCiphertext: encryptInviteToken(token), expiresAt: null } });
+    return { token };
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }));
+}
+
+export async function createInvite(actor: LeagueActor, leagueId: string) {
+  if (!enabled()) fail("FEATURE_DISABLED");
+  const token = createInviteToken();
+  const ciphertext = encryptInviteToken(token);
+  await retrySerializable(() => db.$transaction(async tx => {
+    const owner = await profileId(tx, actor, true);
+    await tx.$queryRaw(Prisma.sql`SELECT id FROM fantasy_leagues WHERE id=${leagueId}::uuid FOR UPDATE`);
+    const league = await tx.fantasyLeague.findFirst({ where: { id: leagueId, ownerProfileId: owner, status: "ACTIVE", legacyTeamId: null } });
+    if (!league) fail("LEAGUE_NOT_FOUND", 404);
+    await requireFantasyCompetition(tx, league.competitionSeasonId);
+    await tx.leagueInvite.updateMany({ where: { leagueId, status: "ACTIVE" }, data: { status: "REVOKED", revokedAt: new Date() } });
+    await tx.leagueInvite.create({ data: { leagueId, tokenHash: hashInviteToken(token), tokenCiphertext: ciphertext, expiresAt: null } });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }));
+  return { token };
+}
+
+export async function invitePreview(token: string) {
+  let hash: string;
+  try { hash = hashInviteToken(token); } catch { return fail("INVITE_INVALID", 404); }
+  const invite = await db.leagueInvite.findUnique({ where: { tokenHash: hash }, include: { league: { include: { competitionSeason: { include: { competition: true } }, memberships: { where: { status: "ACTIVE" } } } } } });
+  if (!invite || invite.status !== "ACTIVE") fail("INVITE_INVALID", 404);
+  if (invite.expiresAt && invite.expiresAt <= new Date()) fail("INVITE_INVALID", 404);
+  if (invite.league.status !== "ACTIVE" || invite.league.legacyTeamId) fail("INVITE_INVALID", 404);
+  if (!invite.league.competitionSeason.fantasyEnabled) fail("COMPETITION_DISABLED");
+  return { name: invite.league.name, competition: invite.league.competitionSeason.competition.name, members: invite.league.memberships.length, limit: invite.league.memberLimit, full: invite.league.memberships.length >= invite.league.memberLimit };
+}
+
+export async function joinLeagueByInvite(actor: LeagueActor, token: string) {
+  if (!enabled()) fail("FEATURE_DISABLED");
+  let hash: string;
+  try { hash = hashInviteToken(token); } catch { return fail("INVITE_INVALID", 404); }
+  const candidate = await db.leagueInvite.findUnique({ where: { tokenHash: hash }, select: { leagueId: true } });
+  if (!candidate) fail("INVITE_INVALID", 404);
+  return retrySerializable(() => db.$transaction(async tx => {
+    const userProfileId = await profileId(tx, actor, true);
+    await tx.$queryRaw(Prisma.sql`SELECT id FROM fantasy_leagues WHERE id=${candidate.leagueId}::uuid FOR UPDATE`);
+    const invite = await tx.leagueInvite.findUnique({ where: { tokenHash: hash } });
+    if (!invite || invite.status !== "ACTIVE" || (invite.expiresAt && invite.expiresAt <= new Date())) fail("INVITE_INVALID", 404);
+    const league = await tx.fantasyLeague.findUnique({ where: { id: invite.leagueId }, omit: { passwordHash: true, leagueCode: true } });
+    if (!league || league.status !== "ACTIVE" || league.legacyTeamId) fail("INVITE_INVALID", 404);
+    await requireLeagueFantasy(tx, league.id);
+    const existing = await tx.leagueMembership.findUnique({ where: { leagueId_userProfileId: { leagueId: league.id, userProfileId } } });
+    if (existing?.status === "ACTIVE") return { id: league.id, name: league.name };
+    const count = await tx.leagueMembership.count({ where: { leagueId: league.id, status: "ACTIVE" } });
+    if (count >= league.memberLimit) fail("LEAGUE_FULL");
+    await tx.leagueMembership.upsert({ where: { leagueId_userProfileId: { leagueId: league.id, userProfileId } }, create: { leagueId: league.id, userProfileId }, update: { status: "ACTIVE", role: "MEMBER", leftAt: null, joinedAt: new Date() } });
+    const profile = await tx.userProfile.findUnique({ where: { id: userProfileId }, select: { username: true, displayName: true } });
+    await appendLeagueEvent(tx, { leagueId: league.id, type: "MEMBER_JOINED", actorProfileId: userProfileId, sourceType: "LEAGUE_MEMBERSHIP", sourceId: `${userProfileId}:${new Date().toISOString().slice(0, 10)}`, payload: { affectedName: profile?.username ? `@${profile.username}` : profile?.displayName ?? "Nuevo manager", destination: `/app/ligas/${league.id}?tab=members` } });
+    await enqueuePushEvent(tx, { userProfileId, leagueId: league.id, intent: "LEAGUE_ACTIVITY", eventKey: `league:${league.id}:member:${userProfileId}:joined`, title: "Te has unido a la liga", body: "Ya puedes participar en la liga.", destination: `/app/ligas/${league.id}` });
+    return { id: league.id, name: league.name };
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })).then(result => { void wakePushWorker(); return result; });
+}
 export async function leaveLeague(actor: LeagueActor, leagueId: string) { if (!enabled()) fail("FEATURE_DISABLED"); return db.$transaction(async tx => { const userProfileId = await profileId(tx, actor, true); const member = await tx.leagueMembership.findUnique({ where: { leagueId_userProfileId: { leagueId, userProfileId } } }); if (!member || member.status !== "ACTIVE") fail("LEAGUE_NOT_FOUND", 404); await requireLeagueFantasy(tx,leagueId); if (member.role === "OWNER") fail("OWNER_CANNOT_LEAVE"); return tx.leagueMembership.update({ where: { id: member.id }, data: { status: "LEFT", leftAt: new Date() } }); }); }
 export async function deleteLeague(actor: LeagueActor, leagueId: string, input: { expectedVersion: number; confirmation: string }) { if (!enabled()) fail("FEATURE_DISABLED"); return db.$transaction(async tx => { const ownerProfileId = await profileId(tx, actor, true); const league = await tx.fantasyLeague.findFirst({ where: { id: leagueId, ownerProfileId, status: "ACTIVE" }, include: { memberships: { where: { status: "ACTIVE" } } } }); if (!league) fail("LEAGUE_NOT_FOUND", 404); await requireFantasyCompetition(tx,league.competitionSeasonId); if (league.version !== input.expectedVersion) fail("VERSION_CONFLICT"); if (league.memberships.length > 1 && input.confirmation !== league.name) fail("CONFIRMATION_REQUIRED"); await tx.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${leagueId}))`); await cancelLeagueMarketV2(tx, leagueId); await cancelLeagueNegotiations(tx, leagueId); await tx.leagueInvite.updateMany({ where: { leagueId, status: "ACTIVE" }, data: { status: "REVOKED", revokedAt: new Date() } }); return tx.fantasyLeague.update({ where: { id: leagueId, version: input.expectedVersion }, data: { status: "ARCHIVED", version: { increment: 1 } } }); }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }); }

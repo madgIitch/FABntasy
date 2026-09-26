@@ -568,8 +568,9 @@ model LeagueInvite {
   id        String        @id @default(uuid()) @db.Uuid
   leagueId  String        @map("league_id") @db.Uuid
   tokenHash String        @unique @map("token_hash") @db.Char(64)
+  tokenCiphertext String? @map("token_ciphertext") @db.VarChar(255)
   status    String        @default("ACTIVE")
-  expiresAt DateTime      @map("expires_at") @db.Timestamptz(3)
+  expiresAt DateTime?     @map("expires_at") @db.Timestamptz(3)
   revokedAt DateTime?     @map("revoked_at") @db.Timestamptz(3)
   league    FantasyLeague @relation(fields: [leagueId], references: [id], onDelete: Restrict)
   createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)

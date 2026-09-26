@@ -5,25 +5,46 @@ import { useRouter } from "next/navigation";
 import { Field } from "./ui/field";
 
 type Season = { id: string; label: string };
-type ErrorBody = { error?: { code?: string } };
-const messages: Record<string, string> = { INVALID_CREDENTIALS: "El código o la contraseña no son correctos.", LEAGUE_FULL: "La liga ya tiene 20 managers.", ALREADY_MEMBER: "Ya perteneces a esta liga.", RATE_LIMITED: "Demasiados intentos. Espera unos minutos.", INVALID_INPUT: "Revisa los datos introducidos." };
+type ErrorBody = { error?: { code?: string }; data?: { id?: string } };
+
+function invitationPath(value: string) {
+  try {
+    const url = new URL(value.trim());
+    if (url.origin !== location.origin || !/^\/liga\/[A-Za-z0-9_-]{22}$/.test(url.pathname)) return null;
+    return url.pathname;
+  } catch {
+    return /^\/liga\/[A-Za-z0-9_-]{22}$/.test(value.trim()) ? value.trim() : null;
+  }
+}
 
 export function LeagueManagementForm({ mode, seasons = [] }: { mode: "create" | "join"; seasons?: Season[] }) {
   const router = useRouter();
-  const [name, setName] = useState(""), [seasonId, setSeasonId] = useState(seasons[0]?.id ?? ""), [code, setCode] = useState(""), [password, setPassword] = useState(""), [pending, setPending] = useState(false), [message, setMessage] = useState("");
+  const [name, setName] = useState("");
+  const [seasonId, setSeasonId] = useState(seasons[0]?.id ?? "");
+  const [link, setLink] = useState("");
+  const [pending, setPending] = useState(false);
+  const [message, setMessage] = useState("");
   async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setPending(true); setMessage("");
-    const create = mode === "create";
-    const response = await fetch(create ? "/api/fantasy/leagues" : "/api/fantasy/leagues/join", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(create ? { name, competitionSeasonId: seasonId, password } : { code, password }) });
-    const body = await response.json().catch(() => null) as (ErrorBody & { data?: { id?: string } }) | null;
-    if (!response.ok) { setPending(false); setMessage(messages[body?.error?.code ?? ""] ?? "No se pudo completar la operación."); return; }
-    if (body?.data?.id) await fetch("/api/fantasy/leagues/active", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ leagueId: body.data.id }) });
-    router.push("/app/perfil/ligas"); router.refresh();
+    event.preventDefault(); setMessage("");
+    if (mode === "join") {
+      const path = invitationPath(link);
+      if (!path) { setMessage("Introduce un enlace de invitación válido."); return; }
+      router.push(path);
+      return;
+    }
+    setPending(true);
+    try {
+      const response = await fetch("/api/fantasy/leagues", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name, competitionSeasonId: seasonId }) });
+      const body = await response.json().catch(() => null) as ErrorBody | null;
+      if (!response.ok) { setMessage(body?.error?.code === "INVALID_INPUT" ? "Revisa el nombre y la competición." : "No se pudo crear la liga."); return; }
+      if (body?.data?.id) await fetch("/api/fantasy/leagues/active", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ leagueId: body.data.id }) });
+      router.push(body?.data?.id ? `/app/ligas/${body.data.id}` : "/app/perfil/ligas"); router.refresh();
+    } catch { setMessage("Sin conexión. Vuelve a intentarlo."); }
+    finally { setPending(false); }
   }
   return <form className="profile-form" onSubmit={submit} aria-busy={pending}>
-    {mode === "create" ? <><Field label="Nombre de la liga" value={name} minLength={3} maxLength={60} required onChange={(event) => setName(event.target.value)} /><label className="ui-field"><span>Competición</span><select value={seasonId} required onChange={(event) => setSeasonId(event.target.value)}>{seasons.map((season) => <option key={season.id} value={season.id}>{season.label}</option>)}</select></label></> : <Field label="Código de liga" value={code} required autoCapitalize="characters" placeholder="CNST-XXXXXX" onChange={(event) => setCode(event.target.value.toUpperCase())} />}
-    <Field label="Contraseña" type="password" autoComplete={mode === "create" ? "new-password" : "current-password"} minLength={6} maxLength={72} required value={password} onChange={(event) => setPassword(event.target.value)} />
-    <div className="profile-form-actions"><button className="primary-action" type="submit" disabled={pending}>{pending ? "Guardando…" : mode === "create" ? "Crear liga" : "Entrar en la liga"}</button></div>
+    {mode === "create" ? <><Field label="Nombre de la liga" value={name} minLength={3} maxLength={60} required onChange={event => setName(event.target.value)} /><label className="ui-field"><span>Competición</span><select value={seasonId} required onChange={event => setSeasonId(event.target.value)}>{seasons.map(season => <option key={season.id} value={season.id}>{season.label}</option>)}</select></label></> : <Field label="Enlace de invitación" type="url" value={link} required placeholder="https://canastio.app/liga/…" onChange={event => setLink(event.target.value)} />}
+    <div className="profile-form-actions"><button className="primary-action" type="submit" disabled={pending}>{pending ? "Guardando…" : mode === "create" ? "Crear liga" : "Abrir invitación"}</button></div>
     {message ? <p className="form-message error" role="alert">{message}</p> : null}
   </form>;
 }

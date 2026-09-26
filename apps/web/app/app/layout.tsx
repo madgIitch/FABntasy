@@ -28,7 +28,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       id: true, username: true, displayName: true, avatarPath: true,
       adminGrants: { where: { role: "INGESTION_ADMIN", revokedAt: null }, take: 1, select: { id: true } },
       leagueMemberships: { where: { status: "ACTIVE", league: { status: "ACTIVE", legacyTeamId: null } }, orderBy: [{ joinedAt: "desc" }, { id: "asc" }], select: {
-        id: true, role: true, league: { select: { id: true, name: true, leagueCode: true, ownerProfileId: true, _count: { select: { memberships: { where: { status: "ACTIVE" } } } } } },
+        id: true, role: true, league: { select: { id: true, name: true, ownerProfileId: true, _count: { select: { memberships: { where: { status: "ACTIVE" } } } } } },
       } },
     },
   });
@@ -38,7 +38,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   }
   if (rollout.state === "PREVIEW" && !rollout.isBypassed && !rollout.isAdmin) {
     const seasons = await db.competitionSeason.findMany({ where: { fantasyEnabled: true }, include: { competition: true }, orderBy: { createdAt: "desc" } });
-    const previewLeagues = profile?.leagueMemberships.map(({ league }) => ({ id: league.id, name: league.name, leagueCode: league.leagueCode, memberCount: league._count.memberships, isOwner: league.ownerProfileId === profile.id })) ?? [];
+    const previewLeagues = profile?.leagueMemberships.map(({ league }) => ({ id: league.id, name: league.name, memberCount: league._count.memberships, isOwner: league.ownerProfileId === profile.id })) ?? [];
     return <div className="league-gate rollout-preview"><LeagueOnboarding preview previewLeagues={previewLeagues} seasons={seasons.map((season) => ({ id: season.id, label: `${season.competition.name}${season.name ? ` · ${season.name}` : ""}` }))} /></div>;
   }
   if (!profile?.leagueMemberships.length && !profile?.adminGrants.length) {

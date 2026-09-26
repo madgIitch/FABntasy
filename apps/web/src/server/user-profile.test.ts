@@ -53,10 +53,10 @@ describe("user profile contracts", () => {
     expect(layout).toContain("!profile?.leagueMemberships.length");
     expect(layout.indexOf("<LeagueOnboarding")).toBeLessThan(layout.indexOf('className="app-frame"'));
     expect(onboarding).toContain("Crear una liga");
-    expect(onboarding).toContain("Tengo un código");
+    expect(onboarding).toContain("Tengo un enlace");
     expect(onboarding).toContain('checked={mode === "create"}');
     expect(onboarding).toContain('checked={mode === "join"}');
     expect(onboarding).toContain("<LogoutControl />");
-    expect(onboarding).toContain('location.assign("/app")');
+    expect(onboarding).toContain('/app/ligas/');
   });
 });

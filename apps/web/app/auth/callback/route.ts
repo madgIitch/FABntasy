@@ -8,7 +8,8 @@ export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
   const tokenHash = request.nextUrl.searchParams.get("token_hash");
   const type = request.nextUrl.searchParams.get("type");
-  const next = safeNextPath(request.nextUrl.searchParams.get("next") ?? (type === "recovery" ? "/actualizar-clave" : null));
+  const cookieNext = request.cookies.get("league_invite_next")?.value;
+  const next = safeNextPath(request.nextUrl.searchParams.get("next") ?? (type === "recovery" ? "/actualizar-clave" : cookieNext ?? null));
   const supabase = await createClient();
   let error: Error | null = null;
   authDebug(operation, "verification_started", {
@@ -31,9 +32,11 @@ export async function GET(request: NextRequest) {
       recoveryFlow,
     });
   } else {
-    authDebug(operation, "completed", { recoveryFlow, destination: next });
+    authDebug(operation, "completed", { recoveryFlow, destination: next.startsWith("/liga/") ? "league_invite" : next });
   }
   const destination = new URL(error ? (recoveryFlow ? "/recuperar-clave" : "/login") : next, request.url);
   destination.search = error ? "?error=invalid_link" : "";
-  return NextResponse.redirect(destination);
+  const response = NextResponse.redirect(destination);
+  if (!error && cookieNext) response.cookies.delete("league_invite_next");
+  return response;
 }

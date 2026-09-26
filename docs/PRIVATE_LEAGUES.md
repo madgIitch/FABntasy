@@ -6,17 +6,19 @@ En `OPEN`, la pestaña inferior **Liga** representa exclusivamente la liga activ
 
 `user_profiles.active_league_id` es una preferencia nullable y aditiva. El servidor nunca la acepta como prueba de acceso: cada lectura o cambio exige una membresía `ACTIVE` en una liga `ACTIVE`. Si la preferencia falta o queda obsoleta, se elige de forma determinista la membresía más reciente (`joined_at DESC`, `id ASC`) y se repara la preferencia. Un propietario no puede abandonar su liga mediante el flujo de membresía vigente.
 
-Un usuario puede pertenecer a varias ligas activas a la vez. Tanto durante el rollout PREVIEW como con el producto OPEN, la interfaz mantiene disponibles las acciones para crear una liga adicional o unirse a otra mediante código y contraseña. Cada membresía, plantilla, mercado y clasificación continúa aislada por `leagueId`.
+Un usuario puede pertenecer a varias ligas activas a la vez. Tanto durante el rollout PREVIEW como con el producto OPEN, la interfaz mantiene disponibles las acciones para crear una liga adicional o abrir un enlace de invitación. Cada membresía, plantilla, mercado y clasificación continúa aislada por `leagueId`.
 
 Inicio muestra la liga activa como selector rápido, pero mantiene la creación, unión, abandono y administración en Perfil → Mis ligas. El cambio reutiliza `POST /api/fantasy/leagues/active`, persiste la preferencia y refresca el contexto server-side; Inicio, Mercado, Mi equipo, Jornada y Liga resuelven después la misma selección. Con una sola liga el selector sigue ofreciendo acceso a la gestión, y con cero ligas permanece el onboarding.
 
 Una liga pertenece a una competición-temporada y admite hasta 20 miembros activos. El owner cuenta en ese límite, administra invitaciones y no puede abandonar la liga. Las plantillas pasan a estar vinculadas a la liga; el precio de mercado de cada jugador sigue siendo global.
 
-Cada liga tiene un código estable `CNST-XXXXXX` y una contraseña definida por su administrador. La base conserva exclusivamente un hash `scrypt` con salt aleatorio; nunca devuelve ni registra la contraseña. El administrador puede rotarla y el código permanece estable. Las ligas migradas conservan el acceso cerrado hasta que su administrador establezca una contraseña.
+Cada liga tiene un enlace de invitación reutilizable hasta que el owner lo regenere. El token opaco tiene al menos 128 bits aleatorios. La base guarda SHA-256 para validarlo y una copia cifrada para que solo el owner pueda recuperar el enlace; la clave de cifrado debe permanecer estable. Regenerar revoca inmediatamente el enlace anterior. Las ligas anteriores reciben un enlace nuevo al acceder el owner a **Invitar**. Los códigos y hashes de contraseña antiguos no conceden nuevas membresías.
+
+El cifrado usa `LEAGUE_INVITE_ENCRYPTION_KEY` (secreto del servidor, mínimo 32 caracteres) o, si no está configurado, deriva una clave de `SUPABASE_SERVICE_ROLE_KEY`. Rotar el secreto efectivo sin migrar las copias cifradas impide recuperar los enlaces vigentes; las invitaciones pueden regenerarse para restablecerlos. La migración `20260926000100_league_invite_links` debe aplicarse antes de desplegar el código.
 
 La migración `20260906000300_private_leagues` crea una liga personal y un membership OWNER por cada equipo previo antes de hacer obligatorio `fantasy_teams.league_id`.
 
-La API usa el envelope `fantasy-league-api.v1`; la identidad procede siempre de Supabase Auth. La unión exige código y contraseña, responde con un error indistinguible si alguno es incorrecto y bloquea la liga en PostgreSQL antes de comprobar capacidad para impedir que dos altas concurrentes ocupen el último hueco.
+La API usa el envelope `fantasy-league-api.v1`; la identidad procede siempre de Supabase Auth. La landing pública revela solo nombre, competición y ocupación. La unión exige confirmar expresamente el enlace estando autenticado y bloquea la liga en PostgreSQL antes de comprobar capacidad para impedir que dos altas concurrentes ocupen el último hueco. Abrir el enlace no incorpora al visitante automáticamente.
 ## Experiencia social de Liga (v1)
 
 Liga conserva los destinos globales existentes y organiza su interior en Clasificación, Actividad y Miembros. Actividad es automática: no admite publicaciones, comentarios, mensajes ni texto libre. Los eventos se ordenan por `occurred_at DESC, id DESC`, usan cursor opaco y conservan una referencia fuente única. Solo una membresía `ACTIVE` permite consultar o reaccionar.

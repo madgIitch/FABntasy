@@ -16,6 +16,7 @@ function secure(response: NextResponse) {
   return response;
 }
 export async function updateSession(request: NextRequest) {
+  const inviteNavigation = request.nextUrl.pathname.startsWith("/liga/") || ((request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/registro") && request.nextUrl.searchParams.get("next")?.startsWith("/liga/"));
   if (MUTATION.has(request.method)) {
     const origin = request.headers.get("origin");
     if (request.headers.get("sec-fetch-site") === "cross-site" || (origin && origin !== request.nextUrl.origin)) {
@@ -35,7 +36,11 @@ export async function updateSession(request: NextRequest) {
   const privateRoute = request.nextUrl.pathname === "/app" || request.nextUrl.pathname.startsWith("/app/");
   // Public, anonymous assets and pages do not need an auth round-trip. Besides
   // reducing latency, this keeps public PWA contract tests independent of Supabase.
-  if (!privateRoute && !sessionCookie) return secure(response);
+  if (!privateRoute && !sessionCookie) {
+    const publicResponse = secure(response);
+    if (inviteNavigation) publicResponse.headers.set("Referrer-Policy", "no-referrer");
+    return publicResponse;
+  }
   const { url, publishableKey } = getSupabaseEnv();
   const supabase = createServerClient(url, publishableKey, { cookies: {
     getAll: () => request.cookies.getAll(),
@@ -50,5 +55,7 @@ export async function updateSession(request: NextRequest) {
     const loginUrl = request.nextUrl.clone(); loginUrl.pathname = "/login"; loginUrl.search = "";
     return secure(NextResponse.redirect(loginUrl));
   }
-  return secure(response);
+  const finalResponse = secure(response);
+  if (inviteNavigation) finalResponse.headers.set("Referrer-Policy", "no-referrer");
+  return finalResponse;
 }

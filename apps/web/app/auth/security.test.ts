@@ -6,6 +6,7 @@ import { passwordResetRedirect, safeNextPath, validEmailOtpType } from "./safe-r
 describe("auth and PWA security contracts", () => {
   it("allows only local callback destinations", () => {
     expect(safeNextPath("/actualizar-clave")).toBe("/actualizar-clave");
+    expect(safeNextPath("/liga/AbCdEfGhIjKlMnOpQrStUv")).toBe("/liga/AbCdEfGhIjKlMnOpQrStUv");
     expect(safeNextPath("//attacker.test")).toBe("/app");
     expect(safeNextPath("/\\attacker.test")).toBe("/app");
     expect(safeNextPath("https://attacker.test")).toBe("/app");

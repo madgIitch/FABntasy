@@ -9,6 +9,12 @@
   border: none;
   margin-top: 24px
 }
+.compact {
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
 .intro {
   display: flex;
   align-items: flex-end;
@@ -263,4 +269,10 @@
 .access {
   padding: 20px 16px
 }
+}
+.access.compact {
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
 }

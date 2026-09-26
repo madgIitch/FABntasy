@@ -1,11 +1,11 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "../../src/lib/supabase/server";
 import { authDebug, authDebugError, newAuthOperation } from "./auth-debug";
 import { authErrorLog, registrationErrorMessage } from "./auth-errors";
-import { passwordResetRedirect } from "./safe-redirect";
+import { passwordResetRedirect, safeNextPath } from "./safe-redirect";
 import { revokeSubscription } from "../../src/server/notifications";
 
 export type AuthState = { status: "idle" | "error" | "success"; message: string; values?: { email?: string; username?: string } };
@@ -34,7 +34,9 @@ export async function login(_: AuthState, formData: FormData): Promise<AuthState
     return { status: "error", message: "No pudimos iniciar sesión. Revisa tus datos o confirma tu correo." };
   }
   authDebug(operation, "completed");
-  redirect("/app");
+  const next = safeNextPath(String(formData.get("next") ?? ""));
+  if (next.startsWith("/liga/")) (await cookies()).delete("league_invite_next");
+  redirect(next);
 }
 
 export async function register(_: AuthState, formData: FormData): Promise<AuthState> {
@@ -53,12 +55,14 @@ export async function register(_: AuthState, formData: FormData): Promise<AuthSt
   }
   const origin = (await headers()).get("origin");
   authDebug(operation, "supabase_request_started", { redirectConfigured: Boolean(origin) });
+  const next = safeNextPath(String(formData.get("next") ?? ""));
   const { error } = await (await createClient()).auth.signUp({ ...values, options: { emailRedirectTo: origin ? `${origin}/auth/callback` : undefined, data: { username } } });
   if (error) {
     authDebugError(operation, "supabase_request_failed", authErrorLog(error));
     if (/username|database error saving new user/i.test(error.message)) return { status: "error", message: "Ese nombre de usuario ya está ocupado. Prueba con otro.", values: safeValues };
     return { status: "error", message: registrationErrorMessage(error), values: safeValues };
   }
+  if (next.startsWith("/liga/")) (await cookies()).set("league_invite_next", next, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", maxAge: 24 * 60 * 60, path: "/" });
   authDebug(operation, "completed", { confirmationRequired: true });
   return { status: "success", message: "Revisa tu correo para confirmar la cuenta." };
 }

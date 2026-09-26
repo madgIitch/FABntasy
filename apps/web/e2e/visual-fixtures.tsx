@@ -8,6 +8,7 @@ import { FantasyTeamManager } from "../src/components/fantasy-team-manager";
 import { JourneyLive } from "../src/components/journey-live";
 import { LeagueHub } from "../src/components/league-hub";
 import { LeagueOnboarding } from "../src/components/league-onboarding";
+import { InviteJoin } from "../src/components/invite-join";
 import { Navigation } from "../src/components/ui/navigation";
 import { AccountAvatar, LogoutControl } from "../app/app/account-controls";
 import { AuthForm } from "../app/auth/auth-form";
@@ -28,7 +29,7 @@ const homeLive:ReadyHome={...home,mode:"LIVE",round:{...home.round,isLive:true,l
 const homeFinal:ReadyHome={...home,mode:"RECENT_FINAL",round:{...home.round,lineupState:"LOCKED"}};
 const homeDegraded:ReadyHome={...home,market:{state:"EMPTY",updatedAt:now,data:[]},games:{state:"ERROR",updatedAt:null,data:[]},activity:{state:"READY",updatedAt:now,data:[...Array(6)].map((_,i)=>({id:`long-${i}`,type:"BUY",manager:"@manager_con_un_nombre_muy_largo",player:"GARCÍA-TREVIJANO DE LOS RÍOS, GUILLERMO-ALEJANDRO",price:5000000,createdAt:now}))}};
 const journey: ComponentProps<typeof JourneyLive>["data"]={competition:"Primera Provincial",league:"Los del viernes",roundNumber:4,rounds:[4,3,2,1],state:"PROVISIONAL",stateLabel:"Calculando",totalPoints:"124.5",revision:1,correction:null,players:roster.slice(0,5).map((p,i)=>({id:p.playerRegistrationId,name:p.displayName,fantasyPoints:i===4?null:"24.9",points:12,assists:3,steals:1,state:i===4?"PENDING":"FINAL",stateLabel:i===4?"Calculando":"Finalizado",statsState:i===4?"PARTIAL":"FINAL",statsUpdatedAt:now})),cumulative:[24.9,49.8,74.7,99.6]};
-const leagues=[{id:"demo",competitionSeasonId:"season",name:"Los del viernes",leagueCode:"CNST-TEST01",version:1,memberLimit:12,competitionSeason:{competition:{name:"Primera Provincial"}},memberships:[{id:"m1",role:"OWNER",userProfile:{authUserId:"demo",username:"pepe",displayName:"Pepe"}}],currentRound:4,rules:{budgetCredits:30000000,rosterSize:7,starterCount:5,substituteCount:2,maxPerRealTeam:2}}];
+const leagues=[{id:"demo",competitionSeasonId:"season",name:"Los del viernes",version:1,memberLimit:12,competitionSeason:{competition:{name:"Primera Provincial"}},memberships:[{id:"m1",role:"OWNER",userProfile:{authUserId:"demo",username:"pepe",displayName:"Pepe"}}],currentRound:4,rules:{budgetCredits:30000000,rosterSize:7,starterCount:5,substituteCount:2,maxPerRealTeam:2}}];
 const seasons=[{id:"season",label:"Primera Provincial Senior Masculina de Sevilla · 2026/27"}];
 const items=[["/app","Inicio","home"],["/app/mercado","Mercado","market"],["/app/mi-equipo","Mi equipo","team"],["/app/jornada","Jornada","calendar"],["/app/ligas","Liga","league"]];
 function Shell({children}:{children:ReactNode}){return <div className="app-frame"><aside className="side-nav"><a className="wordmark" href="/app">Canastio</a><Navigation items={items}/><div className="side-account"><AccountAvatar imageUrl={null} initial="P"/><span>@pepe</span></div><LogoutControl/></aside><div className="workspace"><div className="mobile-account"><a className="wordmark" href="/app">Canastio</a><AccountAvatar imageUrl={null} initial="P"/></div>{children}</div><div className="mobile-navigation-shell"><Navigation items={items} mobile/></div></div>}
@@ -37,6 +38,9 @@ const key=new URLSearchParams(location.search).get("case")||"home";
 async function boot(){let view:ReactNode;
  switch(key){
  case "register":view=<AuthForm mode="register" action={async()=>({status:"error",message:"El nombre de usuario ya está ocupado."})}/>;break;
+ case "invite-login":view=<AuthForm mode="login" next="/liga/AbCdEfGhIjKlMnOpQrStUv" action={async()=>({status:"error",message:"Comprueba tus datos."})}/>;break;
+ case "invite-register":view=<AuthForm mode="register" next="/liga/AbCdEfGhIjKlMnOpQrStUv" action={async()=>({status:"error",message:"Comprueba tus datos."})}/>;break;
+ case "invite":view=<main className="auth-page"><section className="auth-panel"><p className="eyebrow">Invitación a una liga</p><h1>Los del viernes</h1><p>Primera Provincial · 1 de 20 managers</p><InviteJoin token="AbCdEfGhIjKlMnOpQrStUv" /></section></main>;break;
  case "preferences":view=<main className="app-main profile-page"><AppearanceSettings compact /></main>;break;
  case "onboarding":view=<LeagueOnboarding seasons={seasons}/>;break;
  case "home":view=<HomeDashboard data={home}/>;break;
@@ -57,6 +61,6 @@ async function boot(){let view:ReactNode;
  case "states":view=<main className="app-main"><header className="workspace-header"><h1>Sin conexión</h1></header><p className="form-message error" role="alert">No se pudo guardar. Comprueba tu conexión.</p><div className="data-section"><h2>Jornada pendiente</h2><p>No hay resultados publicados.</p><div className="loading-line"/><div className="loading-block"/></div><LogoutControl/></main>;break;
  default:view=<JourneyLive data={null}/>;
  }
- createRoot(document.getElementById("root")!).render(["register","onboarding"].includes(key)?view:<Shell>{view}</Shell>);
+ createRoot(document.getElementById("root")!).render(["register","onboarding","invite","invite-login","invite-register"].includes(key)?view:<Shell>{view}</Shell>);
 }
 void boot();

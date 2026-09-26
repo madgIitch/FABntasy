@@ -46,6 +46,8 @@ const results=[];const errors=[];page.on('pageerror',e=>errors.push(e.message));
 let correctionApplyMode='success';let reversalApplyCalls=0;
 await page.route('**/api/**',route=>{
  const request=route.request(),url=new URL(request.url());
+ if(request.method()==='GET'&&url.pathname.endsWith('/invites'))return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({data:{token:'AbCdEfGhIjKlMnOpQrStUv'}})});
+ if(request.method()==='POST'&&url.pathname==='/api/fantasy/leagues/invite/AbCdEfGhIjKlMnOpQrStUv')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({data:{id:'demo'}})});
  if(request.method()==='POST'&&url.pathname==='/api/admin/revisions')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({revision:{id:'preview-1',fieldName:'homeScore',sourceType:'SOURCE_CORRECTION'},label:'Partido · homeScore',diff:{before:70,after:71},impact:{roundNumber:3,recomputes:['scores','rankings','prices']}})});
  if(request.method()==='POST'&&url.pathname==='/api/admin/revisions/rev1/revert')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({revision:{id:'rev-revert',fieldName:'points'},diff:{before:18,after:16}})});
  if(request.method()==='POST'&&url.pathname.endsWith('/apply')){
@@ -79,11 +81,11 @@ try{
  await page.getByLabel('Correo electrónico').focus();await page.keyboard.press('Tab');
  if(!await username.evaluate(el=>el===document.activeElement))throw Error('Registration focus order changed');
  await page.goto('http://127.0.0.1:4178/?case=onboarding');if(await page.locator('.bottom-nav').count())throw Error('Onboarding exposes navigation');
- if(await page.getByLabel('Código de liga').count())throw Error('Onboarding shows both alternatives at once');
+ if(await page.getByLabel('Enlace de invitación').count())throw Error('Onboarding shows both alternatives at once');
  await page.getByRole('button',{name:/Crear liga/}).click();
  if(!await page.getByRole('alert').isVisible())throw Error('Create league validation feedback missing');
- await page.getByText('Tengo un código',{exact:true}).click();
- if(!await page.getByLabel('Código de liga').isVisible()||await page.getByLabel('Nombre de la liga').count())throw Error('Onboarding mode switch failed');
+ await page.getByText('Tengo un enlace',{exact:true}).click();
+ if(!await page.getByLabel('Enlace de invitación').isVisible()||await page.getByLabel('Nombre de la liga').count())throw Error('Onboarding mode switch failed');
  await page.goto('http://127.0.0.1:4178/?case=market');
  if(await page.locator('.bottom-nav a').count()!==5)throw Error('Navigation must have five destinations');
  if(await page.locator('.bottom-nav [aria-current="page"]').getAttribute('href')!=='/app/mercado')throw Error('Active section missing');
@@ -117,6 +119,14 @@ try{
  if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1))throw Error('Home overflows at 200% zoom');
  await page.screenshot({path:path.join(capture,'home-degraded-zoom200.png'),fullPage:true});
  await page.setViewportSize({width:768,height:900});await page.goto('http://127.0.0.1:4178/?case=onboarding');await page.evaluate(()=>document.body.style.zoom='2');await page.screenshot({path:path.join(capture,'onboarding-zoom200.png'),fullPage:true});
+ }
+ if(!process.env.VISUAL_ONLY||process.env.VISUAL_ONLY.split(',').includes('league')){
+ await page.setViewportSize({width:375,height:900});await page.goto('http://127.0.0.1:4178/?case=league');await page.getByRole('button',{name:'Invitar',exact:true}).click();await page.getByLabel('Enlace de invitación').waitFor();await page.screenshot({path:path.join(capture,'league-invite-375.png'),fullPage:true});if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1))throw Error('Invitation dialog overflows');await page.keyboard.press('Escape');
+ }
+ if(!process.env.VISUAL_ONLY||process.env.VISUAL_ONLY.split(',').includes('invite')){
+ await page.goto('http://127.0.0.1:4178/?case=invite-login');if(await page.locator('input[name="next"]').inputValue()!=='/liga/AbCdEfGhIjKlMnOpQrStUv')throw Error('Login lost invitation destination');
+ await page.goto('http://127.0.0.1:4178/?case=invite-register');if(await page.locator('input[name="next"]').inputValue()!=='/liga/AbCdEfGhIjKlMnOpQrStUv')throw Error('Registration lost invitation destination');
+ await page.goto('http://127.0.0.1:4178/?case=invite');await page.getByRole('button',{name:'Unirme a esta liga'}).click();await page.waitForURL('**/app/ligas/demo');
  }
  fs.writeFileSync(path.join(capture,'results.json'),JSON.stringify({results,errors,smoke:process.env.VISUAL_ONLY ? 'targeted visual and accessibility review' : 'username required/validity/focus, onboarding navigation gate, five destinations/current section, market dialog/Escape/focus restoration/filter, team tabs, profile dialog, league leave cancellation, correction preview/cancel/conflict/reversal, reduced motion, zoom'},null,2));
  console.log(JSON.stringify({overflows:results.filter(r=>r.overflow),errors,captures:results.length}));

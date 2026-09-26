@@ -781,3 +781,16 @@ Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
 ## 2026-09-25 · Reservas y clausulazo en Sprint 40
 
 Las ofertas privadas originadas por el comprador reservan saldo y un hueco. Una contraoferta originada por el vendedor se revalida cuando el comprador la acepta, sin reservarle recursos antes de ese consentimiento. Si el comprador ejecuta un clausulazo por un jugador sobre el que tenía una oferta activa, esa reserva se sustituye por el coste y el hueco del clausulazo dentro de la misma transacción; el cambio de propiedad invalida la oferta.
+
+<!-- harness:sprint-41-league-invite-links -->
+## 2026-09-26 · sprint-41-league-invite-links aprobado
+
+Contexto: se aprobó el spec `sprint-41-league-invite-links` (Invitación a ligas mediante enlace).
+
+Decisiones registradas:
+
+- **auth_secrets:** Supabase Auth para confirmar, propietario para consultar y rotar; token fuera de logs y analítica.
+- **rollback_compat:** Migración aditiva y conservación de miembros e historial; acceso heredado retirado.
+- **tests:** Unitarios, PostgreSQL, E2E y gates del repositorio.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

@@ -16,7 +16,7 @@ describe("multiple league onboarding", () => {
     expect(hub).not.toContain("Unirme a otra liga");
     expect(hub).toContain("<LeagueSwitcher");
     expect(directory).toContain("Crear nueva liga");
-    expect(directory).toContain("Unirme con código");
+    expect(directory).toContain("Unirme con enlace");
     expect(form).toContain("/api/fantasy/leagues/active");
   });
 });

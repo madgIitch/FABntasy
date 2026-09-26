@@ -3541,7 +3541,7 @@
       "id": "sprint-41-league-invite-links",
       "name": "Sprint 41 - League Invite Links",
       "title": "Invitación a ligas mediante enlace",
-      "status": "review_pending",
+      "status": "done",
       "sdd": true,
       "spec_approved": true,
       "priority": "P0",

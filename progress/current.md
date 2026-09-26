@@ -14,3 +14,9 @@ Feature: **sprint-42-multi-competition-player-pool · Selección de competicione
 ## Siguiente acción
 
 - Smoke test humano del flujo de creación y revisión del diff. Mantener `done` pendiente hasta completar esa revisión.
+
+## Ajuste posterior · presupuesto inicial de 60 M
+
+- Sprint 43 aprobado por la petición directa del usuario. El ruleset `cold-start` v2 inicia equipos nuevos con 60 M. Los equipos existentes conservan su ruleset v1 y su saldo.
+- La creación por plantilla y mercado usa v2. La prueba PostgreSQL confirma 60 M para el equipo nuevo y 100 M para uno existente; 214 pruebas en 59 archivos, typecheck, lint y diff-scope pasan.
+- Pendiente: smoke test humano antes de cerrar `sprint-43-starting-budget-60m` como `done`.

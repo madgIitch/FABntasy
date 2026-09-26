@@ -14,8 +14,8 @@ export type RosterRuleSet = Readonly<{
 
 export const COLD_START_RULES: RosterRuleSet = Object.freeze({
   identifier: "cold-start",
-  version: "1",
-  budgetCredits: 100_000_000,
+  version: "2",
+  budgetCredits: 60_000_000,
   rosterSize: 7,
   starters: 5,
   substitutes: 2,

@@ -795,6 +795,10 @@ Decisiones registradas:
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
 
+## 2026-09-26 · Presupuesto inicial de 60 M para equipos nuevos
+
+La regla `cold-start` pasa a versión 2 con presupuesto de 60 000 000 créditos. La creación por plantilla y por mercado usa esa versión. Cada equipo existente conserva el identificador de su ruleset anterior, su saldo y su ledger; no se modifica el presupuesto de una regla ya utilizada. El precio inicial por jugador y el tamaño de la plantilla no cambian.
+
 <!-- harness:sprint-42-multi-competition-player-pool -->
 ## 2026-09-26 · sprint-42-multi-competition-player-pool aprobado
 

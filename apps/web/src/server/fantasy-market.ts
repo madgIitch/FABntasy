@@ -1,5 +1,4 @@
 import { Prisma } from "@prisma/client";
-import { COLD_START_RULES } from "../../../../packages/domain/fantasy-team";
 import { PLAYER_PRICING_V1 } from "../../../../packages/domain/player-pricing";
 import { db } from "./db";
 import { cached, cacheTags, invalidateCache, privateCacheKey } from "./performance";
@@ -8,6 +7,7 @@ import { appendLeagueEvent } from "./social-league";
 import { activeOfferReservations } from "./market-reservations";
 import { invalidatePlayerNegotiations } from "./market-offer-invalidation";
 import { requireAvailableLeagueSeason, requireSelectedSeason } from "./league-competition-seasons";
+import { startingRosterRules } from "./starting-roster-rules";
 
 export const FANTASY_MARKET_SCHEMA_VERSION="fantasy-market-api.v1" as const;
 export const MARKET_INITIAL_PRICE=PLAYER_PRICING_V1.initialPrice;
@@ -33,9 +33,8 @@ async function ensureMarketTeam(actor:MarketActor,leagueId:string){
     const league=await tx.fantasyLeague.findFirst({where:{id:leagueId,status:"ACTIVE",memberships:{some:{userProfileId:profile.id,status:"ACTIVE"}}},select:{competitionSeasonId:true}});
     if(!league)fail("TEAM_NOT_FOUND",404);
     await requireAvailableLeagueSeason(tx,leagueId);
-    const activeRules=await tx.fantasyRosterRuleSet.findFirst({where:{competitionSeasonId:league.competitionSeasonId,status:"ACTIVE"},orderBy:{createdAt:"asc"}});
-    const rules=activeRules??await tx.fantasyRosterRuleSet.upsert({where:{competitionSeasonId_identifier_version:{competitionSeasonId:league.competitionSeasonId,identifier:COLD_START_RULES.identifier,version:COLD_START_RULES.version}},update:{},create:{competitionSeasonId:league.competitionSeasonId,identifier:COLD_START_RULES.identifier,version:COLD_START_RULES.version,budgetCredits:BigInt(COLD_START_RULES.budgetCredits),rosterSize:COLD_START_RULES.rosterSize,starterCount:COLD_START_RULES.starters,substituteCount:COLD_START_RULES.substitutes,maxPerRealTeam:COLD_START_RULES.maxPerRealTeam,positionLimits:COLD_START_RULES.positionLimits,coldStartPriceCredits:BigInt(COLD_START_RULES.coldStartPriceCredits)}});
-    await tx.fantasyTeam.upsert({where:{userProfileId_leagueId:{userProfileId:profile.id,leagueId}},update:{},create:{userProfileId:profile.id,leagueId,competitionSeasonId:league.competitionSeasonId,rosterRuleSetId:rules.id}});
+    const existing=await tx.fantasyTeam.findUnique({where:{userProfileId_leagueId:{userProfileId:profile.id,leagueId}},select:{id:true}});
+    if(!existing){const rules=await startingRosterRules(tx,league.competitionSeasonId);await tx.fantasyTeam.upsert({where:{userProfileId_leagueId:{userProfileId:profile.id,leagueId}},update:{},create:{userProfileId:profile.id,leagueId,competitionSeasonId:league.competitionSeasonId,rosterRuleSetId:rules.id}});}
   });
 }
 async function currentPrice(tx:Prisma.TransactionClient,playerRegistrationId:string,leagueId:string){const player=await tx.playerRegistration.findUnique({where:{id:playerRegistrationId},select:{competitionSeasonId:true}});if(!player||!await requireSelectedSeason(tx,leagueId,player.competitionSeasonId))fail("PLAYER_NOT_FOUND",404);const p=await tx.playerPrice.findFirst({where:{playerRegistrationId,competitionSeasonId:player.competitionSeasonId},orderBy:{updatedAt:"desc"}});return p?.currentPrice??BigInt(MARKET_INITIAL_PRICE);}

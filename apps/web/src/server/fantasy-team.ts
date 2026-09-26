@@ -1,5 +1,5 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
-import { COLD_START_RULES, FantasyTeamRuleError, isCutoffClosed, validateLineup, validateRoster } from "../../../../packages/domain/fantasy-team";
+import { FantasyTeamRuleError, isCutoffClosed, validateLineup, validateRoster } from "../../../../packages/domain/fantasy-team";
 import { createLeagueCode } from "../../../../packages/domain/private-league";
 import { db } from "./db";
 import { enqueuePushEvent, wakePushWorker } from "./push-outbox";
@@ -8,6 +8,7 @@ import { resolveActiveLeagueId } from "./private-leagues";
 import { requireFantasyCompetition } from "./fantasy-availability";
 import { requireAvailableLeagueSeason, selectedSeasonIds } from "./league-competition-seasons";
 import { leagueRoundGames } from "./league-round-window";
+import { startingRosterRules } from "./starting-roster-rules";
 
 type Client = PrismaClient | Prisma.TransactionClient;
 export type TeamActor = Readonly<{ authUserId: string }>;
@@ -38,17 +39,9 @@ async function profileId(client: Client, actor: TeamActor, requireComplete = fal
 }
 
 async function activeRules(tx: Prisma.TransactionClient, competitionSeasonId: string) {
-  const found = await tx.fantasyRosterRuleSet.findFirst({ where: { competitionSeasonId, status: "ACTIVE" }, orderBy: { createdAt: "desc" } });
-  if (found) return found;
   const season = await tx.competitionSeason.findUnique({ where: { id: competitionSeasonId }, select: { id: true } });
   if (!season) fail("TEAM_NOT_FOUND", 404);
-  return tx.fantasyRosterRuleSet.create({ data: {
-    competitionSeasonId, identifier: COLD_START_RULES.identifier, version: COLD_START_RULES.version,
-    budgetCredits: BigInt(COLD_START_RULES.budgetCredits), rosterSize: COLD_START_RULES.rosterSize,
-    starterCount: COLD_START_RULES.starters, substituteCount: COLD_START_RULES.substitutes,
-    maxPerRealTeam: COLD_START_RULES.maxPerRealTeam, positionLimits: COLD_START_RULES.positionLimits,
-    coldStartPriceCredits: BigInt(COLD_START_RULES.coldStartPriceCredits),
-  } });
+  return startingRosterRules(tx, competitionSeasonId);
 }
 
 const playerSelect = { playerRegistrationId: true, acquisitionPrice: true, playerRegistration: { select: {
@@ -106,11 +99,12 @@ export async function putRoster(actor: TeamActor, competitionSeasonId: string, i
       await tx.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext('market-v2:activation'))`);
       if (await tx.marketV2Setting.findUnique({ where: { id: "global" } })) throw new FantasyTeamServiceError("MARKET_V2_ACTIVE", 409);
       const owner = await profileId(tx, actor, true);
-      const rules = await activeRules(tx, competitionSeasonId);
       const selectedLeague = selectedLeagueId ? await tx.fantasyLeague.findFirst({ where: { id: selectedLeagueId, competitionSeasonId, status: "ACTIVE", memberships: { some: { userProfileId: owner, status: "ACTIVE" } } } }) : null;
       if (selectedLeagueId && !selectedLeague) fail("TEAM_NOT_FOUND", 404);
       if (selectedLeague) await requireAvailableLeagueSeason(tx, selectedLeague.id);
       else await requireFantasyCompetition(tx, competitionSeasonId);
+      let team = await tx.fantasyTeam.findFirst({ where: { userProfileId: owner, competitionSeasonId, ...(selectedLeagueId ? { leagueId: selectedLeagueId } : {}), league: { status: "ACTIVE" } }, orderBy: { updatedAt: "desc" } });
+      const rules = team ? await tx.fantasyRosterRuleSet.findUniqueOrThrow({ where: { id: team.rosterRuleSetId } }) : await activeRules(tx, competitionSeasonId);
       const eligibleSeasonIds = selectedLeague ? await selectedSeasonIds(tx, selectedLeague.id) : [competitionSeasonId];
       const enabledSeasonIds = (await tx.competitionSeason.findMany({ where: { id: { in: eligibleSeasonIds }, fantasyEnabled: true }, select: { id: true } })).map(item => item.id);
       const registrations = await tx.playerRegistration.findMany({ where: { id: { in: [...input.playerRegistrationIds] }, competitionSeasonId: { in: enabledSeasonIds }, identityStatus: { not: "CONFLICT" } }, include: {
@@ -125,7 +119,6 @@ export async function putRoster(actor: TeamActor, competitionSeasonId: string, i
         starters: rules.starterCount, substitutes: rules.substituteCount, maxPerRealTeam: rules.maxPerRealTeam,
         positionLimits: rules.positionLimits as Record<string, number>, coldStartPriceCredits: asNumber(rules.coldStartPriceCredits),
       });
-      let team = await tx.fantasyTeam.findFirst({ where: { userProfileId: owner, competitionSeasonId, ...(selectedLeagueId ? { leagueId: selectedLeagueId } : {}), league: { status: "ACTIVE" } }, orderBy: { updatedAt: "desc" } });
       const created = !team;
       if (!team) {
         const league = selectedLeague ?? await tx.fantasyLeague.create({ data: { ownerProfileId: owner, competitionSeasonId, name: "Liga personal", memberLimit: 20, leagueCode: createLeagueCode(), selectedSeasons: { create: { competitionSeasonId } } } });

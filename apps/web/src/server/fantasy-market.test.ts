@@ -29,7 +29,7 @@ describe("fantasy market rules",()=>{
     const page=readFileSync(new URL("../../app/app/mercado/page.tsx",import.meta.url),"utf8");
     expect(service).toContain("ensureMarketTeam");
     expect(service).toContain('status:"ACTIVE"');
-    expect(service).toContain("activeRules??");
+    expect(service).toContain("startingRosterRules(tx,league.competitionSeasonId)");
     expect(service).toContain("fantasyTeam.upsert");
     expect(page).not.toContain("Configura primero tu plantilla");
     expect(page).not.toContain("Ir a Mi equipo");

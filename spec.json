@@ -3663,6 +3663,37 @@
       "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
       "approved_by": "peorr",
       "approved_at": "2026-09-26T17:35:37.704Z"
+    },
+    {
+      "id": "sprint-43-starting-budget-60m",
+      "name": "Sprint 43 - Starting Budget 60M",
+      "title": "Presupuesto inicial Fantasy de 60 M",
+      "status": "review_pending",
+      "sdd": true,
+      "spec_approved": true,
+      "priority": "P1",
+      "dependencies": [
+        "sprint-10-fantasy-team-roster",
+        "sprint-13-market-transactions"
+      ],
+      "description": "Reducir a 60 M el presupuesto de partida de equipos nuevos conservando la economía de los existentes.",
+      "acceptance": [
+        "Equipos nuevos inician con presupuesto total de 60 M.",
+        "Equipos existentes conservan reglas, saldo e historial.",
+        "Plantilla y mercado usan la versión correcta del ruleset.",
+        "Pasan las pruebas y gates del repositorio."
+      ],
+      "scope": [
+        "apps/web/**",
+        "packages/domain/**",
+        "docs/**",
+        "spec/**",
+        "progress/**",
+        "spec.json"
+      ],
+      "spec_reference": "docs/fantasy/SPRINT_43_STARTING_BUDGET_60M_SPEC.md",
+      "approved_by": "peorr",
+      "approval_source": "Solicitud directa del usuario el 26/09/2026: hay que reducir el salario de partida a 60M"
     }
   ]
 }

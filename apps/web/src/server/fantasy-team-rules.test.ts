@@ -7,9 +7,10 @@ const players = (prices = Array(7).fill(3_000_000)) => prices.map((priceCredits,
 
 describe("fantasy roster rules", () => {
   it("accepts the exact budget and rejects one credit over it", () => {
-    expect(COLD_START_RULES.budgetCredits).toBe(100_000_000);
-    const exactPrices = [14_285_716, ...Array(6).fill(14_285_714)];
-    expect(validateRoster(players(exactPrices), COLD_START_RULES)).toEqual({ used: 100_000_000, remaining: 0 });
+    expect(COLD_START_RULES.version).toBe("2");
+    expect(COLD_START_RULES.budgetCredits).toBe(60_000_000);
+    const exactPrices = [8_571_432, ...Array(6).fill(8_571_428)];
+    expect(validateRoster(players(exactPrices), COLD_START_RULES)).toEqual({ used: 60_000_000, remaining: 0 });
     expect(() => validateRoster(players([exactPrices[0] + 1, ...exactPrices.slice(1)]), COLD_START_RULES)).toThrowError(expect.objectContaining({ code: "BUDGET_EXCEEDED" }));
   });
 

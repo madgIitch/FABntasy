@@ -5,35 +5,48 @@ import { requireFantasyCompetition } from "./fantasy-availability";
 import { cached, cacheTags, invalidateCache, measured, privateCacheKey } from "./performance";
 import { enqueuePushEvent, wakePushWorker } from "./push-outbox";
 import { appendLeagueEvent } from "./social-league";
+import { leagueRoundGames, roundWindow } from "./league-round-window";
+import { selectedSeasonIds } from "./league-competition-seasons";
 
 export const ROUND_RANKING_SCHEMA_VERSION = "fantasy-round-ranking-api.v1";
+type ScoreWithRegistration = Prisma.FantasyPlayerGameScoreGetPayload<{ include: { playerGameStat: { select: { playerRegistrationId: true } } } }>;
 export class RoundRankingError extends Error { constructor(public code: string, public status = 409) { super(code); } }
 const enabled = () => process.env.FANTASY_ROUND_SCORING_ENABLED !== "false";
 
-export async function recomputeRoundRankings(competitionSeasonId: string, roundNumber: number) {
+export async function recomputeRoundRankings(competitionSeasonId: string, roundNumber: number, propagate = true) {
   if (!enabled()) throw new RoundRankingError("FEATURE_DISABLED");
   if (!competitionSeasonId || !Number.isInteger(roundNumber) || roundNumber < 1) throw new RoundRankingError("INVALID_INPUT", 422);
   return measured("publish", () => db.$transaction(async (tx) => {
     await requireFantasyCompetition(tx, competitionSeasonId);
     const ruleSet = await tx.fantasyScoringRuleSet.findFirst({ where: { competitionSeasonId, status: "ACTIVE" }, orderBy: { publishedAt: "desc" } });
     if (!ruleSet) throw new RoundRankingError("RULESET_UNAVAILABLE");
-    const games = await tx.game.findMany({ where: { competitionSeasonId, roundNumber, syncStatus: "active" }, select: { id: true, status: true } });
-    const roundReady = games.length > 0 && games.every((game) => game.status === "finished");
     const lineups = await tx.fantasyLineup.findMany({ where: { roundNumber, status: "LOCKED", supersededAt: null, fantasyTeam: { competitionSeasonId } },
       include: { fantasyTeam: true, slots: { where: { role: "STARTER" }, orderBy: { ordinal: "asc" }, include: { playerRegistration: { select: { playerId: true } } } } } });
-    const scores = await tx.fantasyPlayerGameScore.findMany({ where: { ruleSetId: ruleSet.id, game: { competitionSeasonId, roundNumber } }, orderBy: { createdAt: "desc" } });
-    const latest = new Map<string, typeof scores[number]>();
-    for (const score of scores) { const key = `${score.playerId}:${score.gameId}`; if (!latest.has(key)) latest.set(key, score); }
+    const leagueData = new Map<string, { roundReady: boolean; singleEdition: boolean; scores: ScoreWithRegistration[] }>();
+    for (const leagueId of new Set(lineups.map(lineup => lineup.fantasyTeam.leagueId))) {
+      const window = await leagueRoundGames(tx, leagueId, roundNumber);
+      const games = window?.games ?? [];
+      const singleEdition = (await selectedSeasonIds(tx, leagueId)).length === 1;
+      const scores = games.length ? await tx.fantasyPlayerGameScore.findMany({ where: { gameId: { in: games.map(game => game.id) }, ...(singleEdition ? { ruleSetId: ruleSet.id } : { ruleSet: { status: "ACTIVE" } }) }, include: { playerGameStat: { select: { playerRegistrationId: true } } }, orderBy: { createdAt: "desc" } }) : [];
+      leagueData.set(leagueId, { roundReady: games.length > 0 && games.every(game => game.status === "finished"), singleEdition, scores });
+    }
     const now = new Date(); let published = 0; let provisional = 0;
     for (const lineup of lineups) {
+      const { roundReady, singleEdition, scores } = leagueData.get(lineup.fantasyTeam.leagueId)!;
+      const latest = new Map<string, typeof scores[number]>();
+      for (const score of scores) { const key = `${singleEdition ? score.playerId : score.playerGameStat.playerRegistrationId}:${score.gameId}`; if (!latest.has(key)) latest.set(key, score); }
       const calculation = calculateRoundScore({ fantasyTeamId: lineup.fantasyTeamId, leagueId: lineup.fantasyTeam.leagueId,
         createdAt: lineup.fantasyTeam.createdAt, lineupId: lineup.id, lineupRevision: lineup.revision,
         starters: lineup.slots.map((slot) => ({ playerRegistrationId: slot.playerRegistrationId, displayName: slot.displayNameSnapshot,
-          scores: [...latest.values()].filter((score) => score.playerId === slot.playerRegistration.playerId).map((score) => ({ id: score.id,
+          scores: [...latest.values()].filter((score) => singleEdition ? score.playerId === slot.playerRegistration.playerId : score.playerGameStat.playerRegistrationId === slot.playerRegistrationId).map((score) => ({ id: score.id,
             status: score.status as PlayerScoreStatus, points: score.normalizedFantasyPoints?.toString() ?? null, sourceStatsVersion: score.sourceStatsVersion.trim() })) })) });
       const status = roundReady && calculation.status === "PUBLISHED" ? "PUBLISHED" : "PROVISIONAL";
       const existing = await tx.fantasyRoundScore.findUnique({ where: { fantasyTeamId_roundNumber_inputRevision: { fantasyTeamId: lineup.fantasyTeamId, roundNumber, inputRevision: calculation.inputRevision } } });
-      if (existing) { if (status === "PUBLISHED") published++; else provisional++; continue; }
+      if (existing) {
+        if (existing.status !== status) await tx.fantasyRoundScore.update({ where: { id: existing.id }, data: { status, points: status === "PUBLISHED" ? calculation.points : null, publishedAt: status === "PUBLISHED" ? now : null } });
+        if (status === "PUBLISHED") published++; else provisional++;
+        continue;
+      }
       const current = await tx.fantasyRoundScore.findFirst({ where: { fantasyTeamId: lineup.fantasyTeamId, roundNumber, supersededAt: null }, orderBy: { revision: "desc" } });
       if (current) await tx.fantasyRoundScore.update({ where: { id: current.id }, data: { supersededAt: now } });
       const roundScore = await tx.fantasyRoundScore.create({ data: { fantasyTeamId: lineup.fantasyTeamId, leagueId: lineup.fantasyTeam.leagueId,
@@ -53,7 +66,23 @@ export async function recomputeRoundRankings(competitionSeasonId: string, roundN
     isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
     maxWait: 10_000,
     timeout: 30_000,
-  })).then(({ affectedLeagueIds, ...result }) => { for (const leagueId of affectedLeagueIds) invalidateCache(cacheTags({ leagueId, roundNumber })); invalidateCache(cacheTags({ leagueId: competitionSeasonId, roundNumber })); if(result.published)void wakePushWorker(); return result; });
+  })).then(async ({ affectedLeagueIds, ...result }) => {
+    for (const leagueId of affectedLeagueIds) invalidateCache(cacheTags({ leagueId, roundNumber }));
+    invalidateCache(cacheTags({ leagueId: competitionSeasonId, roundNumber }));
+    if (result.published) void wakePushWorker();
+    if (propagate) {
+      const sourceGames = await db.game.findMany({ where: { competitionSeasonId, roundNumber, syncStatus: "active" }, select: { scheduledAt: true } });
+      const leagues = await db.fantasyLeague.findMany({ where: { status: "ACTIVE", competitionSeasonId: { not: competitionSeasonId }, competitionSeason: { fantasyEnabled: true }, selectedSeasons: { some: { competitionSeasonId } } }, select: { competitionSeasonId: true } });
+      for (const primaryId of new Set(leagues.map(league => league.competitionSeasonId))) {
+        const anchors = await db.game.findMany({ where: { competitionSeasonId: primaryId, syncStatus: "active", roundNumber: { not: null } }, select: { roundNumber: true, scheduledAt: true } });
+        for (const leagueRound of new Set(anchors.map(game => game.roundNumber).filter((number): number is number => number !== null))) {
+          const window = roundWindow(anchors, leagueRound);
+          if (window && sourceGames.some(game => game.scheduledAt && game.scheduledAt >= window.startsAt && (!window.endsAt || game.scheduledAt < window.endsAt))) await recomputeRoundRankings(primaryId, leagueRound, false);
+        }
+      }
+    }
+    return result;
+  });
 }
 
 async function publishSocialRound(tx:Prisma.TransactionClient,leagueId:string,roundNumber:number){

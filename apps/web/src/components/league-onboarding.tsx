@@ -8,6 +8,7 @@ import gateStyles from "./league-onboarding.module.css";
 import { Field } from "./ui/field";
 import { Icon } from "./ui/icon";
 import { LeagueDetailActions } from "./league-detail";
+import { LeagueSeasonPicker } from "./league-season-picker";
 
 type Season = { id: string; label: string };
 type PreviewLeague = { id: string; name: string; isOwner: boolean; memberCount: number };
@@ -15,10 +16,11 @@ type Mode = "create" | "join";
 async function body(response: Response) { const type = response.headers.get("content-type") ?? ""; return type.includes("application/json") ? response.json() as Promise<{ error?: { code?: string }; data?: { id?: string } }> : null; }
 const errorMessage = (code: string | undefined, fallback: string) => code === "INVALID_INPUT" ? "No hemos podido completar tu perfil. Recarga la página e inténtalo de nuevo." : code ?? fallback;
 
-export function LeagueOnboarding({ seasons, preview = false, previewLeagues = [] }: { seasons: Season[]; preview?: boolean; previewLeagues?: PreviewLeague[] }) {
+export function LeagueOnboarding({ seasons, preview = false, previewLeagues = [], multiEnabled = false }: { seasons: Season[]; preview?: boolean; previewLeagues?: PreviewLeague[]; multiEnabled?: boolean }) {
   const [mode, setMode] = useState<Mode>("create");
   const [name, setName] = useState("");
   const [seasonId, setSeasonId] = useState(seasons[0]?.id ?? "");
+  const [selectedIds, setSelectedIds] = useState<string[]>(seasons[0] ? [seasons[0].id] : []);
   const [inviteLink, setInviteLink] = useState("");
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
@@ -28,7 +30,7 @@ export function LeagueOnboarding({ seasons, preview = false, previewLeagues = []
     if (name.trim().length < 3) { setMessage("El nombre de la liga debe tener al menos 3 caracteres."); return; }
     if (!seasonId) { setMessage("Selecciona una competición."); return; }
     setPending(true); setMessage("");
-    const response = await fetch("/api/fantasy/leagues", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name, competitionSeasonId: seasonId }) });
+    const response = await fetch("/api/fantasy/leagues", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(multiEnabled ? { name, competitionSeasonIds: selectedIds, primaryCompetitionSeasonId: seasonId } : { name, competitionSeasonId: seasonId }) });
     const result = await body(response);
     if (!response.ok) { setPending(false); setMessage(errorMessage(result?.error?.code, "No se pudo crear la liga")); return; }
     location.assign(result?.data?.id ? `/app/ligas/${result.data.id}` : "/app");
@@ -51,7 +53,7 @@ export function LeagueOnboarding({ seasons, preview = false, previewLeagues = []
       <label onClick={() => choose("join")}><input type="radio" name="league-mode" value="join" checked={mode === "join"} onChange={() => choose("join")} /><Icon name="user" /><span><strong>Tengo un enlace</strong><small>Únete a tus amigos</small></span></label>
     </fieldset>
     <section key={mode} className={`${styles.actions} ${gateStyles.singleAction}`} aria-live="polite">
-      {mode === "create" ? <form onSubmit={(event) => { event.preventDefault(); void create(); }}><p className={gateStyles.formLabel}>CREAR</p><h2>Nueva liga</h2><Field label="Nombre de la liga" placeholder="Ej. Los del viernes" value={name} onChange={(event) => setName(event.target.value)} /><label className="ui-field"><span>Competición</span><select aria-label="Competición" value={seasonId} onChange={(event) => setSeasonId(event.target.value)}>{seasons.map((season) => <option key={season.id} value={season.id}>{season.label}</option>)}</select></label><button type="submit" disabled={pending}>{pending ? "Creando…" : "Crear liga"}<span>→</span></button></form>
+      {mode === "create" ? <form onSubmit={(event) => { event.preventDefault(); void create(); }}><p className={gateStyles.formLabel}>CREAR</p><h2>Nueva liga</h2><Field label="Nombre de la liga" placeholder="Ej. Los del viernes" value={name} onChange={(event) => setName(event.target.value)} />{multiEnabled ? <LeagueSeasonPicker seasons={seasons} selectedIds={selectedIds} primaryId={seasonId} onChange={(ids, primary) => { setSelectedIds(ids); setSeasonId(primary); }} /> : <label className="ui-field"><span>Competición</span><select aria-label="Competición" value={seasonId} onChange={(event) => setSeasonId(event.target.value)}>{seasons.map((season) => <option key={season.id} value={season.id}>{season.label}</option>)}</select></label>}<button type="submit" disabled={pending || (multiEnabled && selectedIds.length === 0)}>{pending ? "Creando…" : "Crear liga"}<span>→</span></button></form>
         : <form onSubmit={(event) => { event.preventDefault(); void join(); }}><p className={gateStyles.formLabel}>UNIRME</p><h2>Entrar en una liga</h2><Field label="Enlace de invitación" type="url" placeholder="https://canastio.app/liga/…" value={inviteLink} onChange={(event) => setInviteLink(event.target.value)} /><button type="submit" disabled={pending}>{pending ? "Abriendo…" : "Abrir invitación"}<span>→</span></button></form>}
     </section>
     {message && <p role="alert" className={styles.message}>{message}</p>}

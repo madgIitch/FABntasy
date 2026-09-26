@@ -1,0 +1,50 @@
+import { randomUUID } from "node:crypto";
+import { describe, expect, it, vi } from "vitest";
+import { db } from "./db";
+import { createLeague } from "./private-leagues";
+import { requireSelectedSeason, selectedSeasonIds } from "./league-competition-seasons";
+import { leagueRoundGames } from "./league-round-window";
+
+const testUrl = process.env.TEST_DATABASE_URL;
+const integration = testUrl ? describe : describe.skip;
+
+integration("multi-competition leagues in PostgreSQL", () => {
+  it("creates an immutable selected pool and rejects disabled or foreign editions", async () => {
+    const url = new URL(testUrl!);
+    if (!["localhost", "127.0.0.1"].includes(url.hostname) || !url.pathname.includes("_test") || process.env.DATABASE_URL !== testUrl || process.env.DIRECT_URL !== testUrl) throw new Error("LOCAL_TEST_DATABASE_REQUIRED");
+    vi.stubEnv("MULTI_COMPETITION_LEAGUES_ENABLED", "true");
+    vi.stubEnv("LEAGUE_INVITE_ENCRYPTION_KEY", "league-integration-test-key-with-at-least-32-characters");
+    const suffix = randomUUID().slice(0, 8);
+    const authUserId = randomUUID();
+    await db.$executeRaw`INSERT INTO auth.users (id, raw_user_meta_data) VALUES (${authUserId}::uuid, ${JSON.stringify({ username: `s42_${suffix}` })}::jsonb)`;
+    const federation = await db.federation.create({ data: { name: `S42 federation ${suffix}` } });
+    const season = await db.season.create({ data: { name: `S42 season ${suffix}` } });
+    const primary = await db.competition.create({ data: { federationId: federation.id, name: `S42 primary ${suffix}` } });
+    const secondary = await db.competition.create({ data: { federationId: federation.id, name: `S42 secondary ${suffix}` } });
+    const disabled = await db.competition.create({ data: { federationId: federation.id, name: `S42 disabled ${suffix}` } });
+    const a = await db.competitionSeason.create({ data: { competitionId: primary.id, seasonId: season.id, fantasyEnabled: true } });
+    const b = await db.competitionSeason.create({ data: { competitionId: secondary.id, seasonId: season.id, fantasyEnabled: true } });
+    const c = await db.competitionSeason.create({ data: { competitionId: disabled.id, seasonId: season.id, fantasyEnabled: false } });
+    const actor = { authUserId };
+    await expect(createLeague(actor, { name: "Invalid pool", competitionSeasonIds: [a.id, c.id], primaryCompetitionSeasonId: a.id })).rejects.toMatchObject({ code: "COMPETITION_DISABLED" });
+    const created = await createLeague(actor, { name: "Mixed league", competitionSeasonIds: [a.id, b.id], primaryCompetitionSeasonId: a.id });
+    expect(created.competitionSeasonId).toBe(a.id);
+    expect(new Set(await selectedSeasonIds(db, created.id))).toEqual(new Set([a.id, b.id]));
+    expect(await requireSelectedSeason(db, created.id, b.id)).toBe(true);
+    expect(await requireSelectedSeason(db, created.id, c.id)).toBe(false);
+    const home = await db.team.create({ data: { name: `S42 home ${suffix}` } });
+    const away = await db.team.create({ data: { name: `S42 away ${suffix}` } });
+    const at = (day: number) => new Date(`2026-10-${String(day).padStart(2, "0")}T18:00:00Z`);
+    const first = await db.game.create({ data: { competitionSeasonId: a.id, homeTeamId: home.id, awayTeamId: away.id, status: "scheduled", roundNumber: 1, scheduledAt: at(4), sourceTimezone: "Europe/Madrid" } });
+    await db.game.create({ data: { competitionSeasonId: a.id, homeTeamId: home.id, awayTeamId: away.id, status: "scheduled", roundNumber: 2, scheduledAt: at(11), sourceTimezone: "Europe/Madrid" } });
+    const included = await db.game.create({ data: { competitionSeasonId: b.id, homeTeamId: home.id, awayTeamId: away.id, status: "scheduled", roundNumber: 9, scheduledAt: at(7), sourceTimezone: "Europe/Madrid" } });
+    const excluded = await db.game.create({ data: { competitionSeasonId: b.id, homeTeamId: home.id, awayTeamId: away.id, status: "scheduled", roundNumber: 9, scheduledAt: at(11), sourceTimezone: "Europe/Madrid" } });
+    const round = await leagueRoundGames(db, created.id, 1);
+    expect(new Set(round?.games.map(game => game.id))).toEqual(new Set([first.id, included.id]));
+    expect(round?.games.some(game => game.id === excluded.id)).toBe(false);
+    await db.competitionSeason.update({ where: { id: b.id }, data: { fantasyEnabled: false } });
+    await expect(requireSelectedSeason(db, created.id, b.id)).rejects.toMatchObject({ code: "COMPETITION_DISABLED" });
+    expect((await leagueRoundGames(db, created.id, 1))?.games.map(game => game.id)).toEqual([first.id]);
+    vi.unstubAllEnvs();
+  });
+});

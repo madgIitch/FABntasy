@@ -1275,3 +1275,27 @@ Sustituir la creación y unión a ligas con código y contraseña por un enlace 
 - **edge_cases:** Reingreso, usuario ya miembro, carrera por última plaza y regeneración concurrente.
 - **ui_states:** Crear, compartir, landing, autenticación, confirmación, éxito y error sin código o contraseña de liga.
 
+<!-- harness:sprint-42-multi-competition-player-pool -->
+## sprint-42-multi-competition-player-pool · Selección de competiciones para una liga Fantasy
+
+Al crear una liga privada, elegir una o varias competiciones-temporada Fantasy habilitadas cuyos jugadores serán elegibles en la liga.
+
+### Scope aprobado
+
+  - `apps/web/**`
+  - `packages/domain/**`
+  - `prisma/**`
+  - `tests/**`
+  - `docs/**`
+  - `spec/**`
+  - `progress/**`
+  - `.harness/**`
+  - `spec.json`
+
+### Contexto técnico
+
+- **data_model:** Relación liga-ediciones y edición principal.
+- **external_contracts:** POST de creación y respuestas de liga.
+- **edge_cases:** Deshabilitación concurrente, partidos reprogramados y ventanas vacías.
+- **ui_states:** Selector, resumen, carga, error y vacío.
+

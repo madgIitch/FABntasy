@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { PLAYER_PRICING_V1 } from "../../../../packages/domain/player-pricing";
 import { db } from "./db";
 import { requireFantasyCompetition } from "./fantasy-availability";
+import { selectedSeasonIds, requireSelectedSeason, requireAvailableLeagueSeason } from "./league-competition-seasons";
 import { invalidateCache, cacheTags } from "./performance";
 import { appendLeagueEvent } from "./social-league";
 import { enqueuePushEvent, wakePushWorker } from "./push-outbox";
@@ -67,17 +68,20 @@ async function price(tx: Tx, playerRegistrationId: string, competitionSeasonId: 
   return row?.currentPrice ?? BigInt(PLAYER_PRICING_V1.initialPrice);
 }
 
-async function selectListings(tx: Tx, cycleId: string, leagueId: string, competitionSeasonId: string) {
+async function selectListings(tx: Tx, cycleId: string, leagueId: string) {
+  const seasonIds = await selectedSeasonIds(tx, leagueId);
+  const enabledSeasons = await tx.competitionSeason.findMany({ where: { id: { in: seasonIds }, fantasyEnabled: true }, select: { id: true } });
+  for (const season of enabledSeasons.sort((a, b) => a.id.localeCompare(b.id))) await requireFantasyCompetition(tx, season.id);
   const [owned, registrations, history] = await Promise.all([
     tx.fantasyRosterSlot.findMany({ where: { leagueId }, select: { playerRegistrationId: true } }),
-    tx.playerRegistration.findMany({ where: { competitionSeasonId, identityStatus: { not: "CONFLICT" } }, select: { id: true } }),
+    tx.playerRegistration.findMany({ where: { competitionSeasonId: { in: seasonIds }, competitionSeason: { fantasyEnabled: true }, identityStatus: { not: "CONFLICT" } }, select: { id: true, competitionSeasonId: true } }),
     tx.marketV2Listing.findMany({ where: { leagueId }, orderBy: { createdAt: "desc" }, select: { playerRegistrationId: true, createdAt: true } }),
   ]);
   const ownedIds = new Set(owned.map(x => x.playerRegistrationId));
   const lastSeen = new Map<string, number>();
   for (const row of history) if (!lastSeen.has(row.playerRegistrationId)) lastSeen.set(row.playerRegistrationId, row.createdAt.getTime());
   const selected = rotatingCandidates(registrations, ownedIds, lastSeen);
-  for (const item of selected) await tx.marketV2Listing.create({ data: { cycleId, leagueId, playerRegistrationId: item.id, referencePrice: await price(tx, item.id, competitionSeasonId) } });
+  for (const item of selected) await tx.marketV2Listing.create({ data: { cycleId, leagueId, playerRegistrationId: item.id, referencePrice: await price(tx, item.id, item.competitionSeasonId) } });
 }
 
 async function cancelCycle(tx: Tx, cycleId: string, now: Date) {
@@ -90,9 +94,17 @@ async function cancelCycle(tx: Tx, cycleId: string, now: Date) {
 async function settleCycle(tx: Tx, cycleId: string, now: Date) {
   const cycle = await tx.marketV2Cycle.findUniqueOrThrow({ where: { id: cycleId }, include: { league: true, listings: { include: { bids: true } } } });
   if (cycle.status !== "OPEN" || cycle.closesAt > now) return;
-  const season = await tx.competitionSeason.findUniqueOrThrow({ where: { id: cycle.league.competitionSeasonId }, select: { fantasyEnabled: true } });
-  if (!season.fantasyEnabled) { await cancelCycle(tx, cycleId, now); return; }
+  const anyEnabled = await tx.competitionSeason.findFirst({ where: { id: { in: await selectedSeasonIds(tx, cycle.leagueId) }, fantasyEnabled: true }, select: { id: true } });
+  if (!anyEnabled) { await cancelCycle(tx, cycleId, now); return; }
+  const selectedIds = new Set(await selectedSeasonIds(tx, cycle.leagueId));
   for (const listing of cycle.listings) {
+    const registration = await tx.playerRegistration.findUnique({ where: { id: listing.playerRegistrationId }, select: { competitionSeasonId: true, competitionSeason: { select: { fantasyEnabled: true } } } });
+    if (!registration || !selectedIds.has(registration.competitionSeasonId) || !registration.competitionSeason.fantasyEnabled) {
+      await tx.marketV2Bid.updateMany({ where: { listingId: listing.id, status: "ACTIVE" }, data: { status: "INVALID" } });
+      await tx.marketV2Listing.update({ where: { id: listing.id }, data: { status: "CANCELLED" } });
+      continue;
+    }
+    await requireSelectedSeason(tx, cycle.leagueId, registration.competitionSeasonId);
     const bids = rankMarketBids(listing.bids.filter(b => b.status === "ACTIVE"));
     const owner = await tx.fantasyRosterSlot.findUnique({ where: { leagueId_playerRegistrationId: { leagueId: cycle.leagueId, playerRegistrationId: listing.playerRegistrationId } }, select: { id: true } });
     let winnerId: string | null = null;
@@ -132,16 +144,17 @@ export async function advanceMarketV2(leagueId: string, now = new Date()) {
   const result = await serializable(async tx => {
     const league = await tx.fantasyLeague.findUnique({ where: { id: leagueId }, include: { competitionSeason: { select: { fantasyEnabled: true } } } });
     if (!league || league.status !== "ACTIVE") return null;
-    await tx.$queryRaw(Prisma.sql`SELECT fantasy_enabled FROM competition_seasons WHERE id=${league.competitionSeasonId}::uuid FOR SHARE`);
+    const anyEnabled = await tx.competitionSeason.findFirst({ where: { id: { in: await selectedSeasonIds(tx, leagueId) }, fantasyEnabled: true }, select: { id: true } });
+    if (anyEnabled) await requireAvailableLeagueSeason(tx, leagueId);
     await tx.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${leagueId}))`);
     const open = await tx.marketV2Cycle.findMany({ where: { leagueId, status: "OPEN" }, orderBy: { opensAt: "asc" } });
-    for (const cycle of open) if (!league.competitionSeason.fantasyEnabled) await cancelCycle(tx, cycle.id, now); else if (cycle.closesAt <= now) await settleCycle(tx, cycle.id, now);
-    if (!league.competitionSeason.fantasyEnabled) return null;
+    for (const cycle of open) if (!anyEnabled) await cancelCycle(tx, cycle.id, now); else if (cycle.closesAt <= now) await settleCycle(tx, cycle.id, now);
+    if (!anyEnabled) return null;
     const current = await tx.marketV2Cycle.findFirst({ where: { leagueId, status: "OPEN", closesAt: { gt: now } }, orderBy: { opensAt: "desc" } });
     if (current) return current;
     const opensAt = new Date(Math.max(setting.startedAt.getTime(), currentMarketMidnight(now).getTime()));
     const cycle = await tx.marketV2Cycle.create({ data: { leagueId, opensAt, closesAt: nextMarketMidnight(now) } });
-    await selectListings(tx, cycle.id, leagueId, league.competitionSeasonId);
+    await selectListings(tx, cycle.id, leagueId);
     return cycle;
   });
   invalidateCache(cacheTags({ leagueId }));
@@ -174,7 +187,7 @@ export async function submitMarketV2Bid(authUserId: string, input: { leagueId: s
   if (!team) fail("TEAM_NOT_FOUND", 404);
   await advanceMarketV2(input.leagueId);
   const result = await serializable(async tx => {
-    await requireFantasyCompetition(tx, team.competitionSeasonId);
+    await requireAvailableLeagueSeason(tx, input.leagueId);
     await tx.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${input.leagueId}))`);
     const prior = await tx.marketV2Request.findUnique({ where: { idempotencyKey: input.idempotencyKey } });
     if (prior) {
@@ -194,9 +207,9 @@ export async function submitMarketV2Bid(authUserId: string, input: { leagueId: s
       tx.marketV2Bid.findMany({ where: { fantasyTeamId: team.id, status: "ACTIVE", id: existing ? { not: existing.id } : undefined }, select: { amountCredits: true, listing: { select: { playerRegistration: { select: { teamRegistrationId: true } } } } } }),
       activeOfferReservations(tx, team.id),
       tx.fantasyRosterSlot.count({ where: { fantasyTeamId: team.id } }),
-      tx.playerRegistration.findUnique({ where: { id: listing.playerRegistrationId }, select: { teamRegistrationId: true } }),
+      tx.playerRegistration.findUnique({ where: { id: listing.playerRegistrationId }, select: { teamRegistrationId: true, competitionSeasonId: true } }),
     ]);
-    if (!player) fail("PLAYER_NOT_FOUND", 404);
+    if (!player || !await requireSelectedSeason(tx, input.leagueId, player.competitionSeasonId)) fail("PLAYER_NOT_FOUND", 404);
     const reserved = activeBids.reduce((sum, b) => sum + b.amountCredits, 0n);
     if (currentTeam.balanceCredits === null || reserved + activeOffers.amount + amount > currentTeam.balanceCredits) fail("INSUFFICIENT_BALANCE");
     if (rosterCount + activeBids.length + activeOffers.count + 1 > currentTeam.rosterRuleSet.rosterSize) fail("ROSTER_FULL");
@@ -219,8 +232,15 @@ export async function advanceAllMarketV2(now = new Date()) {
 }
 
 export async function cancelCompetitionMarketV2(tx: Tx, competitionSeasonId: string, now = new Date()) {
-  const cycles = await tx.marketV2Cycle.findMany({ where: { status: "OPEN", league: { competitionSeasonId } }, select: { id: true } });
-  for (const cycle of cycles) await cancelCycle(tx, cycle.id, now);
+  const listings = await tx.marketV2Listing.findMany({ where: { status: "OPEN", cycle: { status: "OPEN" }, playerRegistration: { competitionSeasonId } }, select: { id: true } });
+  const listingIds = listings.map(item => item.id);
+  await tx.marketV2Bid.updateMany({ where: { listingId: { in: listingIds }, status: "ACTIVE" }, data: { status: "INVALID" } });
+  await tx.marketV2Listing.updateMany({ where: { id: { in: listingIds } }, data: { status: "CANCELLED" } });
+  const leagues = await tx.fantasyLeague.findMany({ where: { status: "ACTIVE", OR: [{ competitionSeasonId }, { selectedSeasons: { some: { competitionSeasonId } } }] }, select: { id: true } });
+  for (const league of leagues) {
+    const available = await tx.competitionSeason.findFirst({ where: { id: { in: await selectedSeasonIds(tx, league.id) }, fantasyEnabled: true }, select: { id: true } });
+    if (!available) await cancelLeagueMarketV2(tx, league.id, now);
+  }
 }
 export async function cancelLeagueMarketV2(tx: Tx, leagueId: string, now = new Date()) {
   const cycles = await tx.marketV2Cycle.findMany({ where: { leagueId, status: "OPEN" }, select: { id: true } });

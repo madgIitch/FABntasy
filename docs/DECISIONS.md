@@ -794,3 +794,16 @@ Decisiones registradas:
 - **tests:** Unitarios, PostgreSQL, E2E y gates del repositorio.
 
 Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.
+
+<!-- harness:sprint-42-multi-competition-player-pool -->
+## 2026-09-26 · sprint-42-multi-competition-player-pool aprobado
+
+Contexto: se aprobó el spec `sprint-42-multi-competition-player-pool` (Selección de competiciones para una liga Fantasy).
+
+Decisiones registradas:
+
+- **auth_secrets:** Identidad de Supabase Auth y validación server-side.
+- **rollback_compat:** Migración aditiva y solo lectura en rollback.
+- **tests:** Unitarios, PostgreSQL, E2E y gates.
+
+Consecuencia: futuras features deben respetar este contrato salvo nuevo ADR.

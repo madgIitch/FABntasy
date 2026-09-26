@@ -1,4 +1,5 @@
 import type { Prisma } from "@prisma/client";
+import { selectedSeasonIds } from "./league-competition-seasons";
 
 type Tx = Prisma.TransactionClient;
 
@@ -12,8 +13,16 @@ export async function invalidatePlayerNegotiations(tx: Tx, leagueId: string, pla
 }
 
 export async function cancelCompetitionNegotiations(tx: Tx, competitionSeasonId: string) {
-  const leagues = await tx.fantasyLeague.findMany({ where: { competitionSeasonId }, select: { id: true } });
-  for (const league of leagues) await cancelLeagueNegotiations(tx, league.id);
+  const leagues = await tx.fantasyLeague.findMany({ where: { OR: [{ competitionSeasonId }, { selectedSeasons: { some: { competitionSeasonId } } }] }, select: { id: true } });
+  for (const league of leagues) {
+    const enabled = await tx.competitionSeason.findFirst({ where: { id: { in: await selectedSeasonIds(tx, league.id) }, fantasyEnabled: true }, select: { id: true } });
+    if (!enabled) { await cancelLeagueNegotiations(tx, league.id); continue; }
+    const [threads, listings] = await Promise.all([
+      tx.marketOfferThread.findMany({ where: { leagueId: league.id, status: "OPEN", playerRegistration: { competitionSeasonId } }, select: { playerRegistrationId: true } }),
+      tx.marketTransferListing.findMany({ where: { leagueId: league.id, status: "OPEN", playerRegistration: { competitionSeasonId } }, select: { playerRegistrationId: true } }),
+    ]);
+    for (const id of new Set([...threads, ...listings].map(item => item.playerRegistrationId))) await invalidatePlayerNegotiations(tx, league.id, id);
+  }
 }
 
 export async function cancelLeagueNegotiations(tx: Tx, leagueId: string) {

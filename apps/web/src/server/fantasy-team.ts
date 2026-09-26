@@ -6,6 +6,8 @@ import { enqueuePushEvent, wakePushWorker } from "./push-outbox";
 import { cacheTags, invalidateCache } from "./performance";
 import { resolveActiveLeagueId } from "./private-leagues";
 import { requireFantasyCompetition } from "./fantasy-availability";
+import { requireAvailableLeagueSeason, selectedSeasonIds } from "./league-competition-seasons";
+import { leagueRoundGames } from "./league-round-window";
 
 type Client = PrismaClient | Prisma.TransactionClient;
 export type TeamActor = Readonly<{ authUserId: string }>;
@@ -77,12 +79,10 @@ async function serializeTeam(client: Client, teamId: string, roundNumber?: numbe
 }
 
 export async function getFantasyTeam(actor: TeamActor, competitionSeasonId: string, roundNumber?: number, selectedLeagueId?: string) {
-  const season = await db.competitionSeason.findUnique({ where: { id: competitionSeasonId }, select: { fantasyEnabled: true } });
-  if (!season?.fantasyEnabled) fail("TEAM_NOT_FOUND", 404);
   const owner = await profileId(db, actor);
   const leagueId = selectedLeagueId ?? await resolveActiveLeagueId(actor);
   if (!leagueId) fail("TEAM_NOT_FOUND", 404);
-  const team = await db.fantasyTeam.findFirst({ where: { userProfileId: owner, competitionSeasonId, leagueId, league: { status: "ACTIVE", competitionSeason: { fantasyEnabled: true }, memberships: { some: { userProfileId: owner, status: "ACTIVE" } } } }, select: { id: true } });
+  const team = await db.fantasyTeam.findFirst({ where: { userProfileId: owner, competitionSeasonId, leagueId, league: { status: "ACTIVE", OR: [{ competitionSeason: { fantasyEnabled: true } }, { selectedSeasons: { some: { competitionSeason: { fantasyEnabled: true } } } }], memberships: { some: { userProfileId: owner, status: "ACTIVE" } } } }, select: { id: true } });
   if (!team) fail("TEAM_NOT_FOUND", 404);
   if (roundNumber !== undefined) await lockExpiredLineup(team.id, roundNumber);
   return serializeTeam(db, team.id, roundNumber);
@@ -105,10 +105,15 @@ export async function putRoster(actor: TeamActor, competitionSeasonId: string, i
     const result = await db.$transaction(async (tx) => {
       await tx.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext('market-v2:activation'))`);
       if (await tx.marketV2Setting.findUnique({ where: { id: "global" } })) throw new FantasyTeamServiceError("MARKET_V2_ACTIVE", 409);
-      await requireFantasyCompetition(tx, competitionSeasonId);
       const owner = await profileId(tx, actor, true);
       const rules = await activeRules(tx, competitionSeasonId);
-      const registrations = await tx.playerRegistration.findMany({ where: { id: { in: [...input.playerRegistrationIds] }, competitionSeasonId, identityStatus: { not: "CONFLICT" } }, include: {
+      const selectedLeague = selectedLeagueId ? await tx.fantasyLeague.findFirst({ where: { id: selectedLeagueId, competitionSeasonId, status: "ACTIVE", memberships: { some: { userProfileId: owner, status: "ACTIVE" } } } }) : null;
+      if (selectedLeagueId && !selectedLeague) fail("TEAM_NOT_FOUND", 404);
+      if (selectedLeague) await requireAvailableLeagueSeason(tx, selectedLeague.id);
+      else await requireFantasyCompetition(tx, competitionSeasonId);
+      const eligibleSeasonIds = selectedLeague ? await selectedSeasonIds(tx, selectedLeague.id) : [competitionSeasonId];
+      const enabledSeasonIds = (await tx.competitionSeason.findMany({ where: { id: { in: eligibleSeasonIds }, fantasyEnabled: true }, select: { id: true } })).map(item => item.id);
+      const registrations = await tx.playerRegistration.findMany({ where: { id: { in: [...input.playerRegistrationIds] }, competitionSeasonId: { in: enabledSeasonIds }, identityStatus: { not: "CONFLICT" } }, include: {
         teamRegistration: { select: { teamId: true } }, prices: { orderBy: { updatedAt: "desc" }, take: 1, select: { currentPrice: true } },
       } });
       if (registrations.length !== new Set(input.playerRegistrationIds).size) fail("ROSTER_INVALID");
@@ -120,12 +125,10 @@ export async function putRoster(actor: TeamActor, competitionSeasonId: string, i
         starters: rules.starterCount, substitutes: rules.substituteCount, maxPerRealTeam: rules.maxPerRealTeam,
         positionLimits: rules.positionLimits as Record<string, number>, coldStartPriceCredits: asNumber(rules.coldStartPriceCredits),
       });
-      const selectedLeague = selectedLeagueId ? await tx.fantasyLeague.findFirst({ where: { id: selectedLeagueId, competitionSeasonId, status: "ACTIVE", memberships: { some: { userProfileId: owner, status: "ACTIVE" } } } }) : null;
-      if (selectedLeagueId && !selectedLeague) fail("TEAM_NOT_FOUND", 404);
       let team = await tx.fantasyTeam.findFirst({ where: { userProfileId: owner, competitionSeasonId, ...(selectedLeagueId ? { leagueId: selectedLeagueId } : {}), league: { status: "ACTIVE" } }, orderBy: { updatedAt: "desc" } });
       const created = !team;
       if (!team) {
-        const league = selectedLeague ?? await tx.fantasyLeague.create({ data: { ownerProfileId: owner, competitionSeasonId, name: "Liga personal", memberLimit: 20, leagueCode: createLeagueCode() } });
+        const league = selectedLeague ?? await tx.fantasyLeague.create({ data: { ownerProfileId: owner, competitionSeasonId, name: "Liga personal", memberLimit: 20, leagueCode: createLeagueCode(), selectedSeasons: { create: { competitionSeasonId } } } });
         if (!selectedLeague) await tx.leagueMembership.create({ data: { leagueId: league.id, userProfileId: owner, role: "OWNER" } });
         team = await tx.fantasyTeam.create({ data: { userProfileId: owner, competitionSeasonId, rosterRuleSetId: rules.id, leagueId: league.id } });
       }
@@ -168,7 +171,9 @@ export async function putLineup(actor: TeamActor, competitionSeasonId: string, r
         if (current.status === "DRAFT") await tx.fantasyLineup.update({ where: { id: current.id }, data: { status: "LOCKED", lockedAt: now } });
         fail("LINEUP_LOCKED");
       }
-      const games = await tx.$queryRaw<Array<{ scheduled_at: Date; source_timezone: string | null }>>(Prisma.sql`SELECT scheduled_at, source_timezone FROM games WHERE competition_season_id=${competitionSeasonId}::uuid AND round_number=${roundNumber} AND sync_status='active' ORDER BY scheduled_at ASC FOR UPDATE`);
+      const round = await leagueRoundGames(tx, leagueId, roundNumber);
+      if (!round?.games.length) fail("CUTOFF_UNAVAILABLE");
+      const games = await tx.$queryRaw<Array<{ scheduled_at: Date; source_timezone: string | null }>>(Prisma.sql`SELECT scheduled_at, source_timezone FROM games WHERE id IN (${Prisma.join(round.games.map(game => Prisma.sql`${game.id}::uuid`))}) ORDER BY scheduled_at ASC FOR UPDATE`);
       if (!games.length || games.some((game) => !game.scheduled_at || !game.source_timezone)) fail("CUTOFF_UNAVAILABLE");
       const cutoffAt = games[0].scheduled_at;
       if (isCutoffClosed(now, cutoffAt)) fail("LINEUP_LOCKED");

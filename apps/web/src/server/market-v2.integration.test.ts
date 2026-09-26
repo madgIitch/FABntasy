@@ -14,14 +14,18 @@ integration("Market V2 PostgreSQL settlement", () => {
     const federation = await db.federation.create({ data: { name: `Market Test ${suffix}` } });
     const competition = await db.competition.create({ data: { federationId: federation.id, name: `Competition ${suffix}` } });
     const season = await db.season.create({ data: { name: `Season ${suffix}` } });
-    const competitionSeason = await db.competitionSeason.create({ data: { competitionId: competition.id, seasonId: season.id, fantasyEnabled: true, fantasyRole: "primary" } });
+    const competitionSeason = await db.competitionSeason.create({ data: { competitionId: competition.id, seasonId: season.id, fantasyEnabled: true, fantasyRole: "validation" } });
     const realTeam = await db.team.create({ data: { name: `Real ${suffix}` } });
     const registration = await db.teamRegistration.create({ data: { competitionSeasonId: competitionSeason.id, teamId: realTeam.id } });
     const player = await db.player.create({ data: { displayName: `Player ${suffix}` } });
     const playerRegistration = await db.playerRegistration.create({ data: { competitionSeasonId: competitionSeason.id, teamRegistrationId: registration.id, playerId: player.id } });
     const secondPlayer = await db.player.create({ data: { displayName: `Second ${suffix}` } });
     const secondRegistration = await db.playerRegistration.create({ data: { competitionSeasonId: competitionSeason.id, teamRegistrationId: registration.id, playerId: secondPlayer.id } });
-    const users = await Promise.all(["ana", "bea", "spectator"].map(async name => db.userProfile.create({ data: { authUserId: randomUUID(), username: `${name}_${suffix}` } })));
+    const users = await Promise.all(["ana", "bea", "spectator"].map(async name => {
+      const authUserId = randomUUID();
+      await db.$executeRaw`INSERT INTO auth.users (id, raw_user_meta_data) VALUES (${authUserId}::uuid, ${JSON.stringify({ username: `${name}_${suffix}` })}::jsonb)`;
+      return db.userProfile.findUniqueOrThrow({ where: { authUserId } });
+    }));
     const league = await db.fantasyLeague.create({ data: { competitionSeasonId: competitionSeason.id, ownerProfileId: users[0].id, name: `League ${suffix}`, leagueCode: suffix.toUpperCase() } });
     await db.leagueMembership.createMany({ data: users.map(user => ({ leagueId: league.id, userProfileId: user.id })) });
     const rules = await db.fantasyRosterRuleSet.create({ data: { competitionSeasonId: competitionSeason.id, identifier: "test", version: "1", budgetCredits: 20_000_000n, rosterSize: 7, starterCount: 5, substituteCount: 2, maxPerRealTeam: 2, coldStartPriceCredits: 5_000_000n } });

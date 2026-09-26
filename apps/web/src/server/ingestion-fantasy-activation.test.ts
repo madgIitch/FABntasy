@@ -7,6 +7,9 @@ const mocks = vi.hoisted(() => {
     },
     $queryRaw: vi.fn(),
     marketV2Cycle: { findMany: vi.fn().mockResolvedValue([]) },
+    marketV2Listing: { findMany: vi.fn().mockResolvedValue([]), updateMany: vi.fn().mockResolvedValue({ count: 0 }) },
+    marketV2Bid: { updateMany: vi.fn().mockResolvedValue({ count: 0 }) },
+    fantasyLeague: { findMany: vi.fn().mockResolvedValue([]) },
     adminAuditEvent: { create: vi.fn() },
     ingestionJob: { create: vi.fn() },
   };
@@ -77,7 +80,7 @@ describe("fantasy suspension", () => {
     expect(mocks.transaction.competitionSeason.update).toHaveBeenCalledWith({
       where: { id: seasonId }, data: { fantasyEnabled: false, fantasyRole: "disabled" },
     });
-    expect(mocks.transaction.marketV2Cycle.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { status: "OPEN", league: { competitionSeasonId: seasonId } } }));
+    expect(mocks.transaction.marketV2Listing.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { status: "OPEN", cycle: { status: "OPEN" }, playerRegistration: { competitionSeasonId: seasonId } } }));
     expect(mocks.transaction.competitionSeason.findFirst).toHaveBeenCalledWith(expect.objectContaining({
       where: { fantasyEnabled: true, id: { not: seasonId } }, orderBy: { id: "asc" },
     }));

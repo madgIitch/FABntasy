@@ -15,6 +15,7 @@ export default async function MyTeamPage() {
   const leagues = await listLeagues({ authUserId: user.id });
   const league = leagues.find(item => item.id === activeLeagueId);
   const seasonId = league?.competitionSeasonId;
+  const eligibleSeasonIds = league?.selectedSeasons.filter(item => item.competitionSeason.fantasyEnabled).map(item => item.competitionSeasonId) ?? [];
 
   if (!seasonId) return <main className="app-main"><section className="empty-state"><span aria-hidden="true">◎</span><h1>Mi equipo</h1><p>No hay una competición fantasy activa.</p></section></main>;
 
@@ -37,7 +38,7 @@ export default async function MyTeamPage() {
     const scores = await db.fantasyPlayerGameScore.findMany({
       where: {
         playerId: { in: initialTeam.roster.map((player) => player.playerId) },
-        game: { competitionSeasonId: seasonId },
+        game: { competitionSeasonId: { in: eligibleSeasonIds.length ? eligibleSeasonIds : [seasonId] } },
         normalizedFantasyPoints: { not: null },
       },
       orderBy: { game: { scheduledAt: "desc" } },
@@ -54,7 +55,7 @@ export default async function MyTeamPage() {
   }
 
   const eligiblePlayers = initialTeam ? [] : await db.playerRegistration.findMany({
-    where: { competitionSeasonId: seasonId, identityStatus: { not: "CONFLICT" } }, take: 80,
+    where: { competitionSeasonId: { in: eligibleSeasonIds.length ? eligibleSeasonIds : [seasonId] }, identityStatus: { not: "CONFLICT" } }, take: 80,
     orderBy: { player: { displayName: "asc" } },
     select: { id: true, player: { select: { displayName: true } }, teamRegistration: { select: { team: { select: { name: true } } } }, prices: { orderBy: { updatedAt: "desc" }, take: 1, select: { currentPrice: true } } },
   });

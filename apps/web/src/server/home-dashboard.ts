@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { selectedSeasonIds } from "./league-competition-seasons";
 import { safeError } from "./security";
 import { deriveHomeMode } from "./home-presentation";
 import { cached, cacheTags, privateCacheKey } from "./performance";
@@ -34,15 +35,17 @@ async function loadHomeDashboard(authUserId:string, requestedLeagueId?:string) {
     const team=profile.fantasyTeams.find((item)=>item.leagueId===requestedLeagueId);
     if (!team) return {kind:"NO_TEAM" as const,displayName:profile.displayName,leagueContext:selectedLeague?{competition:selectedLeague.competitionSeason.competition.name,activeLeague:{id:selectedLeague.id,name:selectedLeague.name},leagues:availableLeagues.map(item=>({id:item.id,name:item.name}))}:null,updatedAt};
     const now=new Date();
+    const seasonIds=await selectedSeasonIds(db,team.leagueId);
     const realTeamIds=[...new Set(team.rosterSlots.map((slot)=>slot.playerRegistration.teamRegistration.teamId))];
-    const gamesResult=await section(()=>db.game.findMany({where:{competitionSeasonId:team.competitionSeasonId,syncStatus:"active",AND:[{OR:[{status:{in:liveStatuses}},{scheduledAt:{gte:now}}]},...(realTeamIds.length?[{OR:[{homeTeamId:{in:realTeamIds}},{awayTeamId:{in:realTeamIds}}]}]:[])]},orderBy:[{scheduledAt:"asc"},{id:"asc"}],take:12,include:{homeTeam:true,awayTeam:true}}));
-    const playedGamesResult=await section(()=>db.game.findMany({where:{competitionSeasonId:team.competitionSeasonId,syncStatus:"active",status:"finished",...(realTeamIds.length?{OR:[{homeTeamId:{in:realTeamIds}},{awayTeamId:{in:realTeamIds}}]}:{})},orderBy:[{scheduledAt:"desc"},{id:"desc"}],take:4,include:{homeTeam:true,awayTeam:true}}));
-    const nextGame=gamesResult.data?.[0], nextRound=nextGame?.roundNumber??team.lineups[0]?.roundNumber??null, lineup=team.lineups.find((item)=>item.roundNumber===nextRound)??team.lineups[0];
+    const gamesResult=await section(()=>db.game.findMany({where:{competitionSeasonId:{in:seasonIds},syncStatus:"active",AND:[{OR:[{status:{in:liveStatuses}},{scheduledAt:{gte:now}}]},...(realTeamIds.length?[{OR:[{homeTeamId:{in:realTeamIds}},{awayTeamId:{in:realTeamIds}}]}]:[])]},orderBy:[{scheduledAt:"asc"},{id:"asc"}],take:12,include:{homeTeam:true,awayTeam:true}}));
+    const playedGamesResult=await section(()=>db.game.findMany({where:{competitionSeasonId:{in:seasonIds},syncStatus:"active",status:"finished",...(realTeamIds.length?{OR:[{homeTeamId:{in:realTeamIds}},{awayTeamId:{in:realTeamIds}}]}:{})},orderBy:[{scheduledAt:"desc"},{id:"desc"}],take:4,include:{homeTeam:true,awayTeam:true}}));
+    const nextGame=await db.game.findFirst({where:{competitionSeasonId:team.competitionSeasonId,syncStatus:"active",roundNumber:{not:null},scheduledAt:{gte:now}},orderBy:{scheduledAt:"asc"},select:{roundNumber:true,scheduledAt:true}});
+    const nextRound=nextGame?.roundNumber??team.lineups[0]?.roundNumber??null, lineup=team.lineups.find((item)=>item.roundNumber===nextRound)??team.lineups[0];
     const starters=lineup?.slots.filter((slot)=>slot.role==="STARTER").length??0, locked=Boolean(lineup?.lockedAt)||Boolean(lineup&&lineup.cutoffAt<=now);
     const lineupState:"NO_CALENDAR"|"NOT_SAVED"|"LOCKED"|"READY"|"INCOMPLETE"=nextRound===null?"NO_CALENDAR":!lineup?"NOT_SAVED":locked?"LOCKED":starters===5?"READY":"INCOMPLETE";
     const [scoresResult,marketResult,activityResult]=await Promise.all([
       section(()=>db.fantasyRoundScore.findMany({where:{fantasyTeamId:team.id,status:"PUBLISHED",supersededAt:null,points:{not:null}},orderBy:[{roundNumber:"desc"},{revision:"desc"}],take:2})),
-      section(()=>db.playerPriceEvent.findMany({where:{competitionSeasonId:team.competitionSeasonId,previousPrice:{gt:0}},orderBy:[{createdAt:"desc"},{id:"asc"}],take:100,include:{playerPrice:{select:{currentPrice:true}},playerRegistration:{include:{player:true}}}})),
+      section(()=>db.playerPriceEvent.findMany({where:{competitionSeasonId:{in:seasonIds},previousPrice:{gt:0}},orderBy:[{createdAt:"desc"},{id:"asc"}],take:100,include:{playerPrice:{select:{currentPrice:true}},playerRegistration:{include:{player:true}}}})),
       section(()=>db.marketTransaction.findMany({where:{leagueId:team.leagueId},orderBy:[{createdAt:"desc"},{id:"desc"}],take:4,include:{playerRegistration:{include:{player:true}},buyerTeam:{include:{userProfile:true}},sellerTeam:{include:{userProfile:true}}}})),
     ]);
     const scores=scoresResult.data??[], latestScore=scores[0], position=latestScore?(team.total?.leaguePosition??team.total?.globalPosition??null):null, previousPosition=latestScore?(team.total?.previousLeaguePosition??team.total?.previousGlobalPosition??null):null;

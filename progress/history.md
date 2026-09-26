@@ -119,3 +119,8 @@
 
 - Spec aprobada por el usuario con enlace reutilizable hasta que el propietario lo regenere. Implementación completa de creación, compartición, landing, autenticación, unión y retirada de código/contraseña de liga.
 - Migración local, integración PostgreSQL de capacidad concurrente y revocación, 202 pruebas unitarias, build Next y revisión visual dirigida correctas. Smoke humano en cuentas reales pendiente.
+
+## 2026-09-26 — #sprint-41-league-invite-links → done
+
+- Cierre solicitado explícitamente por el usuario. La migración se aplicó a la base Supabase configurada en `.env` y `prisma migrate status` confirmó que no quedan pendientes.
+- Los gates y la revisión dirigida constan en el registro. El smoke humano con dos cuentas reales no consta al cierre y queda como comprobación de despliegue.

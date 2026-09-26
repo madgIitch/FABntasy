@@ -39,11 +39,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   if (rollout.state === "PREVIEW" && !rollout.isBypassed && !rollout.isAdmin) {
     const seasons = await db.competitionSeason.findMany({ where: { fantasyEnabled: true }, include: { competition: true }, orderBy: { createdAt: "desc" } });
     const previewLeagues = profile?.leagueMemberships.map(({ league }) => ({ id: league.id, name: league.name, memberCount: league._count.memberships, isOwner: league.ownerProfileId === profile.id })) ?? [];
-    return <div className="league-gate rollout-preview"><LeagueOnboarding preview previewLeagues={previewLeagues} seasons={seasons.map((season) => ({ id: season.id, label: `${season.competition.name}${season.name ? ` · ${season.name}` : ""}` }))} /></div>;
+    return <div className="league-gate rollout-preview"><LeagueOnboarding preview previewLeagues={previewLeagues} multiEnabled={process.env.MULTI_COMPETITION_LEAGUES_ENABLED !== "false"} seasons={seasons.map((season) => ({ id: season.id, label: `${season.competition.name}${season.name ? ` · ${season.name}` : ""}` }))} /></div>;
   }
   if (!profile?.leagueMemberships.length && !profile?.adminGrants.length) {
     const seasons = await db.competitionSeason.findMany({ where: { fantasyEnabled: true }, include: { competition: true }, orderBy: { createdAt: "desc" } });
-    return <div className="league-gate"><LeagueOnboarding seasons={seasons.map((season) => ({ id: season.id, label: `${season.competition.name}${season.name ? ` · ${season.name}` : ""}` }))} /></div>;
+    return <div className="league-gate"><LeagueOnboarding multiEnabled={process.env.MULTI_COMPETITION_LEAGUES_ENABLED !== "false"} seasons={seasons.map((season) => ({ id: season.id, label: `${season.competition.name}${season.name ? ` · ${season.name}` : ""}` }))} /></div>;
   }
   return <div className="app-frame">
     <aside className="side-nav">

@@ -199,6 +199,7 @@ model CompetitionSeason {
   playerPrices          PlayerPrice[]
   playerPriceEvents     PlayerPriceEvent[]
   fantasyLeagues        FantasyLeague[]
+  selectedByLeagues     LeagueCompetitionSeason[]
   fantasyRoundScores    FantasyRoundScore[]
   fabCatalogEntries     FabCompetitionCatalog[]
   fantasyTeamTotals     FantasyTeamTotal[]
@@ -442,6 +443,7 @@ model FantasyLeague {
   memberships         LeagueMembership[]
   invites             LeagueInvite[]
   fantasyTeams        FantasyTeam[]
+  selectedSeasons     LeagueCompetitionSeason[]
   marketTransactions  MarketTransaction[]
   budgetLedger        FantasyBudgetLedgerEntry[]
   marketProtections   MarketProtection[]
@@ -461,6 +463,18 @@ model FantasyLeague {
   @@index([competitionSeasonId, status])
   @@index([ownerProfileId])
   @@map("fantasy_leagues")
+}
+
+model LeagueCompetitionSeason {
+  leagueId            String            @map("league_id") @db.Uuid
+  competitionSeasonId String            @map("competition_season_id") @db.Uuid
+  league              FantasyLeague     @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  competitionSeason   CompetitionSeason @relation(fields: [competitionSeasonId], references: [id], onDelete: Restrict)
+  createdAt           DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@id([leagueId, competitionSeasonId])
+  @@index([competitionSeasonId])
+  @@map("league_competition_seasons")
 }
 
 model LeagueMembership {

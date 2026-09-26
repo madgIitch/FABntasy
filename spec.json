@@ -3603,6 +3603,66 @@
       "answers_hash": "sha256:c1e9b43307a54f76163e67aa4a66e90f833775f91c48197f76e73bb7ea98da40",
       "approved_by": "peorr",
       "approved_at": "2026-09-26T16:52:14.441Z"
+    },
+    {
+      "id": "sprint-42-multi-competition-player-pool",
+      "name": "Sprint 42 - Multi-Competition Player Pool",
+      "title": "Selección de competiciones para una liga Fantasy",
+      "status": "review_pending",
+      "sdd": true,
+      "spec_approved": true,
+      "priority": "P1",
+      "dependencies": [
+        "sprint-12-private-leagues",
+        "sprint-38-disable-fantasy-competition",
+        "sprint-41-league-invite-links"
+      ],
+      "description": "Al crear una liga privada, elegir una o varias competiciones-temporada Fantasy habilitadas cuyos jugadores serán elegibles en la liga.",
+      "objective": "Permitir ligas con un conjunto explícito de ediciones habilitadas, conservando aislamiento, mercado, jornadas y puntuación coherentes.",
+      "user_stories": [
+        {
+          "id": "HU42.1",
+          "story": "Como creador quiero elegir las competiciones de origen de los jugadores de mi liga."
+        },
+        {
+          "id": "HU42.2",
+          "story": "Como miembro quiero que plantilla, mercado y puntos respeten esa selección."
+        }
+      ],
+      "tasks": [
+        "Cerrar decisiones de calendario, edición principal, deshabilitación y rollback.",
+        "Modelar relación liga-ediciones y migrar ligas existentes.",
+        "Actualizar creación, lecturas y validaciones de elegibilidad.",
+        "Adaptar mercado, plantilla, jornadas y puntuación.",
+        "Cubrir flujos unitarios, PostgreSQL y E2E."
+      ],
+      "deliverable": "Ligas privadas con pool de jugadores de una o varias ediciones Fantasy habilitadas.",
+      "acceptance": [
+        "La creación solo acepta una o varias competiciones-temporada Fantasy habilitadas y una principal incluida en la selección.",
+        "Plantilla, mercado, ofertas y cláusulas solo admiten jugadores de las ediciones seleccionadas.",
+        "Las jornadas usan ventanas de la edición principal y la puntuación de cada jugador usa su propio ruleset.",
+        "Las ligas existentes conservan datos y comportamiento al migrarse.",
+        "La deshabilitación es inmediata para mutaciones nuevas y preserva el historial.",
+        "Pasan pruebas unitarias, PostgreSQL, E2E y gates del repositorio."
+      ],
+      "scope": [
+        "apps/web/**",
+        "packages/domain/**",
+        "prisma/**",
+        "tests/**",
+        "docs/**",
+        "spec/**",
+        "progress/**",
+        ".harness/**",
+        "spec.json"
+      ],
+      "spec_reference": "docs/league/SPRINT_42_MULTI_COMPETITION_PLAYER_POOL_SPEC.md",
+      "manual_spec_ready": true,
+      "manual_spec_ready_at": "2026-09-26T17:35:37.580Z",
+      "manual_spec_ready_reason": "Decisiones de producto cerradas en docs/league/SPRINT_42_MULTI_COMPETITION_PLAYER_POOL_SPEC.md tras la aprobación del usuario.",
+      "answers_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "approved_by": "peorr",
+      "approved_at": "2026-09-26T17:35:37.704Z"
     }
   ]
 }

@@ -2,13 +2,13 @@ import { createHash } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { PLAYER_PRICING_V1 } from "../../../../packages/domain/player-pricing";
 import { db } from "./db";
-import { requireFantasyCompetition } from "./fantasy-availability";
 import { invalidatePlayerNegotiations } from "./market-offer-invalidation";
 import { activeOfferReservations } from "./market-reservations";
 import { advanceMarketV2, currentMarketMidnight } from "./market-v2";
 import { cacheTags, invalidateCache } from "./performance";
 import { enqueuePushEvent, wakePushWorker } from "./push-outbox";
 import { appendLeagueEvent } from "./social-league";
+import { requireAvailableLeagueSeason, requireSelectedSeason, selectedSeasonIds } from "./league-competition-seasons";
 
 type Tx = Prisma.TransactionClient;
 const HOUR = 60 * 60 * 1000;
@@ -30,15 +30,22 @@ async function actorTeam(tx: Tx, authUserId: string, leagueId: string) {
   if (!profile) fail("AUTH_REQUIRED", 401);
   const team = await tx.fantasyTeam.findFirst({ where: { leagueId, userProfileId: profile.id, league: { status: "ACTIVE", memberships: { some: { userProfileId: profile.id, status: "ACTIVE" } } } }, include: { rosterRuleSet: true } });
   if (!team) fail("TEAM_NOT_FOUND", 404);
-  await requireFantasyCompetition(tx, team.competitionSeasonId);
+  await requireAvailableLeagueSeason(tx, leagueId);
   if (team.balanceCredits === null) fail("BALANCE_UNAVAILABLE");
   return { profile, team };
 }
-async function currentPrice(tx: Tx, playerRegistrationId: string, competitionSeasonId: string) {
+async function playerSeason(tx: Tx, playerRegistrationId: string, leagueId: string) {
+  const player = await tx.playerRegistration.findUnique({ where: { id: playerRegistrationId }, select: { competitionSeasonId: true } });
+  if (!player || !await requireSelectedSeason(tx, leagueId, player.competitionSeasonId)) fail("PLAYER_NOT_FOUND", 404);
+  return player.competitionSeasonId;
+}
+async function currentPrice(tx: Tx, playerRegistrationId: string, leagueId: string) {
+  const competitionSeasonId = await playerSeason(tx, playerRegistrationId, leagueId);
   const row = await tx.playerPrice.findFirst({ where: { playerRegistrationId, competitionSeasonId }, orderBy: { updatedAt: "desc" }, select: { currentPrice: true } });
   return row?.currentPrice ?? BigInt(PLAYER_PRICING_V1.initialPrice);
 }
-async function priceAt(tx: Tx, playerRegistrationId: string, competitionSeasonId: string, at: Date) {
+async function priceAt(tx: Tx, playerRegistrationId: string, leagueId: string, at: Date) {
+  const competitionSeasonId = await playerSeason(tx, playerRegistrationId, leagueId);
   const row = await tx.playerPrice.findFirst({ where: { playerRegistrationId, competitionSeasonId }, orderBy: { updatedAt: "desc" }, select: { currentPrice: true, updatedAt: true } });
   if (!row || row.updatedAt <= at) return row?.currentPrice ?? BigInt(PLAYER_PRICING_V1.initialPrice);
   const before = await tx.playerPriceEvent.findFirst({ where: { playerRegistrationId, competitionSeasonId, createdAt: { lte: at } }, orderBy: { createdAt: "desc" }, select: { newPrice: true } });
@@ -52,15 +59,15 @@ async function saveRequest(tx: Tx, input: NegotiationInput, actorTeamId: string,
   await tx.marketNegotiationRequest.create({ data: { idempotencyKey: input.idempotencyKey, actorTeamId, action: input.action, payloadHash: payloadHash(input), result: result as Prisma.InputJsonValue } });
   return result;
 }
-async function validateBuyer(tx: Tx, team: { id: string; balanceCredits: bigint | null; rosterRuleSet: { rosterSize: number; maxPerRealTeam: number } }, playerRegistrationId: string, amount: bigint, excludeProposalId?: string) {
+async function validateBuyer(tx: Tx, team: { id: string; leagueId: string; balanceCredits: bigint | null; rosterRuleSet: { rosterSize: number; maxPerRealTeam: number } }, playerRegistrationId: string, amount: bigint, excludeProposalId?: string) {
   const now = new Date();
   const [bids, offers, rosterCount, player] = await Promise.all([
     tx.marketV2Bid.findMany({ where: { fantasyTeamId: team.id, status: "ACTIVE", listing: { cycle: { status: "OPEN", closesAt: { gt: now } } } }, select: { amountCredits: true, listing: { select: { playerRegistration: { select: { teamRegistrationId: true } } } } } }),
     activeOfferReservations(tx, team.id, now, excludeProposalId),
     tx.fantasyRosterSlot.count({ where: { fantasyTeamId: team.id } }),
-    tx.playerRegistration.findUnique({ where: { id: playerRegistrationId }, select: { teamRegistrationId: true, identityStatus: true } }),
+    tx.playerRegistration.findUnique({ where: { id: playerRegistrationId }, select: { teamRegistrationId: true, competitionSeasonId: true, identityStatus: true } }),
   ]);
-  if (!player || player.identityStatus === "CONFLICT") fail("PLAYER_NOT_FOUND", 404);
+  if (!player || player.identityStatus === "CONFLICT" || !await requireSelectedSeason(tx, team.leagueId, player.competitionSeasonId)) fail("PLAYER_NOT_FOUND", 404);
   const bidAmount = bids.reduce((sum, bid) => sum + bid.amountCredits, 0n);
   if (team.balanceCredits === null || bidAmount + offers.amount + amount > team.balanceCredits) fail("INSUFFICIENT_BALANCE");
   if (rosterCount + bids.length + offers.count + 1 > team.rosterRuleSet.rosterSize) fail("ROSTER_FULL");
@@ -75,7 +82,9 @@ export async function advanceMarketNegotiations(leagueId: string, now = new Date
   const result = await serializable(async tx => {
     await lockLeague(tx, leagueId);
     const league = await tx.fantasyLeague.findUnique({ where: { id: leagueId }, select: { status: true, competitionSeasonId: true, competitionSeason: { select: { fantasyEnabled: true } } } });
-    if (!league || league.status !== "ACTIVE" || !league.competitionSeason.fantasyEnabled) return { generated: 0 };
+    if (!league || league.status !== "ACTIVE") return { generated: 0 };
+    const available = await tx.competitionSeason.findFirst({ where: { id: { in: await selectedSeasonIds(tx, leagueId) }, fantasyEnabled: true }, select: { id: true } });
+    if (!available) return { generated: 0 };
     const expired = await tx.marketOfferProposal.findMany({ where: { status: "ACTIVE", expiresAt: { lte: now }, thread: { leagueId, status: "OPEN" } }, select: { id: true, threadId: true } });
     await tx.marketOfferProposal.updateMany({ where: { id: { in: expired.map(item => item.id) } }, data: { status: "EXPIRED" } });
     await tx.marketOfferThread.updateMany({ where: { id: { in: expired.map(item => item.threadId) }, status: "OPEN" }, data: { status: "EXPIRED" } });
@@ -93,7 +102,9 @@ export async function advanceMarketNegotiations(leagueId: string, now = new Date
       if (exists) continue;
       const owner = await tx.fantasyRosterSlot.findUnique({ where: { leagueId_playerRegistrationId: { leagueId, playerRegistrationId: listing.playerRegistrationId } }, select: { fantasyTeamId: true } });
       if (!owner || owner.fantasyTeamId !== listing.sellerTeamId) { await invalidatePlayerNegotiations(tx, leagueId, listing.playerRegistrationId); continue; }
-      const amountCredits = await priceAt(tx, listing.playerRegistrationId, league.competitionSeasonId, cycle.opensAt);
+      const registration = await tx.playerRegistration.findUnique({ where: { id: listing.playerRegistrationId }, select: { competitionSeason: { select: { fantasyEnabled: true } } } });
+      if (!registration?.competitionSeason.fantasyEnabled) continue;
+      const amountCredits = await priceAt(tx, listing.playerRegistrationId, leagueId, cycle.opensAt);
       const offer = await tx.marketSystemOffer.create({ data: { listingId: listing.id, cycleId: cycle.id, amountCredits, expiresAt: new Date(Math.min(cycle.closesAt.getTime(), listing.expiresAt.getTime())) } });
       const seller = await tx.fantasyTeam.findUniqueOrThrow({ where: { id: listing.sellerTeamId }, select: { userProfileId: true } });
       await enqueuePushEvent(tx, { userProfileId: seller.userProfileId, leagueId, intent: "MARKET_SOLD", eventKey: `system-offer:${offer.id}`, title: "Oferta de Canastio", body: "Tienes una oferta por un jugador en venta.", destination: "/app/mercado?view=explore" });
@@ -124,7 +135,7 @@ export async function getMarketNegotiationsForActor(authUserId: string, leagueId
     db.fantasyRosterSlot.findMany({ where: { fantasyTeamId: team.id }, select: { playerRegistrationId: true } }),
     db.marketOfferProposal.findMany({ where: { proposerTeamId: team.id, status: "ACTIVE", expiresAt: { gt: new Date() }, thread: { buyerTeamId: team.id, status: "OPEN" } }, select: { amountCredits: true } }),
   ]);
-  const prices = await db.playerPrice.findMany({ where: { competitionSeasonId: team.competitionSeasonId, playerRegistrationId: { in: ownSlots.map(slot => slot.playerRegistrationId) } }, orderBy: { updatedAt: "desc" }, select: { playerRegistrationId: true, currentPrice: true } });
+  const prices = await db.playerPrice.findMany({ where: { playerRegistrationId: { in: ownSlots.map(slot => slot.playerRegistrationId) } }, orderBy: { updatedAt: "desc" }, select: { playerRegistrationId: true, currentPrice: true } });
   const quoteByPlayer = new Map<string, bigint>();
   for (const price of prices) if (!quoteByPlayer.has(price.playerRegistrationId)) quoteByPlayer.set(price.playerRegistrationId, price.currentPrice);
   return {
@@ -149,7 +160,7 @@ async function transfer(tx: Tx, params: { leagueId: string; playerRegistrationId
   if (!slot || slot.fantasyTeamId !== sellerTeamId) fail("OWNER_CHANGED");
   const seller = await tx.fantasyTeam.findUniqueOrThrow({ where: { id: sellerTeamId }, select: { balanceCredits: true, competitionSeasonId: true } });
   if (seller.balanceCredits === null) fail("BALANCE_UNAVAILABLE");
-  const price = await currentPrice(tx, playerRegistrationId, seller.competitionSeasonId);
+  const price = await currentPrice(tx, playerRegistrationId, leagueId);
   const transaction = await tx.marketTransaction.create({ data: { leagueId, playerRegistrationId, buyerTeamId, sellerTeamId, transactionType, priceCredits: amount, marketPriceCredits: price, idempotencyKey } });
   await tx.fantasyRosterSlot.delete({ where: { id: slot.id } });
   const sellerBalance = seller.balanceCredits + amount;
@@ -195,6 +206,7 @@ export async function executeMarketNegotiation(authUserId: string, input: Negoti
 
     if (input.action === "LIST") {
       if (!input.playerRegistrationId) fail("INVALID_INPUT", 422);
+      await playerSeason(tx, input.playerRegistrationId, input.leagueId);
       const owner = await tx.fantasyRosterSlot.findUnique({ where: { leagueId_playerRegistrationId: { leagueId: input.leagueId, playerRegistrationId: input.playerRegistrationId } }, select: { fantasyTeamId: true } });
       if (owner?.fantasyTeamId !== team.id) fail("NOT_OWNER");
       const existing = await tx.marketTransferListing.findFirst({ where: { leagueId: input.leagueId, playerRegistrationId: input.playerRegistrationId, status: "OPEN", expiresAt: { gt: now } } });
@@ -262,7 +274,7 @@ export async function executeMarketNegotiation(authUserId: string, input: Negoti
       response = { transactionId: transaction.id, status: "ACCEPTED", amountCredits: Number(offer.amountCredits) };
     } else {
       if (!input.playerRegistrationId || input.expectedQuoteCredits === undefined) fail("INVALID_INPUT", 422);
-      const current = await currentPrice(tx, input.playerRegistrationId, team.competitionSeasonId);
+      const current = await currentPrice(tx, input.playerRegistrationId, input.leagueId);
       const quote = instantSaleQuote(current);
       if (BigInt(input.expectedQuoteCredits) !== quote) fail("QUOTE_CHANGED", 409, { quoteCredits: Number(quote) });
       const transaction = await transfer(tx, { leagueId: input.leagueId, playerRegistrationId: input.playerRegistrationId, sellerTeamId: team.id, amount: quote, idempotencyKey: input.idempotencyKey, transactionType: "INSTANT_SELL", actorProfileId: profile.id });

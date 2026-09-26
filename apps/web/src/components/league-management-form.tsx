@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Field } from "./ui/field";
+import { LeagueSeasonPicker } from "./league-season-picker";
 
 type Season = { id: string; label: string };
 type ErrorBody = { error?: { code?: string }; data?: { id?: string } };
@@ -17,10 +18,11 @@ function invitationPath(value: string) {
   }
 }
 
-export function LeagueManagementForm({ mode, seasons = [] }: { mode: "create" | "join"; seasons?: Season[] }) {
+export function LeagueManagementForm({ mode, seasons = [], multiEnabled = false }: { mode: "create" | "join"; seasons?: Season[]; multiEnabled?: boolean }) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [seasonId, setSeasonId] = useState(seasons[0]?.id ?? "");
+  const [selectedIds, setSelectedIds] = useState<string[]>(seasons[0] ? [seasons[0].id] : []);
   const [link, setLink] = useState("");
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
@@ -34,7 +36,7 @@ export function LeagueManagementForm({ mode, seasons = [] }: { mode: "create" | 
     }
     setPending(true);
     try {
-      const response = await fetch("/api/fantasy/leagues", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name, competitionSeasonId: seasonId }) });
+      const response = await fetch("/api/fantasy/leagues", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(multiEnabled ? { name, competitionSeasonIds: selectedIds, primaryCompetitionSeasonId: seasonId } : { name, competitionSeasonId: seasonId }) });
       const body = await response.json().catch(() => null) as ErrorBody | null;
       if (!response.ok) { setMessage(body?.error?.code === "INVALID_INPUT" ? "Revisa el nombre y la competición." : "No se pudo crear la liga."); return; }
       if (body?.data?.id) await fetch("/api/fantasy/leagues/active", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ leagueId: body.data.id }) });
@@ -43,8 +45,8 @@ export function LeagueManagementForm({ mode, seasons = [] }: { mode: "create" | 
     finally { setPending(false); }
   }
   return <form className="profile-form" onSubmit={submit} aria-busy={pending}>
-    {mode === "create" ? <><Field label="Nombre de la liga" value={name} minLength={3} maxLength={60} required onChange={event => setName(event.target.value)} /><label className="ui-field"><span>Competición</span><select value={seasonId} required onChange={event => setSeasonId(event.target.value)}>{seasons.map(season => <option key={season.id} value={season.id}>{season.label}</option>)}</select></label></> : <Field label="Enlace de invitación" type="url" value={link} required placeholder="https://canastio.app/liga/…" onChange={event => setLink(event.target.value)} />}
-    <div className="profile-form-actions"><button className="primary-action" type="submit" disabled={pending}>{pending ? "Guardando…" : mode === "create" ? "Crear liga" : "Abrir invitación"}</button></div>
+    {mode === "create" ? <><Field label="Nombre de la liga" value={name} minLength={3} maxLength={60} required onChange={event => setName(event.target.value)} />{multiEnabled ? <LeagueSeasonPicker seasons={seasons} selectedIds={selectedIds} primaryId={seasonId} onChange={(ids, primary) => { setSelectedIds(ids); setSeasonId(primary); }} /> : <label className="ui-field"><span>Competición</span><select value={seasonId} required onChange={event => setSeasonId(event.target.value)}>{seasons.map(season => <option key={season.id} value={season.id}>{season.label}</option>)}</select></label>}</> : <Field label="Enlace de invitación" type="url" value={link} required placeholder="https://canastio.app/liga/…" onChange={event => setLink(event.target.value)} />}
+    <div className="profile-form-actions"><button className="primary-action" type="submit" disabled={pending || (mode === "create" && multiEnabled && selectedIds.length === 0)}>{pending ? "Guardando…" : mode === "create" ? "Crear liga" : "Abrir invitación"}</button></div>
     {message ? <p className="form-message error" role="alert">{message}</p> : null}
   </form>;
 }

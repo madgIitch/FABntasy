@@ -6,7 +6,7 @@ import type { getMarketV2ForActor } from "../server/market-v2";
 import styles from "./market-v2-panel.module.css";
 
 type MarketV2View = Awaited<ReturnType<typeof getMarketV2ForActor>>;
-type Player = { playerRegistrationId: string; displayName: string };
+type Player = { playerRegistrationId: string; displayName: string; realTeamName: string; competitionName: string };
 const decimal = new Intl.NumberFormat("es-ES", { maximumFractionDigits: 6 });
 const millions = (credits: number) => `${decimal.format(credits / 1_000_000)} M`;
 
@@ -23,6 +23,7 @@ export function MarketV2Panel({ v2, leagueId, players }: { v2: MarketV2View; lea
   const [pending, setPending] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const names = new Map(players.map(player => [player.playerRegistrationId, marketPlayerName(player.displayName)]));
+  const origins = new Map(players.map(player => [player.playerRegistrationId, `${player.realTeamName} · ${player.competitionName}`]));
   if (!v2.active) return null;
 
   async function send(listingId: string, action: "BID" | "CANCEL") {
@@ -64,7 +65,7 @@ export function MarketV2Panel({ v2, leagueId, players }: { v2: MarketV2View; lea
       const name = names.get(item.playerRegistrationId) ?? "Jugador";
       const hasBid = item.myBid?.status === "ACTIVE";
       return <li id={`market-v2-${item.playerRegistrationId}`} className={styles.listing} key={item.id}>
-        <div className={styles.player}><span>{String(index + 1).padStart(2, "0")}</span><div><strong>{name}</strong><small>{millions(item.referencePrice)} mínimo</small></div></div>
+        <div className={styles.player}><span>{String(index + 1).padStart(2, "0")}</span><div><strong>{name}</strong><small>{origins.get(item.playerRegistrationId) ?? "Equipo y competición no disponibles"}</small><small>{millions(item.referencePrice)} mínimo</small></div></div>
         {hasBid && <p className={styles.ownBid}>Tu puja · {millions(item.myBid!.amountCredits)}</p>}
         <div className={styles.bidControls}>
           <label><span className={styles.srOnly}>Puja por {name} en millones</span><input type="number" inputMode="decimal" min={item.referencePrice / 1_000_000} step="0.000001" value={amounts[item.id] ?? String((item.myBid?.amountCredits ?? item.referencePrice) / 1_000_000)} onChange={event => setAmounts(current => ({ ...current, [item.id]: event.target.value }))}/><span className={styles.unit} aria-hidden="true">M</span></label>
@@ -73,6 +74,6 @@ export function MarketV2Panel({ v2, leagueId, players }: { v2: MarketV2View; lea
         </div>
       </li>;
     })}</ol> : <p className={styles.empty}>No hay agentes libres en este ciclo.</p>}
-    {v2.history.length > 0 && <details className={styles.history}><summary>Resultados anteriores</summary><ol>{v2.history.map((item, index) => <li key={`${item.playerRegistrationId}-${index}`}><div><strong>{names.get(item.playerRegistrationId) ?? "Jugador"}</strong><span>{item.result === "WON" ? "Adjudicado" : item.result ? "No adjudicado" : "Ciclo cerrado"}</span></div><p>{item.winner ? `Ganador: ${item.winner} · ${millions(item.winningPrice)}.` : "Sin adjudicar."}</p>{item.bids.length > 0 && <details><summary>Ver pujas cerradas</summary><ul>{item.bids.map((bid, bidIndex) => <li key={bidIndex}>{bid.manager}: {millions(bid.amountCredits)}{bid.status === "WON" ? " · ganador" : ""}</li>)}</ul></details>}</li>)}</ol></details>}
+    {v2.history.length > 0 && <details className={styles.history}><summary>Resultados anteriores</summary><ol>{v2.history.map((item, index) => <li key={`${item.playerRegistrationId}-${index}`}><div><strong>{names.get(item.playerRegistrationId) ?? "Jugador"}</strong><span>{item.result === "WON" ? "Adjudicado" : item.result ? "No adjudicado" : "Ciclo cerrado"}</span></div>{origins.has(item.playerRegistrationId) && <small>{origins.get(item.playerRegistrationId)}</small>}<p>{item.winner ? `Ganador: ${item.winner} · ${millions(item.winningPrice)}.` : "Sin adjudicar."}</p>{item.bids.length > 0 && <details><summary>Ver pujas cerradas</summary><ul>{item.bids.map((bid, bidIndex) => <li key={bidIndex}>{bid.manager}: {millions(bid.amountCredits)}{bid.status === "WON" ? " · ganador" : ""}</li>)}</ul></details>}</li>)}</ol></details>}
   </section>;
 }
